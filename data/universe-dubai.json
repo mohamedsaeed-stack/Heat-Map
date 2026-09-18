@@ -1,0 +1,78 @@
+{
+  "_emirate": "Dubai",
+  "_pulled": "2026-09-18",
+  "_source": "OpenStreetMap via Overpass",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "categories": {
+    "hospitality_fnb": {
+      "label": "Hospitality & F&B",
+      "credible": true,
+      "elements": 5761,
+      "places": 5480,
+      "unnamed_dropped": 281,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-hospitality_fnb.json",
+      "bytes": 459857
+    },
+    "medical_healthcare": {
+      "label": "Medical clinics & healthcare",
+      "credible": true,
+      "elements": 1051,
+      "places": 981,
+      "unnamed_dropped": 70,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-medical_healthcare.json",
+      "bytes": 84774
+    },
+    "auto_automotive": {
+      "label": "Auto parts & automotive trading",
+      "credible": true,
+      "elements": 1057,
+      "places": 1006,
+      "unnamed_dropped": 51,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-auto_automotive.json",
+      "bytes": 82561
+    },
+    "retail": {
+      "label": "Retail",
+      "credible": true,
+      "elements": 10975,
+      "places": 8902,
+      "unnamed_dropped": 318,
+      "reclassified_elsewhere": 1755,
+      "file": "universe-dubai-retail.json",
+      "bytes": 749135
+    },
+    "contracting_fitout": {
+      "label": "Contracting, fitouts, FFE",
+      "credible": false,
+      "elements": 848,
+      "places": 827,
+      "unnamed_dropped": 21,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-contracting_fitout.json",
+      "bytes": 73551
+    },
+    "marketing_advertising": {
+      "label": "Marketing & advertising",
+      "credible": false,
+      "elements": 24,
+      "places": 24,
+      "unnamed_dropped": 0,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-marketing_advertising.json",
+      "bytes": 2613
+    },
+    "manufacturing_trading": {
+      "label": "Manufacturing & general trading",
+      "credible": false,
+      "elements": 890,
+      "places": 798,
+      "unnamed_dropped": 92,
+      "reclassified_elsewhere": 0,
+      "file": "universe-dubai-manufacturing_trading.json",
+      "bytes": 70609
+    }
+  }
+}

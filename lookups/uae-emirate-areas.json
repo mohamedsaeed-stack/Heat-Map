@@ -1,0 +1,56 @@
+{
+  "_comment": "Overpass area ids for each emirate, resolved from Nominatim on 2026-09-19. area_id = 3600000000 + relation id. Used instead of a bounding box, because a Dubai bbox clips Sharjah.",
+  "_source": "Nominatim / OpenStreetMap",
+  "emirates": {
+    "Dubai": {
+      "osm_type": "relation",
+      "osm_id": 3766483,
+      "name": "Dubai Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766483
+    },
+    "Abu Dhabi": {
+      "osm_type": "relation",
+      "osm_id": 3766481,
+      "name": "Abu Dhabi Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766481
+    },
+    "Sharjah": {
+      "osm_type": "relation",
+      "osm_id": 3766486,
+      "name": "Sharjah Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766486
+    },
+    "Ajman": {
+      "osm_type": "relation",
+      "osm_id": 3766482,
+      "name": "Ajman Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766482
+    },
+    "Ras Al Khaimah": {
+      "osm_type": "relation",
+      "osm_id": 3766485,
+      "name": "Ras al-Khaimah Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766485
+    },
+    "Fujairah": {
+      "osm_type": "relation",
+      "osm_id": 3766484,
+      "name": "Fujairah Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766484
+    },
+    "Umm Al Quwain": {
+      "osm_type": "relation",
+      "osm_id": 3766487,
+      "name": "Umm al-Quwain Emirate, United Arab Emirates",
+      "cat": "boundary/administrative",
+      "area_id": 3603766487
+    }
+  },
+  "_note": "Dubai and Abu Dhabi resolve to the CITY unless queried as \"<name> Emirate\"; the emirate relation is the one used here, so Hatta, Jebel Ali and Dubai South are inside the area."
+}
