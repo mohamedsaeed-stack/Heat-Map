@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlapKap — Abu Dhabi F&B Map</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; }
+
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #e5e5e3;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-title { font-size: 15px; font-weight: 600; color: #111; }
+  .header-sub { font-size: 12px; color: #888; margin-top: 1px; }
+
+  .legend {
+    display: flex; gap: 20px; align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: #555; }
+  .legend-dot {
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    flex-shrink: 0;
+  }
+
+  .stats {
+    position: fixed;
+    top: 65px; left: 16px; z-index: 999;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    min-width: 130px;
+  }
+  .stat-card .num { font-size: 22px; font-weight: 700; }
+  .stat-card .lbl { font-size: 11px; color: #888; margin-top: 1px; }
+  .stat-card.leads .num { color: #888; }
+  .stat-card.opps .num { color: #f59e0b; }
+  .stat-card.closed .num { color: #10b981; }
+
+  #map {
+    position: fixed;
+    top: 53px; left: 0; right: 0; bottom: 0;
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  }
+  .leaflet-popup-content { margin: 12px 14px !important; }
+  .popup-name { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 4px; }
+  .popup-industry { font-size: 11px; color: #888; margin-bottom: 6px; }
+  .popup-badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px; margin-bottom: 6px;
+  }
+  .badge-lead { background: #f3f4f6; color: #6b7280; }
+  .badge-opp { background: #fef3c7; color: #d97706; }
+  .badge-customer { background: #d1fae5; color: #065f46; }
+  .popup-note { font-size: 11px; color: #666; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="header-title">FlapKap · Abu Dhabi F&B</div>
+      <div class="header-sub">Hospitality & Restaurants · CRM Coverage Map</div>
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#9ca3af"></div>
+      CRM Lead
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#f59e0b"></div>
+      Opportunity
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:#10b981"></div>
+      Closed Customer
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card leads">
+    <div class="num">256</div>
+    <div class="lbl">CRM Leads</div>
+  </div>
+  <div class="stat-card opps">
+    <div class="num">12</div>
+    <div class="lbl">Opportunities</div>
+  </div>
+  <div class="stat-card closed">
+    <div class="num">2</div>
+    <div class="lbl">Closed Customers</div>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+
+const map = L.map('map', { zoomControl: true }).setView([24.468, 54.42], 12);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+  maxZoom: 19
+}).addTo(map);
+
+function pin(color, size, border) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:${border};box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2],
+    popupAnchor: [0, -(size/2+4)]
+  });
+}
+
+const leadPin = pin('#9ca3af', 13, '2px solid #fff');
+const oppPin  = pin('#f59e0b', 16, '2px solid #fff');
+const custPin = pin('#10b981', 18, '2.5px solid #fff');
+
+function addPin(lat, lng, icon, name, industry, status, note) {
+  const badgeClass = status === 'Closed Customer' ? 'badge-customer' : status === 'Opportunity' ? 'badge-opp' : 'badge-lead';
+  L.marker([lat, lng], { icon })
+    .addTo(map)
+    .bindPopup(`
+      <div class="popup-name">${name}</div>
+      <div class="popup-industry">${industry}</div>
+      <span class="popup-badge ${badgeClass}">${status}</span>
+      ${note ? `<div class="popup-note">${note}</div>` : ''}
+    `);
+}
+
+/* ── CLOSED CUSTOMERS ─────────────────────────────── */
+addPin(24.4773, 54.3879, custPin,
+  'Rain Café — Muroor Road',
+  'Food & Beverages',
+  'Closed Customer',
+  'HQ branch · Muroor Road, Abu Dhabi · Closed Sep 2026');
+
+addPin(24.4876, 54.6089, custPin,
+  'Rain Café — Yas Mall',
+  'Food & Beverages',
+  'Closed Customer',
+  'Second branch · Yas Mall, Yas Island');
+
+addPin(24.4762, 54.3497, custPin,
+  'Marmellata Bakery',
+  'Restaurants',
+  'Closed Customer',
+  'Souk Al Mina, Zayed Port · MENA 50 Best #16 · Closed Oct 2024');
+
+addPin(24.4795, 54.3540, custPin,
+  'Barbassi by Marmellata',
+  'Restaurants',
+  'Closed Customer',
+  'Sister concept · M39, Mina Zayed · Expansion branch');
+
+/* ── OPPORTUNITIES (12 total — sample spread across Abu Dhabi areas) ── */
+const opps = [
+  [24.4539, 54.3773, 'F&B Operator — Khalidiyah', 'Restaurants'],
+  [24.4950, 54.3710, 'Restaurant Group — Al Nahyan', 'Food Production'],
+  [24.4340, 54.3520, 'Café Chain — Al Mushrif', 'Food & Beverages'],
+  [24.5020, 54.4100, 'F&B Brand — Al Rowdah', 'Restaurants'],
+  [24.4650, 54.6000, 'Restaurant — Yas Island', 'Hospitality'],
+  [24.5340, 54.4330, 'Catering Co — Mussafah', 'Food Production'],
+  [24.4180, 54.4870, 'Hotel F&B — Al Reem Island', 'Hospitality'],
+  [24.4760, 54.3250, 'Bakery Group — Al Bateen', 'Food Production'],
+  [24.4580, 54.5600, 'Restaurant — Al Raha', 'Restaurants'],
+  [24.5100, 54.3850, 'Café — Madinat Zayed', 'Food & Beverages'],
+  [24.4900, 54.3600, 'F&B Operator — Al Manhal', 'Restaurants'],
+  [24.4420, 54.4100, 'Restaurant Chain — Al Karamah', 'Food Production'],
+];
+opps.forEach(([lat, lng, name, ind]) => addPin(lat, lng, oppPin, name, ind, 'Opportunity', 'Active in pipeline'));
+
+/* ── CRM LEADS — sample spread across Abu Dhabi ──── */
+const leads = [
+  [24.4690, 54.3610, 'Café — Corniche'],
+  [24.4820, 54.3720, 'Restaurant — Al Wahda'],
+  [24.4600, 54.3900, 'F&B — Hamdan Street'],
+  [24.4510, 54.3650, 'Bakery — Al Zahiyah'],
+  [24.4750, 54.4200, 'Café — Al Muroor'],
+  [24.5200, 54.4500, 'Restaurant — Khalifa City'],
+  [24.5050, 54.6200, 'F&B — Yas Island'],
+  [24.4300, 54.4600, 'Café — Mohammed Bin Zayed'],
+  [24.4900, 54.3400, 'Restaurant — Al Bateen'],
+  [24.4100, 54.4800, 'Catering — Mussafah'],
+  [24.4750, 54.3300, 'Café — Al Mina'],
+  [24.5150, 54.3700, 'Restaurant — Al Rahba'],
+  [24.4600, 54.5200, 'F&B — Saadiyat Island'],
+  [24.4380, 54.5500, 'Bakery — Al Raha Beach'],
+  [24.4950, 54.4800, 'Restaurant — Masdar City'],
+  [24.4820, 54.3550, 'Café — Al Manhal'],
+  [24.4680, 54.4500, 'F&B Brand — Al Nahyan'],
+  [24.4430, 54.3800, 'Restaurant — Khalidiyah'],
+  [24.5000, 54.3950, 'Café — Al Rowdah'],
+  [24.4570, 54.6100, 'F&B — Yas Marina'],
+];
+leads.forEach(([lat, lng, name]) => addPin(lat, lng, leadPin, name, 'F&B', 'CRM Lead', null));
+
+</script>
+</body>
+</html>
