@@ -1,0 +1,624 @@
+{
+  "_source": "Nominatim / OpenStreetMap, queried 2026-09-18",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "_accepted": "Only OSM place, boundary and landuse features. Transport stops, shops and roads are refused, because a metro station named after a district is not that district.",
+  "_note": "Centroids only. A company placed on a community sits at its community centroid, not at its own address. The page states that on every community figure.",
+  "communities": {
+    "Deira": {
+      "sector": "Deira",
+      "lat": 25.272794,
+      "lng": 55.305334,
+      "osm": "node/7826901099",
+      "osm_kind": "place/town"
+    },
+    "Deira Islands": {
+      "sector": "Deira",
+      "lat": 25.317917,
+      "lng": 55.326318,
+      "osm": "relation/8122161",
+      "osm_kind": "place/island"
+    },
+    "Al Rigga": {
+      "sector": "Deira",
+      "lat": 25.267238,
+      "lng": 55.312186,
+      "osm": "relation/14506842",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Muraqqabat": {
+      "sector": "Deira",
+      "lat": 25.265351,
+      "lng": 55.32262,
+      "osm": "relation/18471665",
+      "osm_kind": "boundary/administrative"
+    },
+    "Naif": {
+      "sector": "Deira",
+      "lat": 25.271763,
+      "lng": 55.310317,
+      "osm": "node/13263889493",
+      "osm_kind": "place/suburb"
+    },
+    "Al Ras": {
+      "sector": "Deira",
+      "lat": 25.269152,
+      "lng": 55.296579,
+      "osm": "relation/14506838",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Sabkha": {
+      "sector": "Deira",
+      "lat": 25.269395,
+      "lng": 55.302432,
+      "osm": "way/874795358",
+      "osm_kind": "place/suburb"
+    },
+    "Al Baraha": {
+      "sector": "Deira",
+      "lat": 25.280988,
+      "lng": 55.319525,
+      "osm": "relation/18471780",
+      "osm_kind": "boundary/administrative"
+    },
+    "Hor Al Anz": {
+      "sector": "Deira",
+      "lat": 25.278299,
+      "lng": 55.3395,
+      "osm": "relation/14506843",
+      "osm_kind": "boundary/administrative"
+    },
+    "Abu Hail": {
+      "sector": "Deira",
+      "lat": 25.286029,
+      "lng": 55.328865,
+      "osm": "relation/18471786",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Mamzar": {
+      "sector": "Deira",
+      "lat": 25.300533,
+      "lng": 55.359633,
+      "osm": "relation/18471731",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Khabaisi": {
+      "sector": "Deira",
+      "lat": 25.268064,
+      "lng": 55.335997,
+      "osm": "relation/14506844",
+      "osm_kind": "boundary/administrative"
+    },
+    "Port Saeed": {
+      "sector": "Deira",
+      "lat": 25.253308,
+      "lng": 55.331892,
+      "osm": "relation/12431735",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Garhoud": {
+      "sector": "Deira",
+      "lat": 25.240655,
+      "lng": 55.351998,
+      "osm": "relation/18471788",
+      "osm_kind": "boundary/administrative"
+    },
+    "Umm Ramool": {
+      "sector": "Deira",
+      "lat": 25.231164,
+      "lng": 55.368567,
+      "osm": "relation/18471720",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Qusais": {
+      "sector": "Deira",
+      "lat": 25.270144,
+      "lng": 55.385939,
+      "osm": "relation/18471660",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Nahda": {
+      "sector": "Deira",
+      "lat": 25.290288,
+      "lng": 55.364147,
+      "osm": "relation/18471785",
+      "osm_kind": "boundary/administrative"
+    },
+    "Muhaisnah": {
+      "sector": "Deira",
+      "lat": 25.260745,
+      "lng": 55.419681,
+      "osm": "relation/18471781",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Twar": {
+      "sector": "Deira",
+      "lat": 25.262435,
+      "lng": 55.379486,
+      "osm": "relation/14506845",
+      "osm_kind": "boundary/administrative"
+    },
+    "Nad Al Hamar": {
+      "sector": "Deira",
+      "lat": 25.198884,
+      "lng": 55.385771,
+      "osm": "relation/18471802",
+      "osm_kind": "boundary/administrative"
+    },
+    "Dubai Festival City": {
+      "sector": "Deira",
+      "lat": 25.221701,
+      "lng": 55.359178,
+      "osm": "way/838663334",
+      "osm_kind": "place/suburb"
+    },
+    "Dubai Airport Free Zone": {
+      "sector": "Deira",
+      "lat": 25.261045,
+      "lng": 55.372926,
+      "osm": "node/13258039755",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Bur Dubai": {
+      "sector": "Bur Dubai",
+      "lat": 25.235591,
+      "lng": 55.29672,
+      "osm": "relation/6843778",
+      "osm_kind": "place/island"
+    },
+    "Al Karama": {
+      "sector": "Bur Dubai",
+      "lat": 25.248214,
+      "lng": 55.305061,
+      "osm": "relation/18471789",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Mankhool": {
+      "sector": "Bur Dubai",
+      "lat": 25.249509,
+      "lng": 55.295477,
+      "osm": "relation/18471793",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Fahidi": {
+      "sector": "Bur Dubai",
+      "lat": 25.264137,
+      "lng": 55.288951,
+      "osm": "node/7826894571",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Al Souk Al Kabeer": {
+      "sector": "Bur Dubai",
+      "lat": 25.262046,
+      "lng": 55.293631,
+      "osm": "relation/18471713",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Hamriya": {
+      "sector": "Bur Dubai",
+      "lat": 25.25993,
+      "lng": 55.303194,
+      "osm": "relation/18471710",
+      "osm_kind": "boundary/administrative"
+    },
+    "Oud Metha": {
+      "sector": "Bur Dubai",
+      "lat": 25.236152,
+      "lng": 55.31156,
+      "osm": "relation/18471798",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Jaddaf": {
+      "sector": "Bur Dubai",
+      "lat": 25.214262,
+      "lng": 55.32454,
+      "osm": "relation/18471794",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Kifaf": {
+      "sector": "Bur Dubai",
+      "lat": 25.234627,
+      "lng": 55.298597,
+      "osm": "way/1151635456",
+      "osm_kind": "landuse/residential"
+    },
+    "Zabeel": {
+      "sector": "Bur Dubai",
+      "lat": 25.209834,
+      "lng": 55.297966,
+      "osm": "relation/18471721",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Satwa": {
+      "sector": "Jumeirah",
+      "lat": 25.22086,
+      "lng": 55.273762,
+      "osm": "relation/18471715",
+      "osm_kind": "boundary/administrative"
+    },
+    "Downtown Dubai": {
+      "sector": "Central",
+      "lat": 25.194843,
+      "lng": 55.278195,
+      "osm": "way/1012139061",
+      "osm_kind": "place/suburb"
+    },
+    "DIFC": {
+      "sector": "Central",
+      "lat": 25.212826,
+      "lng": 55.277635,
+      "osm": "way/396571514",
+      "osm_kind": "landuse/commercial"
+    },
+    "Business Bay": {
+      "sector": "Central",
+      "lat": 25.179456,
+      "lng": 55.268371,
+      "osm": "relation/18471755",
+      "osm_kind": "boundary/administrative"
+    },
+    "Trade Centre": {
+      "sector": "Central",
+      "lat": 25.219152,
+      "lng": 55.280542,
+      "osm": "relation/18471719",
+      "osm_kind": "boundary/administrative"
+    },
+    "Dubai Design District": {
+      "sector": "Central",
+      "lat": 25.188337,
+      "lng": 55.297484,
+      "osm": "way/404589107",
+      "osm_kind": "place/suburb"
+    },
+    "Dubai Healthcare City": {
+      "sector": "Central",
+      "lat": 25.23182,
+      "lng": 55.322504,
+      "osm": "way/396554518",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Al Wasl": {
+      "sector": "Jumeirah",
+      "lat": 25.195933,
+      "lng": 55.255737,
+      "osm": "relation/18471795",
+      "osm_kind": "boundary/administrative"
+    },
+    "City Walk": {
+      "sector": "Jumeirah",
+      "lat": 25.208159,
+      "lng": 55.261874,
+      "osm": "way/454470413",
+      "osm_kind": "landuse/retail"
+    },
+    "Jumeirah": {
+      "sector": "Jumeirah",
+      "lat": 25.20696,
+      "lng": 55.247497,
+      "osm": "relation/11912729",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Safa": {
+      "sector": "Jumeirah",
+      "lat": 25.167737,
+      "lng": 55.231018,
+      "osm": "relation/18471742",
+      "osm_kind": "boundary/administrative"
+    },
+    "Umm Suqeim": {
+      "sector": "Jumeirah",
+      "lat": 25.153909,
+      "lng": 55.2075,
+      "osm": "relation/18471749",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Manara": {
+      "sector": "Jumeirah",
+      "lat": 25.144818,
+      "lng": 55.214453,
+      "osm": "relation/18471689",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Quoz": {
+      "sector": "Al Quoz",
+      "lat": 25.15958,
+      "lng": 55.25402,
+      "osm": "node/8143204838",
+      "osm_kind": "place/suburb"
+    },
+    "Al Barsha": {
+      "sector": "Al Barsha",
+      "lat": 25.099489,
+      "lng": 55.201725,
+      "osm": "node/8143204850",
+      "osm_kind": "place/suburb"
+    },
+    "Barsha Heights": {
+      "sector": "Al Barsha",
+      "lat": 25.098284,
+      "lng": 55.175782,
+      "osm": "node/3087418334",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Al Sufouh": {
+      "sector": "Al Barsha",
+      "lat": 25.098357,
+      "lng": 55.161117,
+      "osm": "way/1153975042",
+      "osm_kind": "place/suburb"
+    },
+    "Dubai Media City": {
+      "sector": "Al Barsha",
+      "lat": 25.093525,
+      "lng": 55.151572,
+      "osm": "relation/15599971",
+      "osm_kind": "landuse/residential"
+    },
+    "Dubai Internet City": {
+      "sector": "Al Barsha",
+      "lat": 25.095235,
+      "lng": 55.159757,
+      "osm": "way/1154309751",
+      "osm_kind": "landuse/residential"
+    },
+    "Dubai Knowledge Park": {
+      "sector": "Al Barsha",
+      "lat": 25.103133,
+      "lng": 55.163622,
+      "osm": "node/13264966064",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Dubai Marina": {
+      "sector": "Marina",
+      "lat": 25.078641,
+      "lng": 55.135252,
+      "osm": "relation/11912728",
+      "osm_kind": "landuse/residential"
+    },
+    "Jumeirah Beach Residence": {
+      "sector": "Marina",
+      "lat": 25.077802,
+      "lng": 55.135181,
+      "osm": "way/1011430642",
+      "osm_kind": "landuse/residential"
+    },
+    "Jumeirah Lakes Towers": {
+      "sector": "Marina",
+      "lat": 25.072383,
+      "lng": 55.143743,
+      "osm": "way/433279682",
+      "osm_kind": "place/suburb"
+    },
+    "Palm Jumeirah": {
+      "sector": "Marina",
+      "lat": 25.118303,
+      "lng": 55.133832,
+      "osm": "way/874795235",
+      "osm_kind": "place/suburb"
+    },
+    "Bluewaters Island": {
+      "sector": "Marina",
+      "lat": 25.077616,
+      "lng": 55.122923,
+      "osm": "way/1090798761",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Jebel Ali": {
+      "sector": "Jebel Ali",
+      "lat": 25.033817,
+      "lng": 55.136604,
+      "osm": "node/8143204857",
+      "osm_kind": "place/suburb"
+    },
+    "Dubai Investment Park": {
+      "sector": "Jebel Ali",
+      "lat": 24.987771,
+      "lng": 55.165161,
+      "osm": "node/13707693375",
+      "osm_kind": "place/suburb"
+    },
+    "Dubai South": {
+      "sector": "Jebel Ali",
+      "lat": 24.914439,
+      "lng": 55.161513,
+      "osm": "node/11795445497",
+      "osm_kind": "place/suburb"
+    },
+    "Techno Park": {
+      "sector": "Jebel Ali",
+      "lat": 24.896683,
+      "lng": 55.060486,
+      "osm": "way/354260411",
+      "osm_kind": "landuse/commercial"
+    },
+    "Discovery Gardens": {
+      "sector": "Jebel Ali",
+      "lat": 25.038271,
+      "lng": 55.145696,
+      "osm": "way/213900204",
+      "osm_kind": "boundary/administrative"
+    },
+    "Dubai Production City": {
+      "sector": "Jebel Ali",
+      "lat": 25.032128,
+      "lng": 55.191273,
+      "osm": "relation/18471777",
+      "osm_kind": "boundary/administrative"
+    },
+    "Dubai Studio City": {
+      "sector": "Jebel Ali",
+      "lat": 25.041564,
+      "lng": 55.252259,
+      "osm": "node/1627989278",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Motor City": {
+      "sector": "Jebel Ali",
+      "lat": 25.042371,
+      "lng": 55.241661,
+      "osm": "node/8143204852",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Arjan": {
+      "sector": "Jebel Ali",
+      "lat": 25.060331,
+      "lng": 55.235486,
+      "osm": "way/309488167",
+      "osm_kind": "landuse/residential"
+    },
+    "Jumeirah Village Circle": {
+      "sector": "Jebel Ali",
+      "lat": 25.056588,
+      "lng": 55.207987,
+      "osm": "node/11800596709",
+      "osm_kind": "place/suburb"
+    },
+    "Jumeirah Village Triangle": {
+      "sector": "Jebel Ali",
+      "lat": 25.049843,
+      "lng": 55.190701,
+      "osm": "node/11800596710",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Dubai Hills": {
+      "sector": "Jebel Ali",
+      "lat": 25.097414,
+      "lng": 55.26844,
+      "osm": "node/8143204842",
+      "osm_kind": "place/suburb"
+    },
+    "Damac Hills": {
+      "sector": "Jebel Ali",
+      "lat": 25.026438,
+      "lng": 55.251228,
+      "osm": "node/11795397123",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Arabian Ranches": {
+      "sector": "Jebel Ali",
+      "lat": 25.053568,
+      "lng": 55.275478,
+      "osm": "node/8143204841",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Town Square": {
+      "sector": "Jebel Ali",
+      "lat": 24.99997,
+      "lng": 55.300843,
+      "osm": "way/566134551",
+      "osm_kind": "landuse/residential"
+    },
+    "Mudon": {
+      "sector": "Jebel Ali",
+      "lat": 25.020411,
+      "lng": 55.267994,
+      "osm": "node/11795395058",
+      "osm_kind": "place/suburb"
+    },
+    "Remraam": {
+      "sector": "Jebel Ali",
+      "lat": 25.001365,
+      "lng": 55.24886,
+      "osm": "way/359949337",
+      "osm_kind": "boundary/administrative"
+    },
+    "Tilal Al Ghaf": {
+      "sector": "Jebel Ali",
+      "lat": 25.024334,
+      "lng": 55.223922,
+      "osm": "way/655192769",
+      "osm_kind": "landuse/greenfield"
+    },
+    "Emirates Hills": {
+      "sector": "Marina",
+      "lat": 25.063987,
+      "lng": 55.164585,
+      "osm": "way/874795233",
+      "osm_kind": "landuse/residential"
+    },
+    "Ras Al Khor": {
+      "sector": "Ras Al Khor",
+      "lat": 25.193963,
+      "lng": 55.339245,
+      "osm": "node/8143204820",
+      "osm_kind": "place/suburb"
+    },
+    "Al Aweer": {
+      "sector": "Ras Al Khor",
+      "lat": 25.177447,
+      "lng": 55.569534,
+      "osm": "node/8143204837",
+      "osm_kind": "place/suburb"
+    },
+    "International City": {
+      "sector": "Ras Al Khor",
+      "lat": 25.132274,
+      "lng": 55.398141,
+      "osm": "relation/18471686",
+      "osm_kind": "boundary/administrative"
+    },
+    "Warsan": {
+      "sector": "Ras Al Khor",
+      "lat": 25.153924,
+      "lng": 55.408286,
+      "osm": "relation/18471741",
+      "osm_kind": "boundary/administrative"
+    },
+    "Dubai Silicon Oasis": {
+      "sector": "Ras Al Khor",
+      "lat": 25.121706,
+      "lng": 55.385506,
+      "osm": "way/364819827",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Academic City": {
+      "sector": "Ras Al Khor",
+      "lat": 25.132542,
+      "lng": 55.435467,
+      "osm": "node/8143204834",
+      "osm_kind": "place/suburb"
+    },
+    "Mirdif": {
+      "sector": "Ras Al Khor",
+      "lat": 25.221843,
+      "lng": 55.423147,
+      "osm": "relation/18471716",
+      "osm_kind": "boundary/administrative"
+    },
+    "Al Warqa": {
+      "sector": "Ras Al Khor",
+      "lat": 25.18902,
+      "lng": 55.430832,
+      "osm": "node/8143204816",
+      "osm_kind": "place/suburb"
+    },
+    "Nad Al Sheba": {
+      "sector": "Ras Al Khor",
+      "lat": 25.14563,
+      "lng": 55.364275,
+      "osm": "relation/18471683",
+      "osm_kind": "boundary/administrative"
+    },
+    "Meydan": {
+      "sector": "Ras Al Khor",
+      "lat": 25.16293,
+      "lng": 55.314297,
+      "osm": "way/1159907277",
+      "osm_kind": "place/neighbourhood"
+    },
+    "Dubailand": {
+      "sector": "Ras Al Khor",
+      "lat": 25.058657,
+      "lng": 55.245999,
+      "osm": "way/309488163",
+      "osm_kind": "landuse/commercial"
+    },
+    "Hatta": {
+      "sector": "Hatta",
+      "lat": 24.797557,
+      "lng": 56.120638,
+      "osm": "way/1312389250",
+      "osm_kind": "place/city"
+    }
+  }
+}
