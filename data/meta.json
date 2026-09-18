@@ -1,0 +1,189 @@
+{
+  "_built": "2026-09-18T22:41:15.423Z",
+  "_problems": [],
+  "snapshot": {
+    "crm_pulled": "2026-09-19",
+    "osm_pulled": "2026-09-19",
+    "admin_pulled": null
+  },
+  "universe": {
+    "dubai_companies": 19973,
+    "raw_like_match": 19974,
+    "reconciliation": "city LIKE '%dubai%' returns 19974 companies. One of them has city 'abu dhabi / dubai' and is excluded as ambiguous, leaving 19973. The lifecycle and industry breakdowns below total 19974 because they were queried before that exclusion, so each is one company larger than Dubai proper.",
+    "definition": "HubSpot COMPANY where city LIKE '%dubai%', excluding 'abu dhabi / dubai'. 18 spellings matched '%ubai%'; two of them are Al Jubail and Jubail Industrial City in Saudi Arabia and are excluded by using '%dubai%'.",
+    "excluded": [
+      {
+        "city": "abu dhabi / dubai",
+        "companies": 1,
+        "why": "ambiguous — exclude"
+      },
+      {
+        "city": "al jubail",
+        "companies": 1,
+        "why": "Saudi Arabia — matched '%ubai%' only"
+      },
+      {
+        "city": "jubail industrial city",
+        "companies": 1,
+        "why": "Saudi Arabia — matched '%ubai%' only"
+      }
+    ],
+    "with_address": 5335,
+    "with_city_only": 14638
+  },
+  "lifecycle": [
+    {
+      "label": "Lead",
+      "value": "lead",
+      "companies": 17679
+    },
+    {
+      "label": "Marketing Qualified Lead",
+      "value": "marketingqualifiedlead",
+      "companies": 1018
+    },
+    {
+      "label": "Does Not Fit ICP",
+      "value": "3016600817",
+      "companies": 572
+    },
+    {
+      "label": "Opportunity",
+      "value": "opportunity",
+      "companies": 466
+    },
+    {
+      "label": "Customer",
+      "value": "customer",
+      "companies": 106
+    },
+    {
+      "label": "Unassigned",
+      "value": "(null)",
+      "companies": 104
+    },
+    {
+      "label": "Sales Qualified Lead",
+      "value": "salesqualifiedlead",
+      "companies": 28
+    },
+    {
+      "label": "Subscriber",
+      "value": "subscriber",
+      "companies": 1
+    }
+  ],
+  "categories": [
+    {
+      "key": "hospitality_fnb",
+      "label": "Hospitality & F&B",
+      "target": true,
+      "companies": 2712,
+      "customers": 33
+    },
+    {
+      "key": "medical_healthcare",
+      "label": "Medical clinics & healthcare",
+      "target": true,
+      "companies": 1031,
+      "customers": 5
+    },
+    {
+      "key": "contracting_fitout",
+      "label": "Contracting, fitouts, FFE",
+      "target": true,
+      "companies": 1387,
+      "customers": 9
+    },
+    {
+      "key": "marketing_advertising",
+      "label": "Marketing & advertising",
+      "target": true,
+      "companies": 940,
+      "customers": 3
+    },
+    {
+      "key": "auto_automotive",
+      "label": "Auto parts & automotive trading",
+      "target": true,
+      "companies": 634,
+      "customers": 7
+    },
+    {
+      "key": "manufacturing_trading",
+      "label": "Manufacturing & general trading",
+      "target": true,
+      "companies": 4240,
+      "customers": 19
+    },
+    {
+      "key": "retail",
+      "label": "Retail",
+      "target": true,
+      "companies": 895,
+      "customers": 7
+    },
+    {
+      "key": "other",
+      "label": "Other",
+      "target": false,
+      "companies": 5500,
+      "customers": 18
+    },
+    {
+      "key": "blank",
+      "label": "Blank",
+      "target": false,
+      "companies": 2635,
+      "customers": 5
+    }
+  ],
+  "deals": {
+    "_scope": "ALL deals in the four in-scope pipelines. NOT yet filtered to Dubai - the Dubai filter goes on the associated COMPANY.city, which needs the row-level pull.",
+    "by_layer": {
+      "open": 2378,
+      "won": 157,
+      "lost_risk": 347,
+      "lost_sales": 1326
+    },
+    "by_pipeline": {
+      "Canopy Deal Pipeline": 2752,
+      "UAE Pipeline (default)": 1234,
+      "UAE B2B": 78,
+      "Commercial Egypt Pipeline- UAE Market": 144
+    },
+    "awaiting_confirmation": 675,
+    "stage_map_status": "DRAFT - awaiting the user's OK. 6 stages carry confirm:true."
+  },
+  "communities": {
+    "defined": 91,
+    "with_centroid": 88,
+    "without_centroid": [
+      "Al Khail Gate",
+      "Al Thanyah",
+      "Dubai Sports City"
+    ]
+  },
+  "layers": {
+    "universe": {
+      "built": false,
+      "note": "Not pulled yet. OpenStreetMap via Overpass, free. Credible for F&B, medical, auto and retail only."
+    },
+    "crm": {
+      "built": false,
+      "note": "Not pulled yet. Needs the partitioned HubSpot COMPANY pull."
+    },
+    "in_process": {
+      "built": false,
+      "note": "Not pulled yet. Needs the DEAL pull and an approved stage map."
+    },
+    "closed_lost": {
+      "built": false,
+      "note": "Not pulled yet. Two taxonomies kept apart: lost by sales, rejected by Risk."
+    },
+    "closed_won": {
+      "built": false,
+      "note": "Not pulled yet. Admin app is primary; HubSpot customer count is a cross-check."
+    }
+  }
+}

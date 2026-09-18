@@ -1,0 +1,88 @@
+{
+  "_comment": "One line per (pipeline, stage id) -> layer. Built from lookups/deal-stage-matrix.tsv, measured 19 Sep 2026. NOTHING may be counted from DEAL until _status says approved: the labels in this portal do not mean what their ids say, and four stage labels exist under several ids at once.",
+  "_status": "DRAFT - awaiting the user's OK. 6 stages carry confirm:true.",
+  "_created": "2026-09-19",
+
+  "_layers": {
+    "open": "In process. A live deal, not yet funded and not yet lost.",
+    "won": "Closed won. Funded. PLAN.md layer 5 defines this as funded clients, so only Money Disbursed qualifies unless the user says otherwise.",
+    "lost_sales": "Lost by sales. The merchant went quiet, refused, or was disqualified.",
+    "lost_risk": "Rejected by Risk. A different taxonomy from lost_sales and never merged with it.",
+    "ignore": "Out of scope for a Dubai map."
+  },
+
+  "_traps": [
+    "Stage id 'closedwon' is labelled Offer Sent. A query written as dealstage = 'closedwon' returns Offer Sent, not closed won.",
+    "Stage id 'closedlost' is labelled Signed. It is the opposite of what it says.",
+    "'Signed', 'Unworthy', 'Totally Lost' and 'Offer Sent' each exist under three or four different stage ids across pipelines. Grouping by LABEL silently merges them.",
+    "Deals attach to companies through the DEAL to COMPANY association. The Dubai filter goes on COMPANY.city, never on the deal."
+  ],
+
+  "_pipelines": {
+    "3211046101": { "name": "Canopy Deal Pipeline", "deals": 2752, "in_scope": true, "note": "the live pipeline" },
+    "UAE_Pipeline_default": { "name": "UAE Pipeline (default)", "deals": 1234, "in_scope": true, "note": "legacy, still holds 417 Unworthy and 351 Totally Lost" },
+    "16872663": { "name": "UAE B2B", "deals": 78, "in_scope": true },
+    "2217750730": { "name": "Commercial Egypt Pipeline- UAE Market", "deals": 144, "in_scope": true, "note": "named Egypt, serves the UAE market" },
+    "31091146": { "name": "Egypt Pipeline", "deals": 25, "in_scope": false, "note": "not a Dubai pipeline; every stage maps to ignore so nothing is hidden" }
+  },
+
+  "stages": [
+    { "pipeline": "3211046101", "stage_id": "4415069399", "label": "Meeting Booked (SAL)", "deals": 977, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "5765642489", "label": "Meeting Completed", "deals": 170, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069400", "label": "Awaiting Signup", "deals": 216, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069401", "label": "Sign Up Completed (SQL)", "deals": 93, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069402", "label": "Starts Uploading Documents", "deals": 135, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069403", "label": "Reviewing By Risk", "deals": 36, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069404", "label": "Conditional Offer Sent", "deals": 38, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4415069405", "label": "Final Offer Sent", "deals": 53, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "4413905096", "label": "Offer Accepted", "deals": 6, "layer": "open" },
+    { "pipeline": "3211046101", "stage_id": "5718087923", "label": "Expected NOPs", "deals": 36, "layer": "open", "confirm": true,
+      "why": "NOP is not expanded anywhere in the portal. Read as a deal expected to convert, so open. If NOP means a funded facility, this is won and the won count rises by 36." },
+    { "pipeline": "3211046101", "stage_id": "4413905097", "label": "Money Disbursed", "deals": 151, "layer": "won" },
+    { "pipeline": "3211046101", "stage_id": "5522046161", "label": "Rejected Pre NOP", "deals": 115, "layer": "lost_risk", "confirm": true,
+      "why": "The label says rejected, so it is a loss. Placed under Risk rather than sales because it sits beside Reviewing By Risk in the funnel. If these are sales rejections the loss split changes by 115." },
+    { "pipeline": "3211046101", "stage_id": "4413905098", "label": "Rejected by Risk", "deals": 209, "layer": "lost_risk" },
+    { "pipeline": "3211046101", "stage_id": "4413905099", "label": "Closed Lost", "deals": 517, "layer": "lost_sales" },
+
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "88783315", "label": "Ongoing Conversation", "deals": 324, "layer": "open" },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "305629117", "label": "Awaiting Signup", "deals": 41, "layer": "open" },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "decisionmakerboughtin", "label": "Signup completed", "deals": 7, "layer": "open" },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "closedwon", "label": "Offer Sent", "deals": 4, "layer": "open",
+      "why": "TRAP. The id says closedwon; the label in this portal is Offer Sent. An offer sent is not a win." },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "closedlost", "label": "Signed", "deals": 90, "layer": "open", "confirm": true,
+      "why": "TRAP twice over. The id says closedlost; the label is Signed. Signed is not lost. Proposed as open because PLAN.md defines closed won as FUNDED, and signing precedes funding. If you count a signature as the win, move this and the other two Signed stages to won, which adds 90 + 12 + 1 = 103." },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "57036224", "label": "Totally Lost", "deals": 351, "layer": "lost_sales" },
+    { "pipeline": "UAE_Pipeline_default", "stage_id": "69231596", "label": "Unworthy", "deals": 417, "layer": "lost_sales", "confirm": true,
+      "why": "The single largest contested bucket. Unworthy reads as disqualified rather than lost, which is a different thing: a merchant who never qualified was never really an opportunity. Counting them as lost overstates the loss layer by 417 and makes Dubai look worse than it is. The alternative is ignore." },
+
+    { "pipeline": "16872663", "stage_id": "57036999", "label": "Ongoing Conversation", "deals": 24, "layer": "open" },
+    { "pipeline": "16872663", "stage_id": "270591944", "label": "Awaiting Signup", "deals": 18, "layer": "open" },
+    { "pipeline": "16872663", "stage_id": "57037001", "label": "Signup Completed", "deals": 8, "layer": "open" },
+    { "pipeline": "16872663", "stage_id": "267134432", "label": "Offer Sent", "deals": 4, "layer": "open" },
+    { "pipeline": "16872663", "stage_id": "267134433", "label": "Signed", "deals": 12, "layer": "open", "confirm": true,
+      "why": "Same question as the Signed stage in the legacy pipeline. Kept consistent with it." },
+    { "pipeline": "16872663", "stage_id": "267134434", "label": "Totally Lost", "deals": 1, "layer": "lost_sales" },
+    { "pipeline": "16872663", "stage_id": "267134435", "label": "Unworthy", "deals": 5, "layer": "lost_sales", "confirm": true,
+      "why": "Same question as Unworthy in the legacy pipeline. Kept consistent with it." },
+    { "pipeline": "16872663", "stage_id": "270591945", "label": "Not Interested", "deals": 6, "layer": "lost_sales" },
+
+    { "pipeline": "2217750730", "stage_id": "3026535632", "label": "Meeting Booked", "deals": 30, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3451918535", "label": "Meeting Completed- Awaiting Sign Up", "deals": 16, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3026535634", "label": "Sign Up Completed", "deals": 19, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3026535635", "label": "Uploading Documents", "deals": 7, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3026535636", "label": "Reviewing By Risk", "deals": 5, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3026535637", "label": "Offer Sent", "deals": 9, "layer": "open" },
+    { "pipeline": "2217750730", "stage_id": "3026535661", "label": "Money Disbursed", "deals": 6, "layer": "won" },
+    { "pipeline": "2217750730", "stage_id": "3026703588", "label": "Rejected by risk", "deals": 23, "layer": "lost_risk" },
+    { "pipeline": "2217750730", "stage_id": "3026535662", "label": "Lost", "deals": 29, "layer": "lost_sales" },
+
+    { "pipeline": "31091146", "stage_id": "133132781", "label": "Vetted Leads", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "141400801", "label": "Ongoing Conversation", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "94621400", "label": "Awaiting signup", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "295615187", "label": "Signup Completed", "deals": 4, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "295615188", "label": "Offer Sent", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "93891775", "label": "Signed", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "300992492", "label": "Totally lost", "deals": 1, "layer": "ignore" },
+    { "pipeline": "31091146", "stage_id": "93891777", "label": "Unworthy", "deals": 15, "layer": "ignore" }
+  ]
+}
