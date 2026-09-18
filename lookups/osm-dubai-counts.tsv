@@ -1,0 +1,21 @@
+category_probe	overpass_filter	count	verdict
+F&B (amenity)	"amenity"~"^(restaurant|cafe|fast_food|bar|pub|food_court|ice_cream)$"	5435	usable
+F&B shops (bakery etc)	"shop"~"^(bakery|coffee|confectionery|pastry|tea)$"	371	usable
+Hotels (tourism)	"tourism"~"^(hotel|guest_house|hostel|apartment)$"	1142	usable
+Medical (amenity)	"amenity"~"^(clinic|doctors|dentist|hospital|pharmacy)$"	1217	usable
+Medical (healthcare)	"healthcare"	ERR	re-run with a pause between requests (rate-limited)
+Auto (shop)	"shop"~"^(car_parts|car_repair|car|tyres|motorcycle|motorcycle_repair)$"	1123	usable
+Marketing (office)	"office"~"^(advertising_agency|marketing|public_relations|newspaper|it)$"	59	NOT usable as a universe
+Contracting (office)	"office"~"^(construction_company|architect|interior_design|engineer|surveyor)$"	ERR	re-run; expected low
+Contracting (craft)	"craft"	ERR	re-run; expected low
+Fitout shops	"shop"~"^(hardware|doityourself|furniture|interior_decoration|kitchen|bathroom_furnishing|tiles|paint|lighting|curtain|flooring)$"	ERR	re-run
+Industrial (man_made)	"man_made"="works"	28	NOT usable
+Industrial (industrial=*)	"industrial"	122	NOT usable
+Offices, any	"office"	ERR	re-run
+Shops, any	"shop"	15416	usable for Retail after sub-type filtering
+# Source: Overpass API, 19 Sep 2026 (OSM base timestamp 2026-09-18T22:10Z). Bounding box (south,west,north,east) = (24.75,54.85,25.36,55.60) — approximate Dubai emirate; the northern edge clips Sharjah. The build must use the Dubai admin boundary relation instead of a bbox.
+# Query template: [out:json][timeout:120];(nwr[<filter>](24.75,54.85,25.36,55.60););out count;
+# Endpoint: https://overpass-api.de/api/interpreter — REQUIRES a real User-Agent header (bare curl gets HTTP 406). Used: -A "flapkap-heatmap/0.1 (mohamed.saeed@flapkap.com)" -H "Accept: application/json" --data-urlencode "data=<query>".
+# Mirror that also answered: https://overpass.private.coffee/api/interpreter (older data, 2026-07-15). https://overpass.kumi.systems timed out.
+# ERR rows came back empty when 14 requests were fired 2 s apart — Overpass throttles; space requests 5–10 s apart or use a single combined query.
+# Central-Dubai check: node amenity restaurant|cafe|fast_food in (25.20,55.25,25.30,55.35) = 1,405.

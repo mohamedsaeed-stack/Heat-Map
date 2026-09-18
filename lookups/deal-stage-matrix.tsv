@@ -1,0 +1,51 @@
+stage_label	stage_id	UAE_B2B_16872663	CommercialEgypt_UAE_Market_2217750730	Egypt_Pipeline_31091146	Canopy_Deal_Pipeline_3211046101	UAE_Pipeline_default	proposed_layer
+Vetted Leads	133132781	0	0	1	0	0	open
+Meeting Booked	3026535632	0	30	0	0	0	open
+Meeting Booked (SAL)	4415069399	0	0	0	977	0	open
+Ongoing Conversation	57036999	24	0	0	0	0	open
+Ongoing Conversation	88783315	0	0	0	0	324	open
+Ongoing Conversation	141400801	0	0	1	0	0	open
+Awaiting Signup	270591944	18	0	0	0	0	open
+Awaiting Signup	305629117	0	0	0	0	41	open
+Meeting Completed- Awaiting Sign Up	3451918535	0	16	0	0	0	open
+Meeting Completed	5765642489	0	0	0	170	0	open
+Sign Up Completed	3026535634	0	19	0	0	0	open
+Awaiting Signup	4415069400	0	0	0	216	0	open
+Signup Completed	57037001	8	0	0	0	0	open
+Awaiting signup	94621400	0	0	1	0	0	open
+Signup completed	decisionmakerboughtin	0	0	0	0	7	open
+Offer Sent	267134432	4	0	0	0	0	open
+Signup Completed	295615187	0	0	4	0	0	open
+Uploading Documents	3026535635	0	7	0	0	0	open
+Sign Up Completed (SQL)	4415069401	0	0	0	93	0	open
+Offer Sent	closedwon	0	0	0	0	4	open — TRAP: id says closedwon, label is Offer Sent
+Signed	267134433	12	0	0	0	0	won? — USER TO CONFIRM whether Signed counts as won or open
+Offer Sent	295615188	0	0	1	0	0	open
+Reviewing By Risk	3026535636	0	5	0	0	0	open
+Starts Uploading Documents	4415069402	0	0	0	135	0	open
+Signed	closedlost	0	0	0	0	90	won? — TRAP: id says closedlost, label is Signed
+Totally Lost	267134434	1	0	0	0	0	lost_sales
+Offer Sent	3026535637	0	9	0	0	0	open
+Rejected Pre NOP	5522046161	0	0	0	115	0	lost_risk? — USER TO CONFIRM what NOP means
+Totally Lost	57036224	0	0	0	0	351	lost_sales
+Signed	93891775	0	0	1	0	0	won?
+Unworthy	267134435	5	0	0	0	0	lost_sales? — USER TO CONFIRM (disqualified vs lost)
+Totally lost	300992492	0	0	1	0	0	lost_sales
+Expected NOPs	5718087923	0	0	0	36	0	open? — USER TO CONFIRM
+Unworthy	69231596	0	0	0	0	417	lost_sales? — USER TO CONFIRM
+Not Interested	270591945	6	0	0	0	0	lost_sales
+Money Disbursed	3026535661	0	6	0	0	0	won
+Reviewing By Risk	4415069403	0	0	0	36	0	open
+Unworthy	93891777	0	0	15	0	0	lost_sales? — USER TO CONFIRM
+Rejected by risk	3026703588	0	23	0	0	0	lost_risk
+Conditional Offer Sent	4415069404	0	0	0	38	0	open
+Lost	3026535662	0	29	0	0	0	lost_sales
+Final Offer Sent	4415069405	0	0	0	53	0	open
+Offer Accepted	4413905096	0	0	0	6	0	open
+Money Disbursed	4413905097	0	0	0	151	0	won
+Rejected by Risk	4413905098	0	0	0	209	0	lost_risk
+Closed Lost	4413905099	0	0	0	517	0	lost_sales
+# Source: HubSpot, 19 Sep 2026. SELECT pipeline, dealstage, COUNT(*) FROM DEAL GROUP BY pipeline, dealstage — every (pipeline, stage) pair returned, including zero rows; 46 distinct stage ids across 5 pipelines.
+# Pipeline totals: UAE B2B 78 · Commercial Egypt Pipeline- UAE Market 144 · Egypt Pipeline 25 · Canopy Deal Pipeline 2,752 (the live one) · UAE Pipeline (default) 1,234 (legacy). All deals = 4,233.
+# The proposed_layer column is a DRAFT for lookups/stage-map.json. Rows marked "USER TO CONFIRM" must be settled with the user before any deal is counted. Egypt Pipeline deals are out of scope for a Dubai map but are listed so nothing is hidden.
+# Deals attach to companies through the DEAL→COMPANY association; the Dubai filter is applied on COMPANY.city, not on the deal.

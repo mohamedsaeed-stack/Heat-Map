@@ -1,0 +1,134 @@
+industry_label	industry_value	companies
+Accounting	ACCOUNTING	64
+Airlines/Aviation	AIRLINES_AVIATION	26
+Alternative Medicine	ALTERNATIVE_MEDICINE	2
+Animation	ANIMATION	8
+Apparel & Fashion	APPAREL_FASHION	409
+Architecture & Planning	ARCHITECTURE_PLANNING	107
+Arts and Crafts	ARTS_AND_CRAFTS	2
+Automotive	AUTOMOTIVE	507
+Aviation & Aerospace	AVIATION_AEROSPACE	11
+Banking	BANKING	9
+Biotechnology	BIOTECHNOLOGY	5
+Broadcast Media	BROADCAST_MEDIA	147
+Building Materials	BUILDING_MATERIALS	147
+Business Supplies and Equipment	BUSINESS_SUPPLIES_AND_EQUIPMENT	511
+Capital Markets	CAPITAL_MARKETS	102
+Chemicals	CHEMICALS	45
+Civic & Social Organization	CIVIC_SOCIAL_ORGANIZATION	3
+Civil Engineering	CIVIL_ENGINEERING	13
+Commercial Real Estate	COMMERCIAL_REAL_ESTATE	15
+Computer Games	COMPUTER_GAMES	10
+Computer Hardware	COMPUTER_HARDWARE	27
+Computer Networking	COMPUTER_NETWORKING	23
+Computer & Network Security	COMPUTER_NETWORK_SECURITY	27
+Computer Software	COMPUTER_SOFTWARE	927
+Construction	CONSTRUCTION	689
+Consumer Electronics	CONSUMER_ELECTRONICS	96
+Consumer Goods	CONSUMER_GOODS	90
+Consumer Services	CONSUMER_SERVICES	334
+Cosmetics	COSMETICS	47
+Defense & Space	DEFENSE_SPACE	7
+Design	DESIGN	268
+Education Management	EDUCATION_MANAGEMENT	79
+Electrical/Electronic Manufacturing	ELECTRICAL_ELECTRONIC_MANUFACTURING	95
+Entertainment	ENTERTAINMENT	184
+Environmental Services	ENVIRONMENTAL_SERVICES	21
+Events Services	EVENTS_SERVICES	235
+Executive Office	EXECUTIVE_OFFICE	6
+E-Learning	E_LEARNING	37
+Facilities Services	FACILITIES_SERVICES	127
+Farming	FARMING	6
+Financial Services	FINANCIAL_SERVICES	196
+Fine Art	FINE_ART	3
+Fishery	FISHERY	2
+Food & Beverages	FOOD_BEVERAGES	1777
+Food Production	FOOD_PRODUCTION	102
+Furniture	FURNITURE	33
+Gambling & Casinos	GAMBLING_CASINOS	2
+Glass, Ceramics & Concrete	GLASS_CERAMICS_CONCRETE	3
+Government Administration	GOVERNMENT_ADMINISTRATION	13
+Government Relations	GOVERNMENT_RELATIONS	1
+Graphic Design	GRAPHIC_DESIGN	20
+Health, Wellness and Fitness	HEALTH_WELLNESS_AND_FITNESS	567
+Higher Education	HIGHER_EDUCATION	27
+Hospitality	HOSPITALITY	415
+Hospital & Health Care	HOSPITAL_HEALTH_CARE	282
+Human Resources	HUMAN_RESOURCES	47
+Import and Export	IMPORT_AND_EXPORT	65
+Individual & Family Services	INDIVIDUAL_FAMILY_SERVICES	12
+Industrial Automation	INDUSTRIAL_AUTOMATION	250
+Information Services	INFORMATION_SERVICES	14
+Information Technology and Services	INFORMATION_TECHNOLOGY_AND_SERVICES	1033
+Insurance	INSURANCE	34
+International Affairs	INTERNATIONAL_AFFAIRS	1
+International Trade and Development	INTERNATIONAL_TRADE_AND_DEVELOPMENT	29
+Internet	INTERNET	67
+Investment Banking	INVESTMENT_BANKING	3
+Investment Management	INVESTMENT_MANAGEMENT	47
+Law Practice	LAW_PRACTICE	2
+Legal Services	LEGAL_SERVICES	32
+Leisure, Travel & Tourism	LEISURE_TRAVEL_TOURISM	251
+Logistics and Supply Chain	LOGISTICS_AND_SUPPLY_CHAIN	187
+Luxury Goods & Jewelry	LUXURY_GOODS_JEWELRY	78
+Machinery	MACHINERY	63
+Management Consulting	MANAGEMENT_CONSULTING	824
+Maritime	MARITIME	63
+Marketing and Advertising	MARKETING_AND_ADVERTISING	388
+Market Research	MARKET_RESEARCH	9
+Mechanical or Industrial Engineering	MECHANICAL_OR_INDUSTRIAL_ENGINEERING	105
+Media Production	MEDIA_PRODUCTION	34
+Medical Devices	MEDICAL_DEVICES	43
+Medical Practice	MEDICAL_PRACTICE	22
+Mental Health Care	MENTAL_HEALTH_CARE	3
+Mining & Metals	MINING_METALS	63
+Motion Pictures and Film	MOTION_PICTURES_AND_FILM	1
+Museums and Institutions	MUSEUMS_AND_INSTITUTIONS	1
+Music	MUSIC	1
+Manufacturing & Industrial Engineering	Manufacturing_&_Industrial_Engineering	2126
+Newspapers	NEWSPAPERS	2
+Non-Profit Organization Management	NON_PROFIT_ORGANIZATION_MANAGEMENT	3
+Oil & Energy	OIL_ENERGY	131
+Online Media	ONLINE_MEDIA	43
+Outsourcing/Offshoring	OUTSOURCING_OFFSHORING	7
+Package/Freight Delivery	PACKAGE_FREIGHT_DELIVERY	8
+Packaging and Containers	PACKAGING_AND_CONTAINERS	33
+Paper & Forest Products	PAPER_FOREST_PRODUCTS	9
+Performing Arts	PERFORMING_ARTS	4
+Pharmaceuticals	PHARMACEUTICALS	55
+Photography	PHOTOGRAPHY	7
+Plastics	PLASTICS	12
+Primary/Secondary Education	PRIMARY_SECONDARY_EDUCATION	6
+Printing	PRINTING	34
+Professional Training & Coaching	PROFESSIONAL_TRAINING_COACHING	160
+Public Relations and Communications	PUBLIC_RELATIONS_AND_COMMUNICATIONS	15
+Public Safety	PUBLIC_SAFETY	2
+Publishing	PUBLISHING	19
+Real Estate	REAL_ESTATE	380
+Recreational Facilities and Services	RECREATIONAL_FACILITIES_AND_SERVICES	15
+Renewables & Environment	RENEWABLES_ENVIRONMENT	33
+Research	RESEARCH	30
+Restaurants	RESTAURANTS	135
+Retail	RETAIL	895
+Security and Investigations	SECURITY_AND_INVESTIGATIONS	21
+Semiconductors	SEMICONDUCTORS	18
+Sporting Goods	SPORTING_GOODS	24
+Sports	SPORTS	42
+Staffing and Recruiting	STAFFING_AND_RECRUITING	28
+Supermarkets	SUPERMARKETS	14
+Telecommunications	TELECOMMUNICATIONS	57
+Textiles	TEXTILES	17
+Tobacco	TOBACCO	2
+Translation and Localization	TRANSLATION_AND_LOCALIZATION	2
+Transportation/Trucking/Railroad	TRANSPORTATION_TRUCKING_RAILROAD	127
+Utilities	UTILITIES	21
+Venture Capital & Private Equity	VENTURE_CAPITAL_PRIVATE_EQUITY	9
+Veterinary	VETERINARY	5
+Warehousing	WAREHOUSING	5
+Wholesale	WHOLESALE	92
+Wine and Spirits	WINE_AND_SPIRITS	1
+Wireless	WIRELESS	7
+Unassigned	(null)	2635
+# Source: HubSpot, 19 Sep 2026. SELECT industry, COUNT(*) FROM COMPANY WHERE city LIKE '%dubai%' GROUP BY industry — "Showing 130 of 130". Sum = 19,974.
+# Bucket totals via industry-map.json (before the Retail split): hospitality_fnb 2,712 · medical_healthcare 1,031 · contracting_fitout 1,387 · marketing_advertising 940 · auto_automotive 634 · manufacturing_trading 5,135 (incl. RETAIL 895) · blank 2,635 · other ≈5,500.
+# After the Retail split (user decision 19 Sep 2026): manufacturing_trading 4,240 · retail 895.

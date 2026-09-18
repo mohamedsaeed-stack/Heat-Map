@@ -1,0 +1,11 @@
+lifecyclestage_label	lifecyclestage_value	companies
+Lead	lead	17679
+Marketing Qualified Lead	marketingqualifiedlead	1018
+Does Not Fit ICP	3016600817	572
+Opportunity	opportunity	466
+Customer	customer	106
+Unassigned	(null)	104
+Sales Qualified Lead	salesqualifiedlead	28
+Subscriber	subscriber	1
+# Source: HubSpot, 19 Sep 2026. SELECT lifecyclestage, COUNT(*) FROM COMPANY WHERE city LIKE '%dubai%' GROUP BY lifecyclestage — "Showing 8 of 8". Sum = 19,974.
+# Address coverage: SELECT COUNT(*) FROM COMPANY WHERE city LIKE '%dubai%' AND address IS NOT NULL = 5,335 (26.7 %). The other 14,639 hold a city only.

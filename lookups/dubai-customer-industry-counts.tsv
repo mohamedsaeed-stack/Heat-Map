@@ -1,0 +1,38 @@
+industry_label	industry_value	customers	icp_bucket_per_industry_map
+Food & Beverages	FOOD_BEVERAGES	24	hospitality_fnb
+Manufacturing & Industrial Engineering	Manufacturing_&_Industrial_Engineering	11	manufacturing_trading
+Automotive	AUTOMOTIVE	7	auto_automotive
+Retail	RETAIL	7	retail (NEW bucket, user decision 19 Sep 2026; was manufacturing_trading)
+Unassigned	(null)	5	blank
+Hospitality	HOSPITALITY	4	hospitality_fnb
+Restaurants	RESTAURANTS	4	hospitality_fnb
+Information Technology and Services	INFORMATION_TECHNOLOGY_AND_SERVICES	4	other — candidate "IT & software"
+Business Supplies and Equipment	BUSINESS_SUPPLIES_AND_EQUIPMENT	3	manufacturing_trading
+Design	DESIGN	3	contracting_fitout
+Facilities Services	FACILITIES_SERVICES	3	contracting_fitout
+Health, Wellness and Fitness	HEALTH_WELLNESS_AND_FITNESS	3	medical_healthcare
+Apparel & Fashion	APPAREL_FASHION	2	manufacturing_trading
+Computer Software	COMPUTER_SOFTWARE	2	other — candidate "IT & software"
+Construction	CONSTRUCTION	2	contracting_fitout
+Logistics and Supply Chain	LOGISTICS_AND_SUPPLY_CHAIN	2	other
+Management Consulting	MANAGEMENT_CONSULTING	2	other — candidate "professional services"
+Marketing and Advertising	MARKETING_AND_ADVERTISING	2	marketing_advertising
+Building Materials	BUILDING_MATERIALS	1	contracting_fitout
+Cosmetics	COSMETICS	1	medical_healthcare
+Defense & Space	DEFENSE_SPACE	1	other
+Financial Services	FINANCIAL_SERVICES	1	other
+Hospital & Health Care	HOSPITAL_HEALTH_CARE	1	medical_healthcare
+Human Resources	HUMAN_RESOURCES	1	other — candidate "professional services"
+Industrial Automation	INDUSTRIAL_AUTOMATION	1	manufacturing_trading
+Leisure, Travel & Tourism	LEISURE_TRAVEL_TOURISM	1	hospitality_fnb
+Market Research	MARKET_RESEARCH	1	marketing_advertising
+Mining & Metals	MINING_METALS	1	manufacturing_trading
+Outsourcing/Offshoring	OUTSOURCING_OFFSHORING	1	other — candidate "professional services"
+Research	RESEARCH	1	other — candidate "professional services"
+Sports	SPORTS	1	other
+Staffing and Recruiting	STAFFING_AND_RECRUITING	1	other — candidate "professional services"
+Telecommunications	TELECOMMUNICATIONS	1	other
+Wholesale	WHOLESALE	1	manufacturing_trading
+# Source: HubSpot, 19 Sep 2026. SELECT industry, COUNT(*) FROM COMPANY WHERE city LIKE '%dubai%' AND lifecyclestage = 'customer' GROUP BY industry — "Showing 34 of 34". Sum = 106.
+# By bucket: hospitality_fnb 33 · medical_healthcare 5 · contracting_fitout 9 · marketing_advertising 3 · auto_automotive 7 · manufacturing_trading 19 (after Retail split) · retail 7 · other 18 · blank 5.
+# HubSpot "customer" is only a cross-check. The admin app (~8,400 clients) is the primary source of closed won; category discovery runs on the admin industry field.

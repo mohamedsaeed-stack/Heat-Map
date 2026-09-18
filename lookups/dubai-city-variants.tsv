@@ -1,0 +1,21 @@
+city	companies	treat_as_dubai	note
+dubai	19882	yes
+dubai, united arab emirates	65	yes
+dubai, dubayy, united arab emirates	6	yes
+bur dubai	4	yes	community: Bur Dubai
+dubai marina	3	yes	community: Dubai Marina
+downtown dubai	2	yes	community: Downtown
+dubai motor city	2	yes	community: Motor City
+dubai, dubai, united arab emirates	2	yes
+, dubai	1	yes
+dubai festival city	1	yes	community: Festival City
+dubai healthcare city	1	yes	community: Dubai Healthcare City
+dubai investment park	1	yes	community: DIP
+dubai, health care city	1	yes	community: Dubai Healthcare City
+emirates hills, dubai	1	yes	community: Emirates Hills
+jumeirah lakes towers, dubai	1	yes	community: JLT
+abu dhabi / dubai	1	no	ambiguous — exclude
+al jubail	1	no	Saudi Arabia — matched '%ubai%' only
+jubail industrial city	1	no	Saudi Arabia — matched '%ubai%' only
+# Source: HubSpot portal 25308329, 19 Sep 2026. Query: SELECT city, COUNT(*) FROM COMPANY WHERE city LIKE '%ubai%' GROUP BY city — 18 rows, "Showing 18 of 18". Dubai total (yes rows) = 19,974.
+# In the build, filter with city LIKE '%dubai%' (drops the two Jubail rows) and exclude 'abu dhabi / dubai'.

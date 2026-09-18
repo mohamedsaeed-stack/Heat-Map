@@ -1,8 +1,21 @@
 # Dubai Coverage Heat Map — build plan
 
-Status: **awaiting the user's OK.** Nothing below has been built. Research findings are dated 19 Sep 2026.
+Status: **decisions taken 19 Sep 2026, build not started.** Research findings are dated 19 Sep 2026.
 
 Predecessor: `heatmap-project-brief.md` (Abu Dhabi F&B format demo, handed over from Claude chat). This plan supersedes its Abu Dhabi scope: the target is **the whole of Dubai**, all categories, one page with a category filter.
+
+---
+
+## 0. Decisions taken by the user, 19 Sep 2026
+
+| Question | Decision |
+|---|---|
+| Vendor / GTM tools (Apify, Google Places, Clay, Apollo, Lusha) | **None.** No paid tool, no API key, no account. Claude finds the data itself. Apify may be connected "after a week or so" to complete the universe layer. |
+| Revenue per area | **Yes — outstanding book** (not disbursed, not fees). |
+| Retail as its own category | **Yes.** Category 7. |
+| FlapKap-Admin connector | **Authorised by the user.** The session's stale connection was re-dialled 19 Sep; first call happens in the next turn / next session. |
+| Universe layer if the free route is weak | User's stated fallback: ship the CRM layers first, add the universe when Apify is connected. |
+| Working mode | The user opens a **new task session under this project** from the chip Claude creates; that session builds from this plan. |
 
 ---
 
@@ -12,48 +25,44 @@ One published, org-internal web page: a map of Dubai with five stacked layers, a
 
 | # | Layer | Source | Unit |
 |---|---|---|---|
-| 1 | **Market universe** — businesses that exist in each category | Google Maps (via Apify) | place |
+| 1 | **Market universe** — businesses that exist in each category | **OpenStreetMap via the free Overpass API** (v1). Google Maps via Apify later, if connected. | place |
 | 2 | **On the CRM** — universe businesses (and any others) that exist as HubSpot companies | HubSpot COMPANY | company |
 | 3 | **In process** — companies with an open deal | HubSpot DEAL → COMPANY | company |
-| 4 | **Closed lost** — lost or rejected, with reason and deal owner; two taxonomies kept apart by a type flag | HubSpot DEAL (+ admin-app Risk decisions when reconnected) | company |
-| 5 | **Closed won** — funded clients | FlapKap admin app (primary) · HubSpot Money Disbursed / Signed (fallback until admin reconnects) | client |
+| 4 | **Closed lost** — lost or rejected, with reason and deal owner; two taxonomies kept apart by a type flag | HubSpot DEAL + admin-app Risk decisions | company |
+| 5 | **Closed won** — funded clients | FlapKap admin app (primary) · HubSpot Money Disbursed / Signed (cross-check) | client |
 
 Derived views, computed per grid cell and per Dubai area, shown as the actual *heat*:
 
-- **Coverage** = CRM ÷ universe
+- **Coverage** = CRM ÷ universe — *only for categories where the universe source is credible (see §3, obstacle 4)*
 - **Acquisition** = closed won ÷ CRM
-- **Revenue per area** — once the admin-app join exists (metric to be chosen, see §7)
+- **Outstanding book per area** — from the admin app, reconciled to the admin app's own total before it is shown
 
 ### Categories
 
-The six ICPs, each mapped from HubSpot's 150-value `industry` picklist using the committed `industry-map.json` from the audit repo (reused, not rebuilt):
+Seven, each mapped from HubSpot's 150-value `industry` picklist using the committed `industry-map.json` from the audit repo (reused, extended):
 
-| Category | Dubai CRM companies | Dubai customers (HubSpot) |
-|---|---:|---:|
-| Hospitality & F&B | ≈2,712 | 33 |
-| Medical clinics & healthcare | ≈1,031 | 5 |
-| Contracting, fitouts, FFE | ≈1,387 | 9 |
-| Marketing & advertising | ≈940 | 3 |
-| Auto parts & automotive trading *(Karim's vertical, flagged separately)* | ≈634 | 7 |
-| Manufacturing & general trading | ≈5,135 | 26 |
-| *Blank industry* | 2,635 | 5 |
-| *Other* | ≈5,500 | 18 |
+| # | Category | Dubai CRM companies | Dubai customers (HubSpot) | OSM universe in Dubai bbox |
+|---|---|---:|---:|---:|
+| 1 | Hospitality & F&B | ≈2,712 | 33 | 5,435 eateries + 371 bakeries/coffee + 1,142 hotels |
+| 2 | Medical clinics & healthcare | ≈1,031 | 5 | 1,217 |
+| 3 | Contracting, fitouts, FFE | ≈1,387 | 9 | *not usable* |
+| 4 | Marketing & advertising | ≈940 | 3 | 59 — *not usable* |
+| 5 | Auto parts & automotive trading *(Karim's vertical, flagged separately)* | ≈634 | 7 | 1,123 |
+| 6 | Manufacturing & general trading | ≈4,240 (after Retail split) | 19 | ≈150 — *not usable* |
+| 7 | **Retail** (split out of 6) | 895 | 7 | 15,416 shops of all kinds (needs sub-type filtering) |
+| — | *Blank industry* | 2,635 | 5 | — |
+| — | *Other* | ≈5,500 | 18 | — |
 
-**Category discovery, as instructed:** any category that has closed clients in Dubai but is not one of the six gets its own bucket and its own filter value. From HubSpot's 106 Dubai customers the candidates are already visible:
-
-- **Retail** — 7 customers, 895 Dubai CRM companies. Currently folded into "general trading"; the audit's own map flagged it as the largest contested value. → **Proposed as category 7.**
-- **IT & software** — 6 customers (IT services 4, software 2). → Proposed as category 8 if the admin app confirms volume.
-- Professional services (consulting, HR, staffing, research) — ≈6 customers. → Held in *Other* unless the admin app shows more.
-
-The admin app holds ≈8,400 clients against HubSpot's 106 Dubai customers, so the **real** discovery pass runs on the admin app's industry field the moment the connector is re-authorised (§3, obstacle 1). The list above is the fallback, not the answer.
+**Category discovery, as instructed:** any category with closed clients in Dubai that is not one of the seven gets its own bucket and filter value. HubSpot's 106 Dubai customers show **IT & software** (6) and professional services (≈6) as candidates; the decisive pass runs on the admin app's ≈8,400 clients (its industry field) in W0 and adds buckets accordingly.
 
 ### Filters and controls
 
-- Category: multi-select, default all six (+ discovered).
-- Layers: toggle each of the five independently; heat mode switches between *density*, *coverage* and *acquisition*.
+- Category: multi-select, default all seven (+ discovered).
+- Layers: toggle each of the five independently; heat mode switches between *density*, *coverage* (where credible), *acquisition* and *outstanding book*.
 - Area table: Dubai communities ranked by the chosen metric, click to zoom.
+- **AE "nearby" mode:** click anywhere → the funded clients within 2 km, their category and outstanding book.
 - Every figure has an `i` explainer: how derived, what would make it wrong, and the count of records that could not be located.
-- Date stamp on each layer: CRM snapshot date, universe pull date.
+- Date stamp on each layer: CRM snapshot date, admin snapshot date, OSM data timestamp.
 
 ---
 
@@ -62,18 +71,18 @@ The admin app holds ≈8,400 clients against HubSpot's 106 Dubai customers, so t
 ```
 HubSpot (SQL connector)  ─┐
 FlapKap admin (read API) ─┼─►  pull scripts (Node, WinGet path) ─► data/*.json  ─┐
-Apify Google Maps run    ─┘        match + geocode (Node)         ─► match table  ─┼─► published page
+OpenStreetMap (Overpass) ─┘        match + geocode (Node)         ─► match table  ─┼─► published page
                                                                                      │   index.html + data files
                                    viewer's own HubSpot / admin connector ──────────►┘   (live overlay, optional)
 ```
 
-**Snapshot first, live overlay second.** The page ships with data files built by the scripts, so it works for every viewer. For viewers who have the HubSpot (and later FlapKap-Admin) connector in their own claude.ai, the page uses the artifact `mcp` capability to re-query lifecycle stage and deal stage for the known company ids with the *viewer's* credentials, and recolours pins live. New companies created since the snapshot show as a count ("N new since snapshot"), never as invented pins. This is how "updates directly from the CRM" is met without a backend holding credentials.
+**Snapshot first, live overlay second.** The page ships with data files built by the scripts, so it works for every viewer. For viewers who have the HubSpot (and FlapKap-Admin) connector in their own claude.ai, the page uses the artifact `mcp` capability to re-query lifecycle and deal stage for the known company ids with the *viewer's* credentials and recolours pins live. New companies since the snapshot show as a count, never as invented pins. A weekly scheduled routine that re-pulls and republishes the data files is the second freshness mechanism (§9).
 
 **Data files stay separate from the page** (`data/*.json`, published alongside). The audit page proved that inlining a 150 KB dataset makes every later read of the page cost ~60K tokens.
 
-**Rendering at scale.** The universe will be tens of thousands of points; it is aggregated into a ~500 m hex grid (h3-js from jsDelivr) and drawn as density/coverage heat. CRM, in-process, lost and won layers are small enough for clustered markers (Leaflet.markercluster). Leaflet from cdnjs, never unpkg (blocked, proven by the demo).
+**Rendering at scale.** The universe is aggregated into a ~500 m hex grid (h3-js from jsDelivr) and drawn as density/coverage heat. CRM, in-process, lost and won layers use clustered markers (Leaflet.markercluster). Leaflet from cdnjs, never unpkg (blocked, proven by the demo).
 
-**Tooling.** Node 24 is installed at the WinGet path (not on PATH) — all pulls, matching and aggregation run as Node scripts committed under `scripts/`. No Python.
+**Tooling.** Node 24 at the WinGet path (not on PATH) — all pulls, matching and aggregation run as Node scripts under `scripts/`. No Python. Overpass needs a real `User-Agent` header (a bare request gets HTTP 406 — measured).
 
 ---
 
@@ -81,101 +90,124 @@ Apify Google Maps run    ─┘        match + geocode (Node)         ─► mat
 
 | # | Obstacle | Evidence | Solution |
 |---|---|---|---|
-| 1 | **FlapKap-Admin connector is invalidated.** Every call returns "connection invalidated — reconnect from connector settings". The session lists it as connected; the OAuth grant behind it is dead. | 3 calls, 19 Sep | **User action:** claude.ai → Settings → Connectors → FlapKap-Admin → Reconnect / re-authorise (this is separate from the FlapKap login page). Until then, closed-won and category discovery run on HubSpot as a stated fallback, and the admin sections are designed against the brief's assumptions. |
-| 2 | **Map tiles may not load inside a published artifact.** Artifact pages restrict external resources; the demo already showed tiles blocked in one sandbox. | brief §Technical findings; artifact design contract | **Spike first (W0):** publish a 2 KB private test page that loads one OSM tile. If it renders, proceed. If not, the deliverable becomes a standalone HTML file in Google Drive (proven to work in any browser) and the live overlay is dropped from v1. |
-| 3 | **73 % of Dubai CRM companies have no street address.** 19,974 Dubai companies; only 5,335 have `address`. Most hold `city` alone. | HubSpot, 19 Sep | Three-tier locating, in this order: (a) **name-match to the scraped universe** — free, and it *is* the join; (b) **Nominatim** (free OSM geocoder, 1 req/s) on the 5,335 street addresses; (c) **Google Places Text Search** for the still-unlocated *high-value* records only (customers, open deals, MQLs ≈ 1,600) — within the 5,000 free Pro calls per month, so $0 if kept under that. Anything still unlocated is **counted but not pinned**, and every layer shows its unlocated count. No coordinates are ever invented. |
-| 4 | **The universe needs a scraping account and a budget I cannot create.** Creating accounts or entering payment details is off-limits for me. | — | User creates an Apify account (free plan covers ~1K places for a test run; Starter $49/mo for the real pull) and drops the API token in a gitignored `.env`. I write and run the scripts. **Every run is gated on your yes**, with the place count and estimated spend stated first. |
-| 5 | **No shared key across Maps, HubSpot and the admin app.** "Rain Café" / "Rain Cafe LLC" / "RAIN - UAE". | brief §Open cautions | Store Google `place_id` in a committed **match table** (`data/match.json`: HubSpot company id ↔ place_id ↔ admin client id, with match score and method). Normalise names (case, punctuation, legal suffixes LLC/FZE/FZ-LLC/Trading/Est), token-set similarity, same-city constraint; accept ≥ 0.85, review 0.70–0.85 by sample, reject below. Writing `place_id` back into HubSpot is a later, separate decision — it needs a custom property and write access. |
-| 6 | **Deal stages are a minefield.** Five pipelines; `closedwon` is labelled "Offer Sent" and `closedlost` "Signed"; "Signed", "Unworthy", "Totally Lost" and "Offer Sent" each exist under 3–4 different stage ids; two loss taxonomies (sales-lost vs rejected-by-Risk). | HubSpot pipeline × stage matrix, 19 Sep | Commit an explicit **stage → layer map** (`lookups/stage-map.json`) before any deal is counted, one line per (pipeline, stage id). The live pipeline is *Canopy Deal Pipeline* (977 Meeting Booked, 151 Money Disbursed, 517 Closed Lost, 209 Rejected by Risk); *UAE Pipeline (default)* is legacy (351 Totally Lost, 417 Unworthy, 90 "Signed"). Loss layer carries `type: sales_lost | risk_rejected`. You review the map before it is used. |
-| 7 | **Industry is blank on 2,635 Dubai companies (13 %) and several picklist values are ambiguous** (Retail, Apparel, Design, Leisure…). | HubSpot; `industry-map.json` `_ambiguous` list | Reuse the audit's map. *Blank* is its own filter value, never hidden. Ambiguous placements are listed in the page's method explainer. The Maps universe uses Google's category, so coverage ratios are computed per category on *both* sides with the mapping shown. |
-| 8 | **"Live" updates from a static page.** A published page cannot hold HubSpot or admin credentials. | — | Snapshot data files + `mcp` live overlay using the viewer's own connectors (§2). Viewers without the connectors see the snapshot with its date. A scheduled weekly re-pull that republishes the data files is a v2 option. |
-| 9 | **Scale.** A Dubai-wide universe across eight categories is likely 40–60K places. | estimate | Hex-grid aggregation for the universe; clustered markers for the CRM layers; data in separate files; page never loads more than the visible layers. |
-| 10 | **Freshness decays silently** (UAE F&B turnover). | brief | Date stamp on every layer, universe pull date in the header, refresh cadence recorded in `README.md`. |
-| 11 | **Scraping terms of service.** Internal use of scraped Maps data is one position; a shared artifact is another. | brief | The page is org-internal by construction (the `mcp` grant bars public sharing). Google-sourced fields shown are name, category, address, coordinates; no reviews, photos or phone numbers are stored. Flagged for you to clear before it is shown outside RevOps. |
-| 12 | **HubSpot query traps** — 500-row silent cap, cross-object fan-out, GROUP BY undercount with association filters, `LIKE` broken on phone fields. | audit repo, proven | Partitioned pulls sized to spill to file (450–480 rows each), dedupe on `hs_object_id`, separate `COUNT(*)` per value, verify every "Showing X of Y" line. |
+| 1 | **The session's admin connection was stale.** Every call returned "connection invalidated" even after the user re-authorised. | 6 calls, 19 Sep | The connector was toggled off/on for this session, which re-dials it with the fresh grant when the turn ends. New sessions dial fresh. If a call still fails in a new session, the fix is on the connector page in claude.ai, not on the FlapKap login page. |
+| 2 | **Map tiles may not load inside a published artifact.** Artifact pages restrict external resources; the demo showed tiles blocked in one sandbox. | brief; artifact design contract | **Spike first (W0):** publish a 2 KB private test page that loads one OSM tile. If it renders, proceed. If not, the deliverable becomes a standalone HTML file in Google Drive (proven to work) and the live overlay is dropped from v1. |
+| 3 | **73 % of Dubai CRM companies have no street address.** 19,974 Dubai companies; only 5,335 have `address`. | HubSpot, 19 Sep | Four-tier locating, cheapest first: (a) **community extraction from address and name text** ("Al Quoz", "Deira", "Business Bay"… ) — places a company at community level with no geocoding at all, enough for the area table and community heat; (b) **name-match to the OSM universe** (free; it *is* the join); (c) **Nominatim** (free, 1 req/s) on the 5,335 street addresses; (d) for the still-unlocated **customers and open deals only**, Claude looks the business up in the built-in browser one at a time, **capped at ~50 businesses** (≈4–6K tokens each). Everything else is **counted but not pinned**; each layer shows its unlocated count. No coordinates are ever invented. Contact addresses (HubSpot CONTACT.address) are tested as a fallback for companies without one. |
+| 4 | **The universe cannot be scraped from Google Maps by Claude driving a browser.** Arithmetic: Google Maps lists ~20 results per load and caps a query near 120; Dubai needs 1,500–3,000 category × area queries; each costs 40–80K tokens of browser reads → **60–240 M tokens**, plus CAPTCHAs (which Claude will not bypass) and Google's terms. Background agents spend from the same account, so they do not change the arithmetic. | measured page costs; tool rules | **OpenStreetMap via Overpass** as the v1 universe: free, licensed (ODbL), structured JSON with coordinates, names and `osm_id`, pulled by one Node script at ~zero tokens per record. **Measured in the Dubai bounding box:** 5,435 eateries, 1,142 hotels, 1,217 medical, 1,123 automotive, 15,416 shops — **credible for F&B, medical, auto and retail**, an undercount of perhaps 40–60 % against reality. **Not credible for contracting (no count returned), marketing (59) and manufacturing/trading (≈150)** — for those three the coverage view is switched off and the page says why. Apify/Google Maps replaces or supplements this later without changing the architecture: the join key is a generic `source_id` (`osm:…` now, `google:…` later). |
+| 5 | **No shared key across Maps, HubSpot and the admin app.** "Rain Café" / "Rain Cafe LLC" / "RAIN - UAE". | brief | Committed **match table** (`data/match.json`: HubSpot company id ↔ source_id ↔ admin client id, with score and method). Normalise names (case, punctuation, legal suffixes LLC/FZE/FZ-LLC/Trading/Est), token-set similarity, same-community constraint when known; accept ≥ 0.85, sample-review 0.70–0.85, reject below. The admin app's legal name and HubSpot's trade name are both stored. Writing the id back into HubSpot is a later, separate decision (custom property + write access). |
+| 6 | **Deal stages are a minefield.** Five pipelines; `closedwon` is labelled "Offer Sent" and `closedlost` "Signed"; "Signed", "Unworthy", "Totally Lost", "Offer Sent" each exist under 3–4 stage ids; two loss taxonomies. | pipeline × stage matrix, 19 Sep | Commit an explicit **stage → layer map** (`lookups/stage-map.json`) before any deal is counted, one line per (pipeline, stage id). Live pipeline: *Canopy Deal Pipeline* (977 Meeting Booked, 151 Money Disbursed, 517 Closed Lost, 209 Rejected by Risk). Legacy: *UAE Pipeline (default)* (351 Totally Lost, 417 Unworthy, 90 "Signed"). Loss layer carries `type: sales_lost | risk_rejected`. The user reviews the map before it is used. |
+| 7 | **Industry is blank on 2,635 Dubai companies (13 %) and several picklist values are ambiguous.** | HubSpot; `industry-map.json` `_ambiguous` | Reuse the audit's map, add Retail. *Blank* is its own filter value, never hidden. Ambiguous placements listed in the method explainer. OSM categories are mapped to the same seven buckets with the mapping shown. |
+| 8 | **"Live" updates from a static page.** | — | Snapshot files + `mcp` live overlay with the viewer's connectors (§2); weekly scheduled re-pull as v2. |
+| 9 | **Admin-app pull cost is unknown.** MCP responses come back inline (no spill-to-file like HubSpot); ≈8,400 clients at 100 per page could cost 5–10K tokens a page → 400–800K if pulled naïvely. | tool shape | W0 probes one page and measures. If large: pull only what the map needs (Dubai, funded/active, and the few fields listed in §6) via the narrowest endpoint available — `flapkap_get_stats`, offers by status, or search-filtered lists — and persist immediately. The estimate in §5 carries this as a stated range. |
+| 10 | **Freshness decays silently.** | brief | Date stamp on every layer; OSM data timestamp shown; refresh procedure in `README.md`. |
+| 11 | **Licensing.** | — | OSM data is ODbL — attribution on the page, fine for internal and shared use. Google-sourced data, if Apify is connected later, is internal-only and flagged before wider sharing. |
+| 12 | **HubSpot query traps** — 500-row silent cap, cross-object fan-out, GROUP BY undercount with association filters, `LIKE` broken on phone fields. | audit repo | Partitioned pulls sized to spill to file (450–480 rows), dedupe on `hs_object_id`, separate `COUNT(*)` per value, verify every "Showing X of Y" line. |
 
 The demo's stat card (256 CRM leads) does not reconcile with its own table (Lead 228 + MQL 16 = 244). None of the demo's numbers are reused.
 
 ---
 
-## 4. Build waves and gates
+## 4. Build waves
 
-Each wave ends at a safe point: results on disk, committed, a short report, and a measured usage percentage. **Gates marked £ involve vendor spend and wait for an explicit yes.**
+Each wave ends at a safe point: results on disk, committed, a short report, and a measured usage percentage.
 
-| Wave | Deliverable | Depends on | Gate |
-|---|---|---|---|
-| **W0 — Spikes** | Tile test artifact (obstacle 2). Admin-app field probe: location key and industry field (obstacles 1, §7 Q1/Q3). `git init`, `.gitignore`, `README.md`. | admin re-auth for the probe | — |
-| **W1 — CRM layers, Dubai** | Partitioned pull of all Dubai companies in the six ICPs + Retail + IT (≈13K) and all deals in the two UAE pipelines; committed `stage-map.json`; layers 2–5 built from HubSpot; located via Nominatim on the 5,335 addresses; **first publishable page** with heat = CRM density, category filter, explainers. | W0 | — |
-| **W2 — Universe** | Apify Google Maps pull for Dubai, eight categories, in a **1K-place test run first**, then the full pull; `place_id` stored; hex-grid density; name-match of CRM to universe; coverage heat. | Apify account + token | **£** test run · **£** full run |
-| **W3 — High-value locating** | Google Places Text Search for still-unlocated customers / open deals / MQLs, kept inside the free tier. | GCP project with Places API enabled (user) | **£** only if it would exceed the free 5,000/month |
-| **W4 — Admin-app join** | Closed won from the admin app as primary; category discovery on admin industry; Risk-rejection loss layer; revenue per area (metric per §7). | admin re-auth · answers to §7 | — |
-| **W5 — Live overlay** | `mcp` capability: viewer-credential refresh of lifecycle/deal stage for known ids; "new since snapshot" count. | W1 published | — |
-| **W6 — Handoff** | `README.md` refresh procedure, `START-HERE.md` for a fresh session, all lookups committed. | — | — |
+| Wave | Deliverable | Depends on |
+|---|---|---|
+| **W0 — Spikes & scaffold** | Tile test artifact. Admin-app probe: location key, industry field, outstanding-book field, one-page token cost. `.gitignore`, `README.md`, `lookups/` seeded from the audit repo. | admin connector |
+| **W1 — CRM layers, Dubai** | Partitioned pull of all Dubai companies in the seven categories (≈13K) and all deals in the UAE pipelines; committed `stage-map.json`; layers 2–4 built; community extraction + Nominatim locating; **first publishable page** with density heat, category filter, explainers, unlocated counts. | W0 |
+| **W2 — Closed won & outstanding book** | Funded clients from the admin app as primary, matched to HubSpot; closed-won layer; outstanding book per community and per hex, reconciled to the admin total; Risk-rejection loss layer; category discovery from admin industry. | W0 probe |
+| **W3 — Universe (OSM)** | Overpass pull for Dubai (admin boundary, not bbox), seven categories mapped to OSM tags; `osm_id` stored; hex density; CRM ↔ OSM name match; coverage heat **for F&B, medical, auto, retail only**. | W1 |
+| **W4 — High-value locating** | Browser lookups for still-unlocated customers/open deals, capped at ~50. | W2 |
+| **W5 — Live overlay + AE nearby mode** | `mcp` capability refresh of stages for known ids; "new since snapshot"; nearby-clients panel. | W1 published |
+| **W6 — Handoff** | `README.md` refresh procedure, `START-HERE.md` for a fresh session, all lookups committed. | — |
 
-W1 alone is a usable AE tool (every Dubai customer, open deal and lost deal on a map) and needs no vendor spend and no admin connector.
+W1 alone is a usable AE tool (every Dubai open deal and lost deal on a map, plus HubSpot customers as a cross-check) and needs nothing from any vendor.
 
 ---
 
 ## 5. Estimated cost
 
-### Tokens (my work)
-
-Estimated against the audit project's measured costs: the audit page build consumed one full 430K-context session; this build has more data but the pull pattern (spill-to-file) is now known and Node replaces PowerShell for aggregation.
+### Tokens
 
 | Wave | Estimate | Main driver |
 |---|---:|---|
-| W0 | 15K | two spikes, repo setup |
-| W1 | 70–85K | ~35 partitioned pulls (each ~600 tokens overhead, data spills to file) · match/geocode scripts · first page (~60–80 KB HTML/JS written) · design skills loaded (~20K) |
-| W2 | 30–40K | Apify scripts, monitoring, hex aggregation, match QA samples |
-| W3 | 10–15K | one script, one review |
-| W4 | 30–40K | admin-app pulls (unknown pagination cost — sized after the probe) and the join |
+| W0 | 15–20K | two spikes, admin probe, repo scaffold |
+| W1 | 70–85K | ~35 partitioned pulls (≈600 tokens each, data spills to file) · locating scripts · first page (~60–80 KB HTML/JS) · design skills (~20K) |
+| W2 | 30–60K | **range depends on the W0 admin probe** (obstacle 9) · match to HubSpot · outstanding-book reconciliation |
+| W3 | 20–30K | Overpass script, tag mapping, hex aggregation, match QA samples |
+| W4 | 25–35K | ~50 browser lookups × 4–6K, hard cap |
 | W5 | 15–20K | capability code, one real-call shape check |
-| W6 | 10K | docs and handoff |
-| **Total** | **≈180–225K tokens** | across 2–3 sessions, split at wave boundaries so no session grows past ~300K context |
+| W6 | 10K | docs, handoff |
+| **Total** | **≈185–260K tokens** | 2–3 sessions, split at wave boundaries, no session past ~300K context |
 
-What I will **not** do is convert this to a percentage of your usage window: that rate degrades as a session grows and the last time it was quoted it was wrong. I will report the measured percentage at every gate instead. Right now: 5-hour window **24 %** (resets in ~40 min), weekly **32 %**, this session's context **10 %** of 1M.
+**Without the universe (W3) and browser lookups (W4):** ≈140–195K.
 
-### Money (vendors — every item gated on your yes)
+No conversion to a percentage of the usage window — that rate degrades as a session grows and was wrong the last time it was quoted. Measured percentage is reported at every wave boundary. At the time of writing: 5-hour window **33 %**, weekly **33 %**, this session's context **17 %** of 1M.
 
-| Item | Estimate | Note |
-|---|---:|---|
-| Apify Google Maps Scraper, ~40–60K Dubai places | **$160–240** at ~$3.90/1K places, + Starter plan $49/mo while pulling | Free plan covers a ~1K-place test run at no cost. Cheaper actor variants exist ($1.5–2.1/1K) with unverified quality. |
-| Google Places Text Search, targeted ≈1,600 lookups | **$0** if kept under the 5,000 free Pro calls/month | Needs a GCP project with billing enabled (card on file — yours to set up, not mine). $32/1K beyond the free tier. |
-| Nominatim geocoding | $0 | 1 req/s policy → 5,335 addresses ≈ 90 min unattended. |
-| Clay / Apollo / Lusha | $0 planned | Not needed for v1; would only be proposed, with credit cost stated, if the universe match rate disappoints. |
+### Money
 
-Sources for vendor pricing: [Apify Google Maps Scraper](https://apify.com/compass/crawler-google-places), [Apify pay-per-event note](https://help.apify.com/en/articles/10774732-google-maps-scraper-is-going-to-pay-per-event-pricing), [Apify pricing breakdown 2026](https://gmapsscraper.io/blog/apify-google-maps-scraper-pricing-review), [Google Places API pricing 2026](https://www.safegraph.com/guides/google-places-api-pricing/), [Places free-tier limits 2026](https://www.mapsleads.co/blog/google-places-api-free-tier-limits-2026), [Places pricing per SKU](https://openplacesapi.com/blog/google-places-api-pricing).
+**$0.** No vendor, no API key, no account. OSM and Nominatim are free public services used within their usage policies (User-Agent set, 1 request/second for Nominatim).
 
 ---
 
-## 6. Repo layout (to be created in W0)
+## 6. Repo layout
 
 ```
 heatmap/
   PLAN.md                    this file
   README.md                  what it is, how to refresh, dates of last pulls
-  heatmap-project-brief.md   predecessor brief (kept as history)
-  abudhabi_fb_heatmap.html   format demo (kept as history, not a source of numbers)
+  heatmap-project-brief.md   predecessor brief (history)
+  abudhabi_fb_heatmap.html   format demo (history, not a source of numbers)
   lookups/
-    industry-map.json        copied from the audit repo, extended with Retail / IT
+    industry-map.json        from the audit repo, + Retail bucket, + OSM tag mapping
     stage-map.json           (pipeline, stage id) → layer, reviewed before use
     dubai-city-variants.txt  the 18 spellings that mean Dubai
+    dubai-communities.json   community names + aliases for text extraction
   scripts/                   Node — pull, match, geocode, aggregate, build data files
   data/                      built data files published beside the page (no PII)
-  raw/                       gitignored — raw pulls, .env with vendor tokens
+  raw/                       gitignored — raw pulls
   page/
     index.html               the map
 ```
 
-`raw/` is gitignored because vendor tokens and raw scrapes live there. `data/` holds only what the page shows: business names, categories, coordinates, ids, stages. No phone numbers or emails anywhere in the repo.
+`data/` holds only what the page shows: business names, categories, coordinates, ids, stages, outstanding book per area. **From the admin app only:** company name, legal name, address/community, industry, status, outstanding balance, funded date. No Emirates IDs, no personal names of merchants, no phone numbers, no emails, anywhere in the repo.
 
 ---
 
-## 7. Decisions I need from you (none block W0–W1)
+## 7. What the page will show — and what it will not
 
-1. **Apify account** — will you create it and hand me the token via `raw/.env`, or should the universe wait? (blocks W2)
-2. **Revenue per area metric** — disbursed amount, fees earned, or outstanding book? Three different maps. (blocks the revenue view in W4)
-3. **Retail as category 7** — confirm, or keep it inside general trading. IT & software as 8 — confirm after the admin probe.
-4. **Re-authorise FlapKap-Admin** in claude.ai Connectors (blocks the W0 probe and W4).
+**Shown, and defensible**
 
-Everything else in this plan is decided by the brief or by your instructions today; where I have chosen, the choice and the reason are written above.
+- Every Dubai open deal, lost deal and funded client that can be located, with a click-through to its HubSpot / admin record by id.
+- Where FlapKap's **outstanding book is concentrated** by community — which is also an *exposure* view; Risk will read it that way, and that is a feature.
+- Loss reasons and deal owners per area, sales-lost and Risk-rejected kept apart.
+- For F&B, medical, automotive and retail: **coverage against OSM-mapped businesses**, labelled as a share of *mapped* businesses, not of the market.
+
+**Not shown, or shown with a warning**
+
+- Coverage for contracting, marketing and manufacturing/trading — the free universe is too thin; the page says so rather than showing a misleading ratio.
+- Any company that could not be located — it is counted in the layer total and in the unlocated count, never placed at a guessed point.
+
+## 8. What the user is risking
+
+| Risk | Where it bites | Mitigation |
+|---|---|---|
+| **Coverage read as market share.** OSM undercounts reality by perhaps 40–60 % even in its good categories, so "we cover 30 %" may really be 15 %. | Management view | Label every coverage figure "of OSM-mapped businesses"; explainer states the undercount; swap in Google Maps data later and the numbers move down, which should be said up front. |
+| **A thin CRM layer on the map.** Realistic located share for the broad CRM layer is 35–50 % (community-level placement lifts it further for the area table). Someone will read a sparse area as "no leads there". | Coverage / density views | Unlocated count on every layer and in every area row; density heat computed on *located* companies only, said explicitly. |
+| **Deal-stage misclassification.** One wrong line in the stage map and "Signed" deals become losses. | Layers 3–5 | The stage map is committed and reviewed by the user before any figure is computed; the closed-won layer is cross-checked against the admin app's funded list. |
+| **Outstanding book that does not reconcile** to the admin app's own total. | Revenue view | Reconciliation figure printed in the explainer; if it does not match, the view ships disabled. |
+| **Name-match false positives** placing a CRM company on a different business with a similar name. | All located layers | 85 % threshold, same-community constraint, sample review logged in the repo; the user accepted a 15 % miss rate for this audience. |
+| **Staff names on lost deals.** | Internal sensitivity | Org-internal page (the `mcp` grant bars public sharing); owners shown by name only on the lost layer, which can be toggled off. |
+| **Freshness.** A three-month-old snapshot presented as current. | Trust | Dates in the header; weekly re-pull routine (§9). |
+| **Token spend on the admin pull** if the API only offers full pages. | Budget | Measured in W0 before any full pull; stated range in §5. |
+
+## 9. Further suggestions
+
+1. **Community-level placement from text** (obstacle 3a) — the cheapest lift to the located share; the area table and community heat work without a single geocode.
+2. **Contact addresses as a fallback** — many companies without an address have contacts with one; a two-query probe settles whether this is worth a tier.
+3. **Weekly scheduled routine** to re-pull HubSpot and republish the data files, instead of relying only on the viewer-side live overlay. Cheap, and it keeps the date stamp honest without anyone remembering.
+4. **Write the join key back into HubSpot** (custom property `heatmap_source_id`) once the match table is reviewed — makes the join permanent and lets HubSpot reports use it. Needs write access; a separate decision.
+5. **AE nearby mode** (§1) — the brief's AE use case, and the most likely thing an AE actually opens before a meeting.
+6. **Calibrate the OSM undercount** against Dubai's published business-licence statistics by activity and area (Dubai Pulse / DET open data), if accessible — turns "share of mapped businesses" into an estimated true-market share with a stated method. To be verified in W3; not promised.
+7. **Share the outstanding-book view with Risk** — same data, second audience, no extra work.
+8. **Keep the model city-agnostic** so Abu Dhabi (and the demo's numbers, done properly) and Sharjah are a config change, not a rebuild.
