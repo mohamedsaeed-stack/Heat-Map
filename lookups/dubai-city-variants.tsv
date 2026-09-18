@@ -17,5 +17,12 @@ jumeirah lakes towers, dubai	1	yes	community: JLT
 abu dhabi / dubai	1	no	ambiguous — exclude
 al jubail	1	no	Saudi Arabia — matched '%ubai%' only
 jubail industrial city	1	no	Saudi Arabia — matched '%ubai%' only
-# Source: HubSpot portal 25308329, 19 Sep 2026. Query: SELECT city, COUNT(*) FROM COMPANY WHERE city LIKE '%ubai%' GROUP BY city — 18 rows, "Showing 18 of 18". Dubai total (yes rows) = 19,974.
-# In the build, filter with city LIKE '%dubai%' (drops the two Jubail rows) and exclude 'abu dhabi / dubai'.
+# Source: HubSpot portal 25308329, 19 Sep 2026. Query: SELECT city, COUNT(*) FROM COMPANY WHERE city LIKE '%ubai%' GROUP BY city — 18 rows, "Showing 18 of 18". All 18 rows sum to 19,976.
+# CORRECTED 19 Sep 2026: an earlier version of this comment said the 'yes' rows total 19,974. They total 19,973. Three figures reconcile, do not mix them:
+#   19,976  raw '%ubai%' match — all 18 rows, including the two Saudi Jubail rows.
+#   19,974  '%dubai%' match — drops the two Jubail rows but still INCLUDES 'abu dhabi / dubai'. This is the
+#           total in dubai-lifecycle-counts.tsv and dubai-industry-counts.tsv, both queried with '%dubai%'
+#           before the ambiguous row was excluded. Their internal sums are correct.
+#   19,973  Dubai proper — the 'yes' rows above, after excluding 'abu dhabi / dubai'.
+# 'abu dhabi / dubai' = exactly 1 company (verified against HubSpot 19 Sep 2026), which is the whole difference.
+# In the build: filter city LIKE '%dubai%' AND exclude 'abu dhabi / dubai' -> 19,973 companies.
