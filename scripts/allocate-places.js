@@ -193,7 +193,20 @@ function load(f) {
 function main() {
   // Dubai set from the previous session carries no city field - it IS Dubai by
   // construction (it was pulled with a Dubai city filter), so it is seeded.
-  const dubai = load('hubspot-companies.json').map(c => ({ ...c, city: c.city || 'Dubai' }));
+  // The Dubai build's set is NOT purely Dubai, which an audit of it found:
+  // 598 of its 18,866 records carry a different city (152 Abu Dhabi, 85
+  // Sharjah, and some New York and London), and 1,407 carry no city at all.
+  //
+  // Those without a city are seeded as Dubai, because that set was pulled on a
+  // Dubai filter - but ONLY when nothing on the record contradicts it. 264 of
+  // them state a country that is not the UAE, and seeding those as Dubai put
+  // foreign companies on the map in Dubai. They are left unseeded instead, and
+  // fall out as "not UAE" like any other foreign record.
+  const dubai = load('hubspot-companies.json').map(c => {
+    if (c.city) return c;                                   // it says where it is
+    if (c.country && !isUAE(c.country)) return c;           // says it is elsewhere
+    return { ...c, city: 'Dubai' };
+  });
   const sets = [
     ['dubai-city', dubai],
     ['uae-city', load('uae-noncity-dubai.json')],
