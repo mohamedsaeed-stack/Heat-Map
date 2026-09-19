@@ -4,127 +4,109 @@ Read this, then `README.md`, then `PLAN.md`.
 
 ## The deliverable
 
-**`dist/flapkap-dubai-map.html`** — one file, opens by double-click, needs no server and **no network**.
+**`dist/flapkap-uae-map.html`** — one file, opens by double-click, needs no network.
+All seven emirates. 574 OpenStreetMap tiles are base64 inside it.
 
 ```bash
-node scripts/build-map-data.js && node scripts/build-standalone.js
+export PATH="/c/Users/Mohamed/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.19.0-win-x64:$PATH"
+node scripts/allocate-places.js      # companies -> emirate + area
+node scripts/scatter-pins.js         # -> a coordinate for every one
+node scripts/build-map-data-uae.js   # -> data/map-uae.json
+node scripts/build-standalone-uae.js # -> dist/flapkap-uae-map.html
 ```
 
-**The map tiles are inside the file.** 284 OpenStreetMap tiles for the Dubai core, zoom 10 to 13,
-base64 in the html. This was not gold-plating: the user opened the file twice in viewers that block
-external images, the app's file preview and the published-artifact viewer, and both times saw pins
-floating on grey. Embedded tiles cannot be blocked. A `L.TileLayer` subclass reads the embedded tile
-first and the network second, with `maxNativeZoom: 13` so deeper zooms scale the embedded tiles
-rather than requesting new ones.
-
-This stays inside the OpenStreetMap tile policy: 204 tiles at z13, under the 250 limit, one city,
-one snapshot. Do not widen the box without re-reading that policy.
+The Dubai-only chain (`build-map-data.js` + `build-standalone.js`) still works and is kept as the
+source of the per-company deal and admin findings, which the UAE build reuses by company id rather
+than re-deriving.
 
 ## What is on it
 
 | | |
 |---|---:|
-| Companies pulled | 18,866 |
-| **Pinned** | **3,705** and rising |
-| — geocoded street address | 2,991 |
-| — matched by name to OpenStreetMap | 474 |
-| — on an area centroid | 240 |
-| — counted, cannot be placed | 15,161 |
-| Deals | 1,501 |
-| OpenStreetMap businesses (universe layer) | 18,018 |
-| Closed won | 220 · AED 49.9M |
-| In process | 742 · AED 444.2M |
-| Closed lost | 438 · AED 215.8M |
+| Companies | **29,365** |
+| **Drawn** | **26,224** |
+| — exact geocoded street address | 1,705 and rising |
+| — scattered inside a known area | 723 |
+| — scattered inside a known emirate | 23,796 |
+| Counted, not drawn (UAE, no emirate) | 2,662 |
+| Not UAE | 479 |
+| OpenStreetMap universe | 18,018 — **Dubai only, by decision** |
 
-Every pin carries the business name, category, stage, deal value, owner, close date and loss reason.
-Every stat card has an **`i` button** giving what it counts, the formula, why it is done that way,
-and what would make it wrong.
+Dubai 21,096 · Abu Dhabi 2,916 · Sharjah 1,357 · Ajman 409 · Ras Al Khaimah 296 ·
+Fujairah 94 · Umm Al Quwain 56.
 
-## Precedence, decided by the user
+Closed won 220 / AED 49.9M · in process 742 / AED 444.2M · closed lost 438 / AED 215.8M.
 
-**The admin app outranks HubSpot on closed won and closed lost.** HubSpot keeps pipeline.
+## Decisions the user took, 19 Sep 2026
 
-```
-financingStatus REFINANCING      -> closed won
-status LOST_IN_ACQUISITION       -> closed lost
-status POST_ANALYSIS_REJECTION   -> closed lost, Risk
-status AUTO_REJECTION            -> closed lost, auto
-status CLOSED                    -> closed lost
-```
+1. **Scatter, do not hide.** A company we know is in a place is drawn *inside that place*, flagged as
+   not-exact. This **supersedes** the old "no address means not drawn" rule. What stays banned is
+   inventing a *place*.
+2. **UAE-wide from CRM + admin app only.** Finding businesses we do *not* already hold is parked
+   outside Dubai until the CRM/admin side is finished.
+3. **Contacts count.** A company with no location of its own is counted in the emirate its contacts
+   name — but still never gets a street-level pin.
+4. **Location evidence is emirate names, city names and UAE names. Nothing else.**
+5. **IT & software is category 8.**
 
-209 companies reclassified. **The two systems disagree on 169 records**, every popup shows both
-readings, and 13 sit in open HubSpot pipeline for merchants the admin app has already lost.
+## Traps — connector, all silent, all measured
 
-## Locating: every route, and where each one stops
+**These fail by returning plausible data, not errors.**
 
-This is the question the user pressed hardest on. All four free routes are implemented.
+- **A WIDE query is nearly free; a NARROW one is expensive.** Over ~75 KB the result spills to a file
+  and costs ~250 tokens. Under it, the rows come back inline and cost thousands. Ask for *more*
+  columns on purpose.
+- **The 500-row cap is hard**, even on the spill path. `LIMIT 5000` still returns 500.
+- **`OFFSET` works on single-object queries** and paginates correctly.
+- **`OFFSET` is IGNORED on cross-object queries.** Two pages at `OFFSET 0` and `OFFSET 500` came back
+  byte-identical, same md5. Paginating that way writes the same 500 rows forever and reconciles to
+  nothing. Cut cross-object pulls by `createdate` instead.
+- **`ORDER BY` returns an EMPTY dataset on cross-object queries.**
+- **`OR` inside a cross-object `WHERE` also returns an EMPTY dataset.** One city per query.
+- **`WHERE` allows at most 20 nested conditions, and 2 association joins.**
+- **Cross-object results are TSV, not JSON**, with duplicate column names — two `[hs_object_id]` and
+  two `[country]`. Tell them apart by the `Contact `/`Company ` label prefix and by position.
+- **`GROUP BY` is unreliable with some filters** — it returned empty against a `COUNT(*)` of 4,639.
+  Always cross-check a `GROUP BY` against a direct count before trusting it.
 
-| Route | Yield | Ceiling |
-|---|---:|---|
-| Street address → Nominatim | 2,991 | Only ~25% of companies hold an address, and 41% of those resolve |
-| Business name → OpenStreetMap place | 474 | 16,429 companies have no OSM place of that name |
-| Business name → Nominatim free-text | running | ~3% hit rate; most Dubai SMEs are not mapped |
-| Address text → area centroid | 240 | Marks the area, not the building |
+## Traps — map and page
 
-**Contacts were checked and do not help.** 35,062 contacts carry a city and a company link, but
-**only 53 in the entire CRM carry a street address**. Contacts can confirm a company is in the UAE;
-they cannot place one on a map. Measured, not assumed.
-
-**Generic addresses are refused.** 173 say only "Dubai" or "UAE", which geocodes to the city centre.
-An early build stacked 383 unrelated companies on one point that way, and it reads as a real cluster.
-
-What would raise the ceiling, none of it free: a paid geocoder, Google Places, or writing a
-`place_id` back into both systems so the join stops depending on names.
-
-## Traps already paid for — do not rediscover these
-
-- **This HubSpot connector is not the one the old notes describe.** A record SELECT returns 25 rows
-  by default, caps at **500**, and writes large results to a file instead of the conversation. That
-  file is the cheap path: a 480-row partition costs ~200 tokens to request and nothing to receive.
-- **Truncation at 500 is silent.** Every partition needs an expected `COUNT(*)` and the totals must
-  reconcile before the data is trusted.
-- **`GROUP BY` with an association filter is unreliable.** Grouping deal-linked companies by
-  lifecycle stage summed to ~47,000 against a `COUNT(*)` of 2,969.
-- **Cross-object deal queries return TSV, not JSON**, and two columns are both `hs_object_id`.
-- **Partition from exact daily counts** (`lookups/dubai-createdate-buckets.json`). 2026-01-14 alone
-  holds 468 records.
-- **Nominatim free-text almost always returns something.** Without a guard it hands back the centre
-  of Dubai for any unknown business. `scripts/geocode-by-name.js` only accepts a result whose first
-  display-name component shares a distinctive word with the company.
-- **Nominatim's first result is often not the place.** Hatta resolved to a road 90 km away.
-- **CARTO Voyager stamps "API KEY REQUIRED" across every tile** while firing a normal tile-load
-  event, so no automatic check catches it.
-- **Marker clustering made the map stop looking like a map.** It replaces the coloured dots with
-  numbered bubbles. Every pin is drawn individually now; clustering is an opt-in checkbox.
-- **`fitBounds` got the opening view wrong twice**, once landing on the whole world and once on a
-  single street. It reads the container size at call time. A fixed `setView` on the median pin is
-  used instead.
-- **Inside the page's template literal, `\n` becomes a real newline** and breaks the emitted JS
-  string; a raw apostrophe in sample SQL closes it. Escape both.
-- **Backticks inside a shell string get executed.** Use the Write tool for files.
-- **Nominatim is one request per second.** No faster free route exists.
+- **Uniform scatter over an emirate is worse, not more honest.** It drew 20,000 businesses across
+  empty desert and rendered as a filled geometric shape. Emirate-level pins are spread over that
+  emirate's known populated areas instead.
+- **Over-fading approximate pins makes them vanish.** 20% opacity with no stroke disappeared at
+  country zoom. Exact pins keep the white ring; approximate ones lose it but stay readable.
+- **Draw order matters now.** 27,821 grey CRM pins bury the ~1,400 coloured deal pins unless the
+  quiet layer is drawn first.
+- **Size.** 26,224 pins + 8.8 MB of tiles = 15.4 MB against a **16 MB** publish limit. Repeated
+  string fields are dictionary-encoded to integers and expanded on load; that alone bought 2.1 MB.
+- **Do not open at the median pin.** 80% of pins are in Dubai, so the median hides six emirates. A
+  fixed country `setView` is used. `fitBounds` got it wrong twice before.
+- **Tile policy: max 250 tiles at z13+.** Currently 229. `fetch-tiles-uae.js --plan` prints the
+  budget and refuses to run if the plan breaks it.
+- Nominatim is 1 req/s. Overpass needs a real User-Agent and 9s between queries.
+- Inside the page's template literal, `\n` becomes a real newline. Backticks in a shell string get
+  executed — use the Write tool.
 
 ## What is still open
 
-1. **UAE beyond Dubai.** Boundaries for all seven emirates are in `lookups/uae-emirate-areas.json`,
-   so the universe extends with one flag. The CRM side needs city spellings and an area list per
-   emirate, and the embedded tile set would need extending per city.
-2. **318 of 372 funded clients cannot be placed.** The admin app holds no city and no street address
-   on the client summary; its only location is `legalAddresses` on the per-client endpoint, one API
-   call each. The name join to HubSpot matches 8.4%, which measures the broken link between the
-   systems rather than a defect in the matcher.
-3. **The outstanding book.** Needs `flapkap_get_credit_balance` per client. Aggregate by area before
-   drawing anything.
-4. **IT & software as category 8.** The admin app's `IT_SOFTWARE_DATA` holds 180 clients.
-5. **The two NOP stages.** `pre_nop_rejection_reason` options are all credit criteria, so Rejected
-   Pre NOP is a Risk rejection. Still worth a sentence from whoever owns the Canopy pipeline.
+1. **The outstanding book is BLOCKED, and not by tokens.** See `lookups/outstanding-book.md`.
+   Only **48 of 372** funded clients can be placed at all, and they sit in 4 areas with 1–2 clients
+   each — so an area-level book would expose individual balances. The blocker is the broken
+   name join, not effort. **Ask the user before spending anything here.**
+2. **2,662 companies are UAE with no emirate.** More contact slices would resolve some.
+3. **Small-emirate contact evidence is missing** (~150 companies). Cross-object pulls must be cut by
+   `createdate`, one city per query.
+4. **The universe layer outside Dubai** — parked by decision 2 above.
+5. **`data/map-uae.json` is 7.0 MB** and committed. If that becomes awkward, gitignore it and rebuild.
 
 ## How the user wants this done
 
-- **It must look like a real map**, at city zoom, with named businesses and coloured pins. This was
-  said many times and it is the measure of success.
-- **Ship the standalone file**, with the tiles inside it.
-- **Never invent data.** A record with no usable address is counted and not drawn.
-- **No paid credits.** Overpass and Nominatim only.
-- **Every figure carries an explainer** with the formula.
-- Report measured usage percentages. Stop at 90% of the context window.
+- **It must look like a real map.** This is the measure of success.
+- **Never invent a place.** Scattering inside a real boundary is fine; a guessed boundary is not.
+- **No paid credits.** Overpass and Nominatim only, inside their policies.
+- **Every figure carries an explainer** with the formula and what would make it wrong.
+- **Save what you pull; search it on disk.** Never re-query for something already in `raw/`.
+- **The admin app outranks HubSpot on won and lost.** HubSpot keeps pipeline.
+- Send the built file with SendUserFile after each meaningful change; republish to the same artifact
+  URL. Report measured usage; stop at 90% of context.
