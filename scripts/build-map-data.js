@@ -40,6 +40,10 @@ const geocoded = fs.existsSync(path.join(ROOT, 'raw', 'address-geocodes.json'))
 // could never be geocoded no matter how long the geocoder ran.
 const nameLoc = fs.existsSync(path.join(ROOT, 'raw', 'name-locations.json'))
   ? read('raw/name-locations.json') : {};
+// Tier 2b: Nominatim asked for the business by NAME. Only results that actually
+// name the business are kept - see scripts/geocode-by-name.js.
+const nameGeo = fs.existsSync(path.join(ROOT, 'raw', 'name-geocodes.json'))
+  ? read('raw/name-geocodes.json') : {};
 
 // ---------------------------------------------------------------- owners
 const ownerName = {};
@@ -173,7 +177,7 @@ for (const c of companies) {
   if (c.address && !addrOk) tally.genericAddressesRefused++;
 
   const g = addrOk ? geocoded[c.address.trim().toLowerCase()] : null;
-  const nl = nameLoc[c.hs_object_id];
+  const nl = nameLoc[c.hs_object_id] || nameGeo[c.hs_object_id];
   const m = locate({ name: c.name, address: c.address, zip: c.zip });
   if (g && g.lat != null) {
     lat = g.lat; lng = g.lng; how = 'geocoded';
