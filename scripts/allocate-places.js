@@ -157,13 +157,41 @@ function main() {
     }
   }
 
+  // Contact evidence: the only route that reaches a company carrying no
+  // location of its own. It is used LAST, and only to name an emirate - a
+  // contact's city never produces a street-level pin, because just 53 contacts
+  // in the whole CRM hold an address.
+  //
+  // NOTE: this evidence is PARTIAL. Cross-object queries cannot be paginated
+  // (ORDER BY returns empty, OFFSET is silently ignored), so they are cut by
+  // createdate, and two slices came back at exactly the 500-row cap. Dubai and
+  // Abu Dhabi are well covered; the small emirates are not. Companies found
+  // only this way are a floor, never a total.
+  const evidence = new Map();
+  try {
+    for (const e of JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/contact-city-evidence.json'), 'utf8'))) {
+      evidence.set(String(e.company_id), e);
+    }
+  } catch (err) { /* no evidence file yet */ }
+
+  // Companies that exist ONLY in the contact evidence are real CRM companies
+  // that every other sweep missed. Seed them from what the contact query
+  // returned about their company.
+  let contactOnly = 0;
+  for (const [cid, e] of evidence) {
+    if (byId.has(cid)) continue;
+    byId.set(cid, { hs_object_id: cid, name: e.name, industry: e.industry, _src: 'contact-only' });
+    contactOnly++;
+  }
+
   const tally = {};
   const precision = {};
   const routes = {};
   const out = [];
 
   for (const c of byId.values()) {
-    const a = allocate(c, null);
+    const e = evidence.get(String(c.hs_object_id));
+    const a = allocate(c, e ? Object.keys(e.contact_cities || {}) : null);
     const em = a.emirate || (a.uae ? 'UAE (emirate unknown)' : 'not UAE');
     tally[em] = (tally[em] || 0) + 1;
     precision[a.precision || 'none'] = (precision[a.precision || 'none'] || 0) + 1;
@@ -180,6 +208,7 @@ function main() {
   const num = n => n.toLocaleString().padStart(8);
 
   console.log('DISTINCT COMPANIES  ' + byId.size.toLocaleString());
+  console.log('  found only via a contact\'s city: ' + contactOnly.toLocaleString());
   console.log('');
   console.log('BY EMIRATE');
   for (const [k, v] of Object.entries(tally).sort((a, b) => b[1] - a[1])) console.log('  ' + pad(k, 26) + num(v));
