@@ -32,6 +32,7 @@ const comms = read('data/communities.json');
 const imap = read('lookups/industry-map.json');
 const stageMap = read('lookups/stage-map.json');
 const ownersFile = read('lookups/owners.json');
+const adminMatch = fs.existsSync(path.join(ROOT,'raw','admin-match.json')) ? read('raw/admin-match.json') : {};
 const geocoded = fs.existsSync(path.join(ROOT, 'raw', 'address-geocodes.json'))
   ? read('raw/address-geocodes.json') : {};
 
@@ -119,12 +120,20 @@ const tally = {
   total: companies.length, byLayer: {}, byCategory: {},
   byLocation: { geocoded: 0, community: 0, unlocated: 0 },
   genericAddressesRefused: 0, locatedByLayer: {}, byCommunity: {},
+  adminMatched: 0, adminFunded: 0,
   wonAmount: 0, pipelineAmount: 0, lostAmount: 0,
 };
 
 for (const c of companies) {
   const info = companyDeal(c);
+  const am = adminMatch[c.hs_object_id];
+  // The admin app is the source of truth for who is a real, funded client. A
+  // company it marks REFINANCING has been funded at least once, whatever
+  // HubSpot's deal stage says.
+  if (am && am.fin === 'REFINANCING' && info.layer !== 'closed_won') { info.layer = 'closed_won'; info.stage = 'Funded (admin app)'; }
   const cat = categoryOf(c);
+  if (am) tally.adminMatched++;
+  if (am && am.fin === 'REFINANCING') tally.adminFunded++;
   tally.byLayer[info.layer] = (tally.byLayer[info.layer] || 0) + 1;
   tally.byCategory[cat] = (tally.byCategory[cat] || 0) + 1;
   if (info.amount) {
@@ -165,6 +174,8 @@ for (const c of companies) {
     s: info.stage, m: info.amount, o: info.owner,
     t: info.lostType, r: info.reason, cd: info.closedate,
     d: info.dealCount, lc: info.viaLifecycle ? 1 : 0,
+    ad: am ? 1 : 0, af: am && am.fin === 'REFINANCING' ? 1 : 0,
+    ai: am && am.industry && am.industry.length ? am.industry[0] : null,
   });
 }
 

@@ -249,12 +249,14 @@ ${V('MarkerCluster.Default.css')}
     if(c.cd) kv+='<dt>Close date</dt><dd>'+esc(c.cd)+'</dd>';
     if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
     if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
+    if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
     var loc = c.h==='geocoded'
       ? 'Street address geocoded from OpenStreetMap.'
       : 'No street address on the CRM &mdash; placed on the '+esc(c.a||'')+' area centroid, not an exact location.';
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
+      (c.af?' <span class="pb" style="background:#0b8043">Funded &middot; admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
       '<div class="pid">HubSpot company '+esc(c.i)+'</div></div>';
