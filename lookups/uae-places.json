@@ -1,0 +1,102 @@
+{
+  "_comment": "UAE place gazetteer for allocating CRM/admin records to an emirate and, where possible, to an area inside it. Built 19 Sep 2026. Scope was set by the user: emirate names, city names and UAE names only - no other signal is treated as a location.",
+  "_matching_rules": {
+    "normalise": "lowercase, strip punctuation and accents, collapse whitespace, then substring match",
+    "precedence": [
+      "1. company.city            - the record's own city field",
+      "2. company.state           - the record's own state/region field",
+      "3. company.country         - only proves UAE, never an emirate",
+      "4. company.address         - free text, may name an area",
+      "5. company.name            - weakest; IGNORED when company.country is set and is NOT the UAE, because 'X Dubai Ltd' registered in India is an Indian company",
+      "6. contact.city            - only when the company itself carries nothing"
+    ],
+    "ambiguity": "A token that matches two emirates is refused and the record stays UAE-level only.",
+    "false_positive_guard": "Short tokens (rak, auh, dxb, uae) are matched ONLY on country/state fields, never inside a free-text name or address, because they occur inside unrelated words."
+  },
+  "uae_tokens": ["united arab emirates", "u.a.e", "uae", "emirates", "are"],
+  "emirates": {
+    "Dubai": {
+      "osm_relation": 3766483,
+      "centroid": [25.0772, 55.3093],
+      "aliases": ["dubai", "dubayy", "dubai emirate", "دبي", "imarat dubayy"],
+      "safe_short": ["dxb"],
+      "areas": [
+        "Deira", "Bur Dubai", "Al Quoz", "Business Bay", "Downtown Dubai", "Dubai Marina",
+        "Jumeirah", "Jumeirah Lakes Towers", "Al Barsha", "Al Karama", "Al Satwa",
+        "Dubai Investment Park", "Jebel Ali", "Al Qusais", "Muhaisnah", "Mirdif",
+        "International City", "Discovery Gardens", "Dubai Silicon Oasis", "Motor City",
+        "Dubai Sports City", "Arabian Ranches", "Emirates Hills", "Palm Jumeirah",
+        "Dubai Healthcare City", "Dubai Media City", "Dubai Internet City", "Al Nahda",
+        "Ras Al Khor", "Umm Ramool", "Garhoud", "Oud Metha", "Dubai Festival City",
+        "Jumeirah Village Circle", "Dubai South", "Hatta", "Al Aweer", "Nad Al Hamar"
+      ]
+    },
+    "Abu Dhabi": {
+      "osm_relation": 3766481,
+      "centroid": [24.4539, 54.3773],
+      "aliases": ["abu dhabi", "abudhabi", "abu zaby", "abu dabi", "أبو ظبي", "ابوظبي", "imarat abu zaby"],
+      "safe_short": ["auh"],
+      "areas": [
+        "Musaffah", "Mussafah", "Khalifa City", "Al Reem Island", "Yas Island",
+        "Saadiyat Island", "Al Mushrif", "Al Khalidiyah", "Al Bateen", "Al Zahiyah",
+        "Madinat Zayed", "Baniyas", "Al Shahama", "Al Shamkha", "Mohammed Bin Zayed City",
+        "Al Ain", "Al Ain City", "Ruwais", "Mirfa", "Liwa", "Ghayathi", "Al Mirfa",
+        "Al Falah", "Masdar City", "Al Raha", "Al Wathba", "Al Dhafra"
+      ],
+      "note": "Al Ain is a city inside the Abu Dhabi emirate, not a separate emirate. Musaffah is an industrial area of Abu Dhabi city."
+    },
+    "Sharjah": {
+      "osm_relation": 3766486,
+      "centroid": [25.3463, 55.4209],
+      "aliases": ["sharjah", "ash shariqah", "al shariqah", "shariqah", "الشارقة", "imarat ash shariqah"],
+      "safe_short": [],
+      "areas": [
+        "Al Nahda Sharjah", "Al Majaz", "Al Qasimia", "Muwailih", "Al Khan",
+        "Industrial Area Sharjah", "Al Layyah", "Al Sajaa", "Khorfakkan", "Kalba",
+        "Dibba Al Hisn", "Al Dhaid", "Al Madam", "Al Rahmaniya", "Muweilah",
+        "Sharjah Airport Free Zone", "Hamriyah Free Zone", "Al Tai"
+      ]
+    },
+    "Ajman": {
+      "osm_relation": 3766482,
+      "centroid": [25.4052, 55.5136],
+      "aliases": ["ajman", "imarat 'ajman", "imarat ajman", "emirate of ajman", "ajman city", "عجمان"],
+      "safe_short": [],
+      "areas": [
+        "Al Jurf", "Al Nuaimiya", "Al Rashidiya", "Al Rumailah", "Masfout",
+        "Manama Ajman", "Ajman Industrial Area", "Ajman Free Zone", "Al Zorah"
+      ]
+    },
+    "Ras Al Khaimah": {
+      "osm_relation": 3766485,
+      "centroid": [25.7895, 55.9432],
+      "aliases": ["ras al khaimah", "ras al-khaimah", "ras alkhaimah", "ras alkhaima", "ras al khaima", "khaimah", "راس الخيمة", "rasalkhaimah"],
+      "safe_short": ["rak"],
+      "areas": [
+        "Al Nakheel", "Al Dhait", "Al Jazirah Al Hamra", "Digdaga", "Al Hamra",
+        "Khuzam", "Al Rams", "Sha'am", "RAK Free Trade Zone", "Al Qusaidat",
+        "Julphar", "Mina Al Arab"
+      ]
+    },
+    "Fujairah": {
+      "osm_relation": 3766484,
+      "centroid": [25.1288, 56.3265],
+      "aliases": ["fujairah", "al fujairah", "fujayrah", "al fujayrah", "الفجيرة", "fujairah city"],
+      "safe_short": [],
+      "areas": [
+        "Dibba Al Fujairah", "Masafi", "Qidfa", "Mirbah", "Al Faseel",
+        "Fujairah Free Zone", "Sakamkam", "Murbah"
+      ]
+    },
+    "Umm Al Quwain": {
+      "osm_relation": 3766487,
+      "centroid": [25.5647, 55.5532],
+      "aliases": ["umm al quwain", "umm al qaiwain", "umm al-quwain", "umm alquwain", "quwain", "qaiwain", "أم القيوين"],
+      "safe_short": ["uaq"],
+      "areas": [
+        "Falaj Al Mualla", "Al Salamah", "Al Raas", "Umm Al Quwain Marina",
+        "UAQ Free Trade Zone", "Al Humrah"
+      ]
+    }
+  }
+}
