@@ -94,7 +94,7 @@ for (const p of pins) {
   for (const k of Object.keys(rec)) if (rec[k] === null || rec[k] === undefined) delete rec[k];
   companies.push(rec);
 
-  const em = p.emirate || (p.placement ? 'UAE (untraceable)' : 'not UAE');
+  const em = p.emirate || (p.placement ? 'UAE, emirate unknown' : 'not UAE');
   byEmirate[em] = byEmirate[em] || { total: 0, exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
   byEmirate[em].total++;
   if (p.placement) { byEmirate[em][p.placement]++; byPlacement[p.placement]++; }
@@ -153,6 +153,18 @@ const out = {
     byCategory,
     money,
     universeScope: 'Dubai only',
+    // The whole CRM, split three ways, so the map's total is never mistaken
+    // for the portal's. Measured against HubSpot on 19 Sep 2026; the three
+    // rows below add to 47,516 exactly.
+    crmScope: {
+      total: 47516,
+      uaeCountry: 29355,      // country field says United Arab Emirates
+      elsewhere: 9974,        // country field names another country
+      noCountry: 8187,        // no country at all
+      noLocationAtAll: 8040,  // …and no city, state, address or zip either
+      noLocationNoContacts: 795, // …and no contacts to ask, so nothing to go on
+      onMap: byPlacement.exact + byPlacement.area + byPlacement.emirate + byPlacement.uae,
+    },
     emirateCentroids: Object.fromEntries(
       Object.entries(places.emirates).map(([k, v]) => [k, v.centroid])),
   }),

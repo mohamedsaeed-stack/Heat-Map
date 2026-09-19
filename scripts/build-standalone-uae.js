@@ -315,9 +315,9 @@ ${V('MarkerCluster.Default.css')}
   // Emirate filter, and a filter on HOW WELL a pin is located. The second one
   // matters: switching off "emirate only" leaves just the pins whose position
   // is actually meaningful, which is the honest view of the map.
-  var EMIRATES=Object.keys(DATA.stats.byEmirate||{}).filter(function(k){return k!=='unplaced';});
+  var EMIRATES=Object.keys(DATA.stats.byEmirate||{}).filter(function(k){return k!=='unplaced'&&k!=='not UAE';});
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
-  var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE only — untraceable']];
+  var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
   var precOn={exact:true,area:true,emirate:true,uae:true};
   var showLabels=false, sizeByValue=false;
 
@@ -370,7 +370,7 @@ ${V('MarkerCluster.Default.css')}
       : c.h==='area'
       ? '<b>Approximate &mdash; area only.</b> No street address on record. This pin is placed at a random point inside <b>'+esc(c.a||'')+'</b>, which is where we know the business is. It is <i>not</i> the building.'
       : c.h==='uae'
-      ? '<b>Untraceable.</b> We know this business is in the UAE, but no source we hold names an emirate — not its own record, not its contacts, not its website. This pin sits at a random populated point in the country and tells you <i>nothing</i> below national level.'
+      ? '<b>UAE, emirate unknown.</b> This company&rsquo;s own record says its country is the United Arab Emirates, but nothing names an emirate — not its record, not its contacts, not its website. The pin sits at a random populated point in the country. It confirms the UAE and tells you <i>nothing</i> below that.'
       : c.h==='emirate'
       ? '<b>Approximate &mdash; emirate only.</b> No street address and no area on record. This pin is placed at a random point inside <b>'+esc(c.e||'')+'</b>. All it tells you is the emirate.'
       : 'No usable location on record.';
@@ -503,7 +503,13 @@ ${V('MarkerCluster.Default.css')}
       '<dl><dt>The number</dt><dd><b>'+fmt(s.drawn)+'</b> of '+fmt(s.total)+' companies are drawn. '+fmt(b.notdrawn||0)+' are counted but not drawn.</dd>'+
       '<dt>How a pin is placed</dt><dd><code>1 street address  -> exact point   '+fmt(b.exact||0)+'\\n2 known area      -> inside area   '+fmt(b.area||0)+'\\n3 emirate only    -> inside emirate '+fmt(b.emirate||0)+'\\n4 nothing usable  -> not drawn    '+fmt(b.notdrawn||0)+'</code></dd>'+
       '<dt>Why this way</dt><dd>A company we know is in Al Quoz but have no address for is drawn <i>inside Al Quoz</i>, at a point chosen from its own record id so it never moves between rebuilds. The place is real and measured; only the exact spot within it is not. Nothing is ever drawn in a place we did not verify.</dd>'+
-      '<dt>What would make it wrong</dt><dd>Reading a faded pin as a real address. Only '+fmt(b.exact||0)+' pins are true geocoded addresses &mdash; switch off &ldquo;Area only&rdquo; and &ldquo;Emirate only&rdquo; to see just those. An emirate-only pin tells you the emirate and nothing more.</dd></dl>';}},
+      '<dt>What would make it wrong</dt><dd>Reading a faded pin as a real address. Only '+fmt(b.exact||0)+' pins are true geocoded addresses &mdash; switch off the other precision filters to see just those. An emirate-only pin tells you the emirate and nothing more.</dd></dl>';}},
+
+    scope:{h:'What this map is NOT showing',b:function(){var s=DATA.stats.crmScope;if(!s)return '';return ''+
+      '<dl><dt>The whole CRM, split three ways</dt><dd><code>says United Arab Emirates  '+fmt(s.uaeCountry)+'\\nsays somewhere else       '+fmt(s.elsewhere)+'\\nsays nothing at all       '+fmt(s.noCountry)+'\\n                        --------\\ntotal in HubSpot          '+fmt(s.total)+'</code></dd>'+
+      '<dt>This map shows the first group</dt><dd><b>'+fmt(s.onMap)+'</b> companies. The '+fmt(s.elsewhere)+' that name another country are out of scope &mdash; this is a UAE map, and a company in Philadelphia or Cairo is not the market.</dd>'+
+      '<dt>The ones nobody can place</dt><dd><b>'+fmt(s.noLocationAtAll)+'</b> companies say <i>nothing</i> about where they are &mdash; no city, no country, no region, no address, no postcode. They are not on this map and they are not counted as UAE, because nothing says they are. <b>They might be. '+fmt(s.noLocationNoContacts)+' of them have no contacts either</b>, so there is nothing left to ask.</dd>'+
+      '<dt>Why this matters</dt><dd>'+fmt(s.noLocationAtAll)+' is 17% of the CRM sitting in the dark. If even half of them are Emirati, this map is missing thousands of real UAE companies &mdash; not because they could not be placed, but because nobody filled in a field. That is a CRM hygiene number, not a mapping one.</dd></dl>';}},
 
     closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
       '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
@@ -553,6 +559,12 @@ ${V('MarkerCluster.Default.css')}
       {k:'closed_lost',n:fmt(s.byLayer.closed_lost||0),l:'Closed lost',c:'#d93025',a:aed(s.lostAmount)},
       {k:'crm',n:fmt(s.total),l:'On the CRM',c:'#7d8894',a:null}
     ];
+    // The number the user asked to have flagged: companies nothing places
+    // anywhere. Not UAE, not foreign - unknown. Shown beside the map's own
+    // totals so the 28,748 is never read as "all our companies".
+    var sc=DATA.stats.crmScope;
+    if(sc) rows.push({k:'scope',n:fmt(sc.noLocationAtAll),l:'Location unknown',c:'#b06000',
+      a:'not on this map &middot; might be UAE'});
     document.getElementById('stats').innerHTML=rows.map(function(r){
       return '<div class="stat"><div class="num" style="color:'+r.c+'">'+r.n+'</div>'+
         '<div class="lbl"><span>'+r.l+'</span><button class="i" data-i="'+r.k+'" title="How this is worked out">i</button></div>'+
