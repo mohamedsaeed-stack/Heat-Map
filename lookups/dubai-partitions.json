@@ -1,0 +1,248 @@
+{
+  "_comment": "Partition plan for the Dubai COMPANY pull. Each partition must return exactly `expected` rows; a parsed count below that means the query truncated and the partition must be split.",
+  "_generated_from": "lookups/dubai-createdate-buckets.json",
+  "_cap": 480,
+  "_total": 19977,
+  "partitions": [
+    {
+      "start": "2022-03-01",
+      "end": "2023-08-31",
+      "expected": 393
+    },
+    {
+      "start": "2023-09-01",
+      "end": "2023-11-30",
+      "expected": 457
+    },
+    {
+      "start": "2023-12-01",
+      "end": "2024-03-31",
+      "expected": 374
+    },
+    {
+      "start": "2024-04-01",
+      "end": "2024-11-30",
+      "expected": 476
+    },
+    {
+      "start": "2024-12-01",
+      "end": "2025-08-25",
+      "expected": 422
+    },
+    {
+      "start": "2025-08-26",
+      "end": "2025-09-01",
+      "expected": 441
+    },
+    {
+      "start": "2025-09-02",
+      "end": "2025-09-10",
+      "expected": 462
+    },
+    {
+      "start": "2025-09-11",
+      "end": "2025-09-17",
+      "expected": 459
+    },
+    {
+      "start": "2025-09-18",
+      "end": "2025-09-23",
+      "expected": 459
+    },
+    {
+      "start": "2025-09-24",
+      "end": "2025-09-30",
+      "expected": 332
+    },
+    {
+      "start": "2025-10-01",
+      "end": "2025-10-11",
+      "expected": 448
+    },
+    {
+      "start": "2025-10-13",
+      "end": "2025-10-16",
+      "expected": 450
+    },
+    {
+      "start": "2025-10-17",
+      "end": "2025-10-22",
+      "expected": 360
+    },
+    {
+      "start": "2025-10-23",
+      "end": "2025-10-24",
+      "expected": 256
+    },
+    {
+      "start": "2025-10-27",
+      "end": "2025-10-31",
+      "expected": 461
+    },
+    {
+      "start": "2025-11-03",
+      "end": "2025-11-06",
+      "expected": 413
+    },
+    {
+      "start": "2025-11-07",
+      "end": "2025-11-15",
+      "expected": 480
+    },
+    {
+      "start": "2025-11-16",
+      "end": "2025-11-20",
+      "expected": 445
+    },
+    {
+      "start": "2025-11-21",
+      "end": "2025-12-04",
+      "expected": 441
+    },
+    {
+      "start": "2025-12-05",
+      "end": "2025-12-15",
+      "expected": 464
+    },
+    {
+      "start": "2025-12-16",
+      "end": "2026-01-13",
+      "expected": 477
+    },
+    {
+      "start": "2026-01-14",
+      "end": "2026-01-14",
+      "expected": 468
+    },
+    {
+      "start": "2026-01-15",
+      "end": "2026-01-28",
+      "expected": 474
+    },
+    {
+      "start": "2026-01-29",
+      "end": "2026-02-10",
+      "expected": 394
+    },
+    {
+      "start": "2026-02-11",
+      "end": "2026-03-03",
+      "expected": 467
+    },
+    {
+      "start": "2026-03-04",
+      "end": "2026-03-04",
+      "expected": 417
+    },
+    {
+      "start": "2026-03-05",
+      "end": "2026-03-11",
+      "expected": 370
+    },
+    {
+      "start": "2026-03-12",
+      "end": "2026-03-23",
+      "expected": 445
+    },
+    {
+      "start": "2026-03-24",
+      "end": "2026-03-25",
+      "expected": 361
+    },
+    {
+      "start": "2026-03-26",
+      "end": "2026-03-28",
+      "expected": 206
+    },
+    {
+      "start": "2026-03-30",
+      "end": "2026-03-30",
+      "expected": 325
+    },
+    {
+      "start": "2026-03-31",
+      "end": "2026-04-01",
+      "expected": 471
+    },
+    {
+      "start": "2026-04-02",
+      "end": "2026-04-03",
+      "expected": 386
+    },
+    {
+      "start": "2026-04-06",
+      "end": "2026-04-06",
+      "expected": 293
+    },
+    {
+      "start": "2026-04-07",
+      "end": "2026-04-09",
+      "expected": 453
+    },
+    {
+      "start": "2026-04-10",
+      "end": "2026-04-15",
+      "expected": 456
+    },
+    {
+      "start": "2026-04-16",
+      "end": "2026-05-06",
+      "expected": 468
+    },
+    {
+      "start": "2026-05-07",
+      "end": "2026-05-11",
+      "expected": 389
+    },
+    {
+      "start": "2026-05-12",
+      "end": "2026-05-13",
+      "expected": 373
+    },
+    {
+      "start": "2026-05-14",
+      "end": "2026-05-18",
+      "expected": 454
+    },
+    {
+      "start": "2026-05-19",
+      "end": "2026-06-01",
+      "expected": 327
+    },
+    {
+      "start": "2026-06-02",
+      "end": "2026-06-04",
+      "expected": 407
+    },
+    {
+      "start": "2026-06-05",
+      "end": "2026-06-10",
+      "expected": 402
+    },
+    {
+      "start": "2026-06-11",
+      "end": "2026-06-18",
+      "expected": 423
+    },
+    {
+      "start": "2026-06-19",
+      "end": "2026-07-05",
+      "expected": 403
+    },
+    {
+      "start": "2026-07-06",
+      "end": "2026-07-23",
+      "expected": 462
+    },
+    {
+      "start": "2026-07-24",
+      "end": "2026-08-25",
+      "expected": 467
+    },
+    {
+      "start": "2026-08-26",
+      "end": "2026-09-19",
+      "expected": 446
+    }
+  ]
+}
