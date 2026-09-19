@@ -35,6 +35,11 @@ const ownersFile = read('lookups/owners.json');
 const adminMatch = fs.existsSync(path.join(ROOT,'raw','admin-match.json')) ? read('raw/admin-match.json') : {};
 const geocoded = fs.existsSync(path.join(ROOT, 'raw', 'address-geocodes.json'))
   ? read('raw/address-geocodes.json') : {};
+// Tier 2: the company's NAME matched to a named OpenStreetMap place. This is
+// what reaches the 15,621 companies that hold no address at all - the ones that
+// could never be geocoded no matter how long the geocoder ran.
+const nameLoc = fs.existsSync(path.join(ROOT, 'raw', 'name-locations.json'))
+  ? read('raw/name-locations.json') : {};
 
 // ---------------------------------------------------------------- owners
 const ownerName = {};
@@ -118,7 +123,7 @@ const categoryOf = c => (!c.industry ? 'blank' : (imap.map[c.industry] || 'other
 const out = { companies: [], universe: [], areas: comms.communities, stats: {} };
 const tally = {
   total: companies.length, byLayer: {}, byCategory: {},
-  byLocation: { geocoded: 0, community: 0, unlocated: 0 },
+  byLocation: { geocoded: 0, named: 0, community: 0, unlocated: 0 },
   genericAddressesRefused: 0, locatedByLayer: {}, byCommunity: {},
   adminMatched: 0, adminFunded: 0, adminOverrode: 0, adminLost: 0,
   wonAmount: 0, pipelineAmount: 0, lostAmount: 0,
@@ -168,9 +173,13 @@ for (const c of companies) {
   if (c.address && !addrOk) tally.genericAddressesRefused++;
 
   const g = addrOk ? geocoded[c.address.trim().toLowerCase()] : null;
+  const nl = nameLoc[c.hs_object_id];
   const m = locate({ name: c.name, address: c.address, zip: c.zip });
   if (g && g.lat != null) {
     lat = g.lat; lng = g.lng; how = 'geocoded';
+    community = m ? m.community : null;
+  } else if (nl && nl.lat != null) {
+    lat = nl.lat; lng = nl.lng; how = 'named';
     community = m ? m.community : null;
   } else if (m && comms.communities[m.community]) {
     community = m.community;
@@ -218,9 +227,10 @@ out.stats = {
 
 fs.writeFileSync(path.join(ROOT, 'data', 'map.json'), JSON.stringify(out));
 
-const located = tally.byLocation.geocoded + tally.byLocation.community;
+const located = tally.byLocation.geocoded + tally.byLocation.named + tally.byLocation.community;
 console.log('companies             ' + tally.total);
 console.log('  geocoded            ' + tally.byLocation.geocoded);
+console.log('  matched by name     ' + tally.byLocation.named);
 console.log('  on a community      ' + tally.byLocation.community);
 console.log('  unlocated           ' + tally.byLocation.unlocated);
 console.log('  PINNED              ' + located + '  (' + (100 * located / tally.total).toFixed(1) + '%)');

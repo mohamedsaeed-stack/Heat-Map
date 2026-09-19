@@ -32,6 +32,20 @@ const CAT_COLOR = {
   manufacturing_trading: '#ae3ec9', other: '#7a8699', blank: '#9aa4b2',
 };
 
+// Every OpenStreetMap tile for the Dubai core, base64 in the file itself.
+// This is the fix for the failure the user hit twice: a viewer that blocks
+// external images leaves the map as pins on grey. Embedded tiles cannot be
+// blocked, so the file shows a real street map anywhere, with or without a
+// network.
+const TILE_DIR = path.join(ROOT, 'raw', 'tiles');
+const TILES = {};
+if (fs.existsSync(TILE_DIR)) {
+  for (const f of fs.readdirSync(TILE_DIR)) {
+    if (!f.endsWith('.png')) continue;
+    TILES[f.replace(/.png$/, '')] = fs.readFileSync(path.join(TILE_DIR, f)).toString('base64');
+  }
+}
+
 const payload = {
   pulled: map.stats.pulled,
   companies: pinned,
@@ -124,6 +138,23 @@ ${V('MarkerCluster.Default.css')}
   .lbl:before{display:none}
   .marker-cluster div{font-family:inherit;font-weight:600}
 
+  .i{width:15px;height:15px;border-radius:50%;border:1px solid #c5c8cc;background:#fff;color:#80868b;
+    font-size:10px;font-weight:700;line-height:1;cursor:pointer;padding:0;font-family:inherit;flex-shrink:0}
+  .i:hover{border-color:#1a73e8;color:#1a73e8}
+  .stat .lbl{display:flex;align-items:center;gap:5px;justify-content:space-between}
+  dialog.info{border:1px solid #e3e3e1;border-radius:12px;padding:0;max-width:520px;width:calc(100% - 32px);
+    background:#fff;color:#111;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+  dialog.info::backdrop{background:rgba(0,0,0,.45)}
+  .ih{padding:15px 18px 0;font-size:15px;font-weight:650}
+  .ib{padding:8px 18px 14px;font-size:12.5px;color:#444;line-height:1.55}
+  .ib dt{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#9aa0a6;font-weight:600;margin-top:12px}
+  .ib dd{margin:3px 0 0}
+  .ib code{display:block;background:#f6f8fa;border:1px solid #e8eaed;border-radius:6px;padding:7px 9px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#1a1a1a;white-space:pre-wrap;
+    margin-top:4px;line-height:1.45}
+  .if{padding:0 18px 15px;text-align:right}
+  .ibtn{font:inherit;font-size:12px;padding:6px 15px;border-radius:99px;background:#1a73e8;color:#fff;border:0;cursor:pointer}
+
   @media(max-width:820px){
     .header{height:auto;padding:8px 12px;flex-direction:column;align-items:flex-start;gap:6px}
     #map{top:96px}
@@ -169,9 +200,16 @@ ${V('MarkerCluster.Default.css')}
 
 <div class="note" id="note"></div>
 
+<dialog class="info" id="dlg">
+  <div class="ih" id="dlgh"></div>
+  <div class="ib" id="dlgb"></div>
+  <div class="if"><button class="ibtn" id="dlgx">Close</button></div>
+</dialog>
+
 <script>${V('leaflet.min.js')}</script>
 <script>${V('leaflet.markercluster.min.js')}</script>
 <script>var DATA = ${JSON.stringify(payload)};</script>
+<script>var TILES = ${JSON.stringify(TILES)};</script>
 <script>
 (function(){
   var LAYERS = ${JSON.stringify(LAYERS)};
@@ -200,12 +238,22 @@ ${V('MarkerCluster.Default.css')}
   var map = L.map('map',{zoomControl:true,preferCanvas:true}).setView([25.15,55.28],11);
   L.control.scale({imperial:false}).addTo(map);
 
+  // Embedded first, network second. A blocked or absent network changes
+  // nothing inside the covered area.
+  var EmbeddedTiles = L.TileLayer.extend({
+    getTileUrl: function(c){
+      var k = c.z + '_' + c.x + '_' + c.y;
+      if (TILES[k]) return 'data:image/png;base64,' + TILES[k];
+      return L.TileLayer.prototype.getTileUrl.call(this, c);
+    }
+  });
   var tileLayer=null,curBase=null;
   function setBase(k){
     if(curBase===k) return;
     if(tileLayer) map.removeLayer(tileLayer);
     var b=BASEMAPS.filter(function(x){return x.k===k;})[0];
-    tileLayer=L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr}).addTo(map);
+    tileLayer=(b.k==='streets'?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
+                              :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
     tileLayer.bringToBack(); curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
@@ -264,6 +312,8 @@ ${V('MarkerCluster.Default.css')}
     var dis = c.hs ? '<div class="pnote" style="border-top-color:#f9ab00;color:#8a6d00">HubSpot still has this as <b>'+esc(STAGE[c.hs])+'</b>. The admin app is authoritative for won and lost, so the map follows it.</div>' : '';
     var loc = c.h==='geocoded'
       ? 'Street address geocoded from OpenStreetMap.'
+      : c.h==='named'
+      ? 'No address on the CRM &mdash; located by matching the business name to an OpenStreetMap record.'
       : 'No street address on the CRM &mdash; placed on the '+esc(c.a||'')+' area centroid, not an exact location.';
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
@@ -340,25 +390,75 @@ ${V('MarkerCluster.Default.css')}
       el.onclick=function(){ catOn[el.getAttribute('data-k')]=!catOn[el.getAttribute('data-k')]; renderCats(); redraw(); };});
   }
 
+  var INFO={
+    closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
+      '<dt>Formula</dt><dd><code>admin.financingStatus = REFINANCING\\n  OR HubSpot stage = Money Disbursed\\n  OR HubSpot lifecyclestage = customer</code></dd>'+
+      '<dt>Why this way</dt><dd>You said the admin app is more reliable than HubSpot for won and lost, so it overrides the deal stage. '+fmt(s.adminOverrode||0)+' companies were reclassified by it.</dd>'+
+      '<dt>What would make it wrong</dt><dd>REFINANCING marks a client who is refinancing, so it catches those funded at least once. The admin app has no DISBURSED status. Read this as a floor, not a total.</dd></dl>';}},
+
+    in_process:{h:'In process',b:function(){return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses with a live deal, not yet funded and not yet lost.</dd>'+
+      '<dt>Formula</dt><dd><code>deal (pipeline, stage id) maps to "open"\\n  in lookups/stage-map.json\\n  AND the company has no won or lost deal</code></dd>'+
+      '<dt>Why this way</dt><dd>Stage names in this portal do not match their ids. The id <b>closedwon</b> is labelled "Offer Sent" and <b>closedlost</b> is labelled "Signed". Every pipeline and stage id pair is mapped by hand rather than trusted.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Four stage labels exist under three or four different ids each. Grouping by label instead of id would silently merge them.</dd></dl>';}},
+
+    closed_lost:{h:'Closed lost',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses lost by sales, rejected by Risk, or closed in the admin app.</dd>'+
+      '<dt>Formula</dt><dd><code>admin.status IN (LOST_IN_ACQUISITION,\\n    POST_ANALYSIS_REJECTION, AUTO_REJECTION, CLOSED)\\n  OR deal stage maps to "lost_sales" or "lost_risk"</code></dd>'+
+      '<dt>Why this way</dt><dd>Same rule as won: the admin app wins. '+fmt(s.adminLost||0)+' of these come from the admin app rather than from HubSpot.</dd>'+
+      '<dt>What would make it wrong</dt><dd><b>Three different loss taxonomies sit in this one layer.</b> A merchant who went quiet, one rejected by Risk, and one lost before any analysis are not the same thing. Amber pins are Risk rejections; red are the rest.</dd></dl>';}},
+
+    crm:{h:'On the CRM',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Every company record pulled for this map.</dd>'+
+      '<dt>Formula</dt><dd><code>SELECT ... FROM COMPANY\\nWHERE city LIKE &#39;%dubai%&#39;\\n   OR associations.DEAL IS NOT NULL</code></dd>'+
+      '<dt>Why this way</dt><dd>City is the only location field HubSpot fills reliably. The deal clause adds every company that has a deal anywhere, so no won or lost business is missed because its city is blank.</dd>'+
+      '<dt>What would make it wrong</dt><dd>A company trading in Dubai but registered elsewhere, with no deal, is not here. '+fmt(s.byCategory.blank||0)+' of these have no industry at all.</dd></dl>';}},
+
+    pins:{h:'Why only some are pinned',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>The number</dt><dd><b>'+fmt(s.byLocation.geocoded+(s.byLocation.named||0)+s.byLocation.community)+'</b> of '+fmt(s.total)+' companies can be placed. '+fmt(s.byLocation.unlocated)+' cannot.</dd>'+
+      '<dt>How a pin is placed</dt><dd><code>1 street address -> geocoded    '+fmt(s.byLocation.geocoded)+'\\n2 business name  -> OSM match    '+fmt(s.byLocation.named||0)+'\\n3 address text   -> area centre  '+fmt(s.byLocation.community)+'\\n4 otherwise      -> not drawn    '+fmt(s.byLocation.unlocated)+'</code></dd>'+
+      '<dt>Why so many cannot be placed</dt><dd>Only about a quarter of companies hold a street address, and 41% of those resolve in OpenStreetMap. '+fmt(s.genericAddressesRefused||0)+' more say only "Dubai" or "UAE", which would geocode to the city centre and stack unrelated businesses on one point, so they are refused.</dd>'+
+      '<dt>Routes already tried</dt><dd>Contacts were checked as a fallback: <b>only 53 contacts in the whole CRM carry a street address</b>, so they can confirm a company is in the UAE but cannot place one. Paid lookups such as Google Places are excluded by the no-credits rule.</dd>'+
+      '<dt>What would make it wrong</dt><dd>An area-centroid pin marks the AREA, not the building. No coordinate here is guessed.</dd></dl>';}}
+  };
+
+  function openInfo(k){
+    var i=INFO[k]; if(!i) return;
+    document.getElementById('dlgh').textContent=i.h;
+    document.getElementById('dlgb').innerHTML=i.b();
+    document.getElementById('dlg').showModal();
+  }
+  document.getElementById('dlgx').onclick=function(){ document.getElementById('dlg').close(); };
+
   function renderStats(){
     var s=DATA.stats.crm;
     var rows=[
-      {n:fmt(s.byLayer.closed_won||0),l:'Closed won',c:'#0b8043',a:aed(s.wonAmount)},
-      {n:fmt(s.byLayer.in_process||0),l:'In process',c:'#1a73e8',a:aed(s.pipelineAmount)},
-      {n:fmt(s.byLayer.closed_lost||0),l:'Closed lost',c:'#d93025',a:aed(s.lostAmount)},
-      {n:fmt(s.total),l:'On the CRM',c:'#7d8894',a:null}
+      {k:'closed_won',n:fmt(s.byLayer.closed_won||0),l:'Closed won',c:'#0b8043',a:aed(s.wonAmount)},
+      {k:'in_process',n:fmt(s.byLayer.in_process||0),l:'In process',c:'#f5a623',a:aed(s.pipelineAmount)},
+      {k:'closed_lost',n:fmt(s.byLayer.closed_lost||0),l:'Closed lost',c:'#d93025',a:aed(s.lostAmount)},
+      {k:'crm',n:fmt(s.total),l:'On the CRM',c:'#7d8894',a:null}
     ];
     document.getElementById('stats').innerHTML=rows.map(function(r){
       return '<div class="stat"><div class="num" style="color:'+r.c+'">'+r.n+'</div>'+
-        '<div class="lbl">'+r.l+'</div>'+(r.a?'<div class="amt">'+r.a+'</div>':'')+'</div>';}).join('');
+        '<div class="lbl"><span>'+r.l+'</span><button class="i" data-i="'+r.k+'" title="How this is worked out">i</button></div>'+
+        (r.a?'<div class="amt">'+r.a+'</div>':'')+'</div>';}).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.stat .i'),function(el){
+      el.onclick=function(){ openInfo(el.getAttribute('data-i')); };});
   }
 
   function redraw(){
     var shown=drawCRM(); drawUniverse(); renderStats();
     var s=DATA.stats.crm, pin=s.byLocation.geocoded+s.byLocation.community;
     document.getElementById('locnote').innerHTML=
-      '<b>'+fmt(shown)+'</b> of <b>'+fmt(pin)+'</b> locatable companies drawn. '+
-      fmt(s.byLocation.unlocated)+' hold no usable address and are counted but not drawn.';
+      'Drawing <b>'+fmt(shown)+'</b> pins from the layers you have switched on. '+
+      '<b>'+fmt(pin)+'</b> companies have a location in total &mdash; '+
+      fmt(s.byLocation.geocoded)+' from a geocoded street address, '+
+      fmt(s.byLocation.named||0)+' matched by name to an OpenStreetMap business, '+
+      fmt(s.byLocation.community)+' on an area centroid. '+
+      fmt(s.byLocation.unlocated)+' could not be placed at all. '+
+      '<button class="i" id="ipins" title="Why">i</button>';
+    var ip=document.getElementById('ipins'); if(ip) ip.onclick=function(){ openInfo('pins'); };
   }
 
   // search
@@ -409,11 +509,10 @@ ${V('MarkerCluster.Default.css')}
     var lats=DATA.companies.map(function(c){return c.y;});
     var lngs=DATA.companies.map(function(c){return c.x;});
     if(!lats.length) return;
-    // 4th to 96th percentile: covers the bulk of the book, ignores the far
-    // outliers that would otherwise zoom the whole city out of view.
-    var b=L.latLngBounds([pct(lats,0.04),pct(lngs,0.04)],[pct(lats,0.96),pct(lngs,0.96)]);
-    map.fitBounds(b,{padding:[30,30]});
-    if(map.getZoom()<11) map.setZoom(11);
+    // The MEDIAN pin, at a fixed city zoom. fitBounds was tried and abandoned:
+    // it reads the container size at call time and got it wrong twice, once
+    // landing on the whole world and once on a single street.
+    map.setView([pct(lats,0.5), pct(lngs,0.5)], 11);
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
