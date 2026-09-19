@@ -188,6 +188,22 @@ async function main() {
 
   const seen = new Set();
   let targets = [];
+
+  // Priority -1: the 8,040 companies that carry NO location field at all.
+  // These are not in `allocated` because no sweep could reach them - nothing on
+  // the record said where they were. 7,448 of them do have a domain, which is
+  // the only route left, and a hit here turns a company that is nowhere on the
+  // map into one that is. So they go first, ahead of everything else.
+  try {
+    for (const c of JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/unlocated-recovered.json'), 'utf8'))) {
+      if (!c.domain) continue;
+      const h = hostOf(c.domain);
+      if (!h || done[h] !== undefined || seen.has(h)) continue;
+      seen.add(h);
+      targets.push({ host: h, id: c.id, p: -1 });
+    }
+  } catch (e) { /* not built yet */ }
+
   for (const c of allocated) {
     if (!needsHelp(c)) continue;
     const w = web.get(String(c.id));
@@ -208,7 +224,10 @@ async function main() {
   console.log('  priority 2 (emirate-level upgrade)  : ' + (byP[2] || 0));
   console.log('');
 
-  const CONC = 6;                                       // across DIFFERENT hosts
+  // 16 concurrent, across DIFFERENT hosts. The per-host courtesy delay and the
+  // one-request-at-a-time-per-host rule are untouched, so no single server sees
+  // more load - this only widens how many distinct servers are in flight.
+  const CONC = 16;
   let i = 0, ok = 0, none = 0;
   async function worker() {
     while (i < targets.length) {
