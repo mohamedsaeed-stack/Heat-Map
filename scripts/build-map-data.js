@@ -120,20 +120,41 @@ const tally = {
   total: companies.length, byLayer: {}, byCategory: {},
   byLocation: { geocoded: 0, community: 0, unlocated: 0 },
   genericAddressesRefused: 0, locatedByLayer: {}, byCommunity: {},
-  adminMatched: 0, adminFunded: 0,
+  adminMatched: 0, adminFunded: 0, adminOverrode: 0, adminLost: 0,
   wonAmount: 0, pipelineAmount: 0, lostAmount: 0,
 };
 
 for (const c of companies) {
   const info = companyDeal(c);
   const am = adminMatch[c.hs_object_id];
-  // The admin app is the source of truth for who is a real, funded client. A
-  // company it marks REFINANCING has been funded at least once, whatever
-  // HubSpot's deal stage says.
-  if (am && am.fin === 'REFINANCING' && info.layer !== 'closed_won') { info.layer = 'closed_won'; info.stage = 'Funded (admin app)'; }
+  // THE ADMIN APP OUTRANKS HUBSPOT ON WON AND LOST - the user's instruction,
+  // 19 Sep 2026, and it matches the brief: the admin app is primary for anything
+  // involving money or a real client. HubSpot keeps pipeline.
+  //   financingStatus REFINANCING  -> funded at least once, so closed won
+  //   status LOST_IN_ACQUISITION   -> lost before any analysis
+  //   status POST_ANALYSIS_REJECTION / AUTO_REJECTION -> rejected, a Risk loss
+  //   status CLOSED                -> the account is closed
+  // HubSpot's deal stage is kept as the label so the disagreement stays visible.
+  if (am) {
+    const ADMIN_LOST = { LOST_IN_ACQUISITION: 'lost_in_acquisition', POST_ANALYSIS_REJECTION: 'risk_rejected', AUTO_REJECTION: 'auto_rejected', CLOSED: 'account_closed' };
+    if (am.fin === 'REFINANCING') {
+      if (info.layer !== 'closed_won') info.hubspotSaid = info.layer;
+      info.layer = 'closed_won';
+      info.stage = info.stage || 'Funded';
+      info.source = 'admin';
+    } else if (ADMIN_LOST[am.status]) {
+      if (info.layer !== 'closed_lost') info.hubspotSaid = info.layer;
+      info.layer = 'closed_lost';
+      info.lostType = ADMIN_LOST[am.status];
+      info.reason = info.reason || am.status.replace(/_/g, ' ').toLowerCase();
+      info.source = 'admin';
+    }
+  }
   const cat = categoryOf(c);
   if (am) tally.adminMatched++;
   if (am && am.fin === 'REFINANCING') tally.adminFunded++;
+  if (info.source === 'admin') tally.adminOverrode++;
+  if (info.source === 'admin' && info.layer === 'closed_lost') tally.adminLost++;
   tally.byLayer[info.layer] = (tally.byLayer[info.layer] || 0) + 1;
   tally.byCategory[cat] = (tally.byCategory[cat] || 0) + 1;
   if (info.amount) {
@@ -175,6 +196,7 @@ for (const c of companies) {
     t: info.lostType, r: info.reason, cd: info.closedate,
     d: info.dealCount, lc: info.viaLifecycle ? 1 : 0,
     ad: am ? 1 : 0, af: am && am.fin === 'REFINANCING' ? 1 : 0,
+    src: info.source || 'hubspot', hs: info.hubspotSaid || null,
     ai: am && am.industry && am.industry.length ? am.industry[0] : null,
   });
 }

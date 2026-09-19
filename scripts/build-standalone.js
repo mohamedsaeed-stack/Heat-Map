@@ -250,14 +250,15 @@ ${V('MarkerCluster.Default.css')}
     if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
     if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
     if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
+    var dis = c.hs ? '<div class="pnote" style="border-top-color:#f9ab00;color:#8a6d00">HubSpot still has this as <b>'+esc(STAGE[c.hs])+'</b>. The admin app is authoritative for won and lost, so the map follows it.</div>' : '';
     var loc = c.h==='geocoded'
       ? 'Street address geocoded from OpenStreetMap.'
       : 'No street address on the CRM &mdash; placed on the '+esc(c.a||'')+' area centroid, not an exact location.';
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
-      (c.af?' <span class="pb" style="background:#0b8043">Funded &middot; admin app</span>':'')+
-      (kv?'<dl class="kv">'+kv+'</dl>':'')+
+      (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
+      (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
       '<div class="pid">HubSpot company '+esc(c.i)+'</div></div>';
   }
@@ -375,6 +376,8 @@ ${V('MarkerCluster.Default.css')}
     'owner and close date. '+fmt(s.byLocation.geocoded)+' sit at a geocoded street address; '+
     fmt(s.byLocation.community)+' on their area centroid because the CRM has no street address for them.';
 
+  var disN=DATA.companies.filter(function(c){return c.hs;}).length;
+  if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';
   renderLegend(); renderCats(); redraw();
 
   // The container has no size until layout settles. Fitting before that lands on
