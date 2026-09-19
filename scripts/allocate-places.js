@@ -42,8 +42,24 @@ const AREA_INDEX = [];   // {area, emirate, needle}
 for (const [em, def] of EMIRATES) {
   for (const a of def.areas || []) AREA_INDEX.push({ area: a, emirate: em, needle: norm(a) });
 }
-// Longest area names first so "Al Ain City" wins over "Al Ain".
+// The previous session built and geocoded 91 Dubai communities with aliases
+// ("jlt" -> Jumeirah Lakes Towers). Reusing them costs nothing and is the
+// difference between a pin that says "somewhere in Dubai" and one that says
+// "Al Quoz". Their centroids are already on disk in communities-geocoded.json.
+try {
+  const dc = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/dubai-communities.json'), 'utf8'));
+  for (const c of dc.communities || []) {
+    for (const al of (c.aliases && c.aliases.length ? c.aliases : [c.name])) {
+      AREA_INDEX.push({ area: c.name, emirate: 'Dubai', needle: norm(al) });
+    }
+  }
+} catch (e) { /* optional */ }
+
+// Longest area names first so "Al Ain City" wins over "Al Ain", and
+// "Jumeirah Lakes Towers" wins over "Jumeirah".
 AREA_INDEX.sort((a, b) => b.needle.length - a.needle.length);
+// A needle under 4 characters matches inside unrelated words; drop it.
+const AREA_INDEX_SAFE = AREA_INDEX.filter(a => a.needle.length >= 4);
 
 const UAE_TOKENS = PLACES.uae_tokens.map(norm);
 
@@ -61,10 +77,13 @@ function emirateFrom(text, allowShort) {
   return null;                       // 0 = no match, >1 = ambiguous, both refused
 }
 
-function areaFrom(text) {
+function areaFrom(text, restrictTo) {
   const t = norm(text);
   if (!t) return null;
-  for (const a of AREA_INDEX) if (t.includes(a.needle)) return a;
+  for (const a of AREA_INDEX_SAFE) {
+    if (restrictTo && a.emirate !== restrictTo) continue;
+    if (t.includes(a.needle)) return a;
+  }
   return null;
 }
 
@@ -98,10 +117,16 @@ function allocate(c, contactCities) {
       if (em) { out.emirate = em; out.route = 'address'; }
     }
   }
-  // An area can still be recovered from the address even once the emirate is known.
-  if (out.emirate && !out.area && c.address) {
-    const ar = areaFrom(c.address);
-    if (ar && ar.emirate === out.emirate) { out.area = ar.area; out.route += ' + address area'; }
+  // Once the emirate is settled, an area can still be recovered from any free
+  // text on the record, restricted to that emirate so a Sharjah area is never
+  // attached to a Dubai company. Names carry areas constantly here -
+  // "Al Quoz Auto Spare Parts" names its own neighbourhood.
+  if (out.emirate && !out.area) {
+    for (const [field, label] of [['address', 'address'], ['zip', 'zip'], ['name', 'name']]) {
+      if (!c[field]) continue;
+      const ar = areaFrom(c[field], out.emirate);
+      if (ar) { out.area = ar.area; out.route += ' + ' + label + ' area'; break; }
+    }
   }
 
   // 4: the company name - refused when its own country says somewhere else.
