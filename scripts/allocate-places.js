@@ -55,6 +55,15 @@ try {
   }
 } catch (e) { /* optional */ }
 
+// Abbreviations, landmarks, major roads and the misspellings that actually turn
+// up in this CRM - "DWC", "DAFZA", "JLT", "Diera" for Deira, "Quawain" for Umm
+// Al Quwain. Every one of these was read off an address that FAILED to geocode,
+// so the list is evidence rather than guesswork, and each maps to an area that
+// already has a real centroid.
+for (const [needle, [em, area]] of Object.entries(PLACES.landmarks || {})) {
+  AREA_INDEX.push({ area, emirate: em, needle: norm(needle) });
+}
+
 // Longest area names first so "Al Ain City" wins over "Al Ain", and
 // "Jumeirah Lakes Towers" wins over "Jumeirah".
 AREA_INDEX.sort((a, b) => b.needle.length - a.needle.length);
@@ -93,7 +102,7 @@ function isUAE(text) {
   return UAE_TOKENS.some(x => t.includes(x));
 }
 
-function allocate(c, contactCities) {
+function allocate(c, contactCities, webHit) {
   const out = { emirate: null, area: null, precision: null, route: null, uae: false };
 
   if (isUAE(c.country) || isUAE(c.state) || isUAE(c.city)) out.uae = true;
@@ -134,6 +143,27 @@ function allocate(c, contactCities) {
   if (!out.emirate && c.name && !countrySaysElsewhere) {
     const em = emirateFrom(c.name, false);
     if (em) { out.emirate = em; out.route = 'name'; }
+  }
+
+  // 4b: the address the company publishes on ITS OWN WEBSITE.
+  //
+  // Ranked above contacts because it is the company's own public statement
+  // about where it is, whereas a contact is a person who may sit anywhere.
+  // Ranked below the company's own CRM fields, which someone at FlapKap
+  // entered deliberately.
+  //
+  // It is also the only route that regularly yields an AREA for a company whose
+  // CRM record says nothing but "Dubai", so it is applied for the area even
+  // when the emirate is already settled - as long as the two agree.
+  if (webHit && webHit.emirate) {
+    if (!out.emirate) {
+      out.emirate = webHit.emirate;
+      out.route = 'website';
+      if (webHit.area) out.area = webHit.area;
+    } else if (!out.area && webHit.area && webHit.emirate === out.emirate) {
+      out.area = webHit.area;
+      out.route += ' + website area';
+    }
   }
 
   // 5: contacts, only if the company itself gave nothing.
@@ -214,9 +244,21 @@ function main() {
   const routes = {};
   const out = [];
 
+  // Addresses read off the companies' own websites, keyed by hostname.
+  let webLoc = {};
+  try { webLoc = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/website-locations.json'), 'utf8')); } catch (err) {}
+  const hostOf = w => {
+    let u = String(w || '').trim();
+    if (!u) return null;
+    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+    try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return null; }
+  };
+
   for (const c of byId.values()) {
     const e = evidence.get(String(c.hs_object_id));
-    const a = allocate(c, e ? Object.keys(e.contact_cities || {}) : null);
+    const h = hostOf(c.website || c.domain);
+    const wh = h && webLoc[h] && !webLoc[h].none ? webLoc[h] : null;
+    const a = allocate(c, e ? Object.keys(e.contact_cities || {}) : null, wh);
     const em = a.emirate || (a.uae ? 'UAE (emirate unknown)' : 'not UAE');
     tally[em] = (tally[em] || 0) + 1;
     precision[a.precision || 'none'] = (precision[a.precision || 'none'] || 0) + 1;
