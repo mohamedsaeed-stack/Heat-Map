@@ -159,6 +159,7 @@ ${V('MarkerCluster.Default.css')}
   <h4>Display</h4>
   <label class="row"><input type="checkbox" id="labels"> Show business names</label>
   <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
+  <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
 
   <h4>Categories</h4>
   <div class="cats" id="cats"></div>
@@ -196,7 +197,7 @@ ${V('MarkerCluster.Default.css')}
     return 'AED ' + fmt(n);
   }
 
-  var map = L.map('map',{zoomControl:true,preferCanvas:false}).setView([25.15,55.28],11);
+  var map = L.map('map',{zoomControl:true,preferCanvas:true}).setView([25.15,55.28],11);
   L.control.scale({imperial:false}).addTo(map);
 
   var tileLayer=null,curBase=null;
@@ -228,10 +229,20 @@ ${V('MarkerCluster.Default.css')}
         'font-size:'+(n<100?12:11)+'px;font-weight:600">'+n+'</div>'});
     };
   }
-  var crmGroup=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
+  // EVERY PIN IS DRAWN BY DEFAULT. Clustering was the reason this did not look
+  // like the Abu Dhabi demo: it replaces the coloured dots with big numbered
+  // bubbles until you zoom right in, which reads as a chart, not a map. Canvas
+  // rendering handles 3,000+ circle markers without it. Clustering stays as an
+  // opt-in for the 18,000-point universe layer, where raw dots do become a mess.
+  var crmPlain=L.layerGroup();
+  var crmCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
     disableClusteringAtZoom:16,iconCreateFunction:clusterIcon('rgba(26,115,232,.86)')});
-  var uniGroup=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:60,showCoverageOnHover:false,
+  var uniPlain=L.layerGroup();
+  var uniCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:60,showCoverageOnHover:false,
     disableClusteringAtZoom:17,iconCreateFunction:clusterIcon('rgba(0,150,148,.80)')});
+  var clusterOn=false;
+  function crmGroupNow(){ return clusterOn?crmCluster:crmPlain; }
+  function uniGroupNow(){ return clusterOn?uniCluster:uniPlain; }
 
   var STAGE={closed_won:'Closed won',in_process:'In process',closed_lost:'Closed lost',crm:'On the CRM'};
   var markerIndex=[];
@@ -264,7 +275,9 @@ ${V('MarkerCluster.Default.css')}
   }
 
   function drawCRM(){
-    crmGroup.clearLayers(); markerIndex=[];
+    crmPlain.clearLayers(); crmCluster.clearLayers(); markerIndex=[];
+    var target=crmGroupNow(), other=clusterOn?crmPlain:crmCluster;
+    if(map.hasLayer(other)) map.removeLayer(other);
     var shown=0;
     DATA.companies.forEach(function(c){
       if(!on[c.l]||!catOn[c.c]) return;
@@ -276,16 +289,18 @@ ${V('MarkerCluster.Default.css')}
       m.bindPopup(popupFor(c,color));
       if(showLabels) m.bindTooltip(c.n,{permanent:true,direction:'right',offset:[6,0],className:'lbl'});
       else m.bindTooltip(c.n,{direction:'top',className:'lbl'});
-      crmGroup.addLayer(m);
+      target.addLayer(m);
       markerIndex.push({c:c,m:m});
     });
-    if(!map.hasLayer(crmGroup)) map.addLayer(crmGroup);
+    if(!map.hasLayer(target)) map.addLayer(target);
     return shown;
   }
 
   function drawUniverse(){
-    uniGroup.clearLayers();
-    if(!on.universe){ if(map.hasLayer(uniGroup)) map.removeLayer(uniGroup); return; }
+    uniPlain.clearLayers(); uniCluster.clearLayers();
+    if(!on.universe){ if(map.hasLayer(uniPlain)) map.removeLayer(uniPlain); if(map.hasLayer(uniCluster)) map.removeLayer(uniCluster); return; }
+    var utarget=uniGroupNow(), uother=clusterOn?uniPlain:uniCluster;
+    if(map.hasLayer(uother)) map.removeLayer(uother);
     DATA.universe.forEach(function(p){
       if(!catOn[p.c]) return;
       var m=L.circleMarker([p.y,p.x],{radius:3.5,color:'#fff',weight:1,opacity:.9,
@@ -295,9 +310,9 @@ ${V('MarkerCluster.Default.css')}
         '<div class="pnote">Market universe, from OpenStreetMap. Not a CRM record.</div>');
       if(showLabels) m.bindTooltip(p.n,{permanent:true,direction:'right',offset:[5,0],className:'lbl'});
       else m.bindTooltip(p.n,{direction:'top',className:'lbl'});
-      uniGroup.addLayer(m);
+      utarget.addLayer(m);
     });
-    if(!map.hasLayer(uniGroup)) map.addLayer(uniGroup);
+    if(!map.hasLayer(utarget)) map.addLayer(utarget);
   }
 
   function renderLegend(){
@@ -357,12 +372,14 @@ ${V('MarkerCluster.Default.css')}
       el.onclick=function(){
         var h=hits[Number(el.getAttribute('data-i'))];
         map.flyTo([h.c.y,h.c.x],17,{duration:.7});
-        crmGroup.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
+        if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
+        else h.m.openPopup();
       };});
   };
 
   document.getElementById('labels').onchange=function(e){ showLabels=e.target.checked; redraw(); };
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
+  document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
 
   var s=DATA.stats.crm;
   document.getElementById('sub').textContent =
