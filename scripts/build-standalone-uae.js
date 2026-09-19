@@ -29,7 +29,7 @@ const LAYERS = [
 const CAT_COLOR = {
   hospitality_fnb: '#e8590c', medical_healthcare: '#1098ad', marketing_advertising: '#c2255c',
   auto_automotive: '#2f9e44', contracting_fitout: '#6741d9', retail: '#b58900',
-  manufacturing_trading: '#ae3ec9', other: '#7a8699', blank: '#9aa4b2',
+  manufacturing_trading: '#ae3ec9', it_software: '#0b7285', other: '#7a8699', blank: '#9aa4b2',
 };
 
 // Every OpenStreetMap tile for the Dubai core, base64 in the file itself.

@@ -10,7 +10,8 @@
     "manufacturing_trading": "Manufacturing & general trading",
     "retail": "Retail",
     "other": "Other",
-    "blank": "Blank"
+    "blank": "Blank",
+    "it_software": "IT & software"
   },
   "map": {
     "Unassigned": "blank",
@@ -81,8 +82,8 @@
     "SHIPBUILDING": "manufacturing_trading",
     "RAILROAD_MANUFACTURE": "manufacturing_trading",
     "ARTS_AND_CRAFTS": "manufacturing_trading",
-    "INFORMATION_TECHNOLOGY_AND_SERVICES": "other",
-    "COMPUTER_SOFTWARE": "other",
+    "INFORMATION_TECHNOLOGY_AND_SERVICES": "it_software",
+    "COMPUTER_SOFTWARE": "it_software",
     "MANAGEMENT_CONSULTING": "other",
     "CONSUMER_SERVICES": "other",
     "REAL_ESTATE": "other",
@@ -93,10 +94,10 @@
     "PROFESSIONAL_TRAINING_COACHING": "other",
     "CAPITAL_MARKETS": "other",
     "EDUCATION_MANAGEMENT": "other",
-    "TELECOMMUNICATIONS": "other",
+    "TELECOMMUNICATIONS": "it_software",
     "MARITIME": "other",
     "ACCOUNTING": "other",
-    "INTERNET": "other",
+    "INTERNET": "it_software",
     "RENEWABLES_ENVIRONMENT": "other",
     "INVESTMENT_MANAGEMENT": "other",
     "HIGHER_EDUCATION": "other",
@@ -109,11 +110,11 @@
     "ENVIRONMENTAL_SERVICES": "other",
     "SPORTS": "other",
     "E_LEARNING": "other",
-    "COMPUTER_NETWORK_SECURITY": "other",
+    "COMPUTER_NETWORK_SECURITY": "it_software",
     "STAFFING_AND_RECRUITING": "other",
-    "COMPUTER_HARDWARE": "other",
-    "COMPUTER_NETWORKING": "other",
-    "COMPUTER_GAMES": "other",
+    "COMPUTER_HARDWARE": "it_software",
+    "COMPUTER_NETWORKING": "it_software",
+    "COMPUTER_GAMES": "it_software",
     "LEGAL_SERVICES": "other",
     "LAW_PRACTICE": "other",
     "PUBLISHING": "other",
@@ -235,7 +236,7 @@
       "why": "Print shops are light manufacturing; print-for-marketing fits advertising."
     }
   ],
-  "_extended": "2026-09-19 (heatmap project): added a `retail` bucket. RETAIL moved out of manufacturing_trading. Nothing else was moved - see _retail_candidates.",
+  "_extended": "2026-09-19 (heatmap project): added a `retail` bucket. RETAIL moved out of manufacturing_trading. Nothing else was moved - see _retail_candidates.[object Object]",
   "_source": "Copied from flapkap-callable-leads/lookups/industry-map.json, then extended.",
   "_retail_candidates": {
     "_comment": "Values that arguably belong in `retail` but were LEFT in manufacturing_trading on 2026-09-19 so that the counts quoted in PLAN.md stay comparable. Moving any of them changes both the retail and the manufacturing_trading totals. Decide before W2 compares against the Google Maps universe.",

@@ -49,7 +49,13 @@ const byCategory = {};
 for (const p of pins) {
   const old = prevById.get(String(p.id));
 
-  const cat = old && old.c ? old.c : categoryOf(p.industry);
+  // The record's own industry value wins over the Dubai build's stored bucket,
+  // so re-bucketing (IT & software became category 8 on 19 Sep) takes effect
+  // everywhere instead of only on records pulled since. The stored bucket is
+  // the fallback for records that carry no industry.
+  const fromIndustry = p.industry ? categoryOf(p.industry) : null;
+  const cat = (fromIndustry && fromIndustry !== 'blank') ? fromIndustry
+            : (old && old.c ? old.c : 'blank');
   const layer = old && old.l ? old.l : 'crm';
 
   // Copy the Dubai build's record WHOLESALE rather than re-listing its fields.
@@ -64,7 +70,7 @@ for (const p of pins) {
 
   rec.i = String(p.id);
   if (p.name) rec.n = p.name;
-  if (!rec.c) rec.c = cat;
+  rec.c = cat;
   if (!rec.l) rec.l = 'crm';
   // Geography is always taken from the new allocation, which supersedes the
   // Dubai-only placement.
@@ -117,6 +123,11 @@ const out = {
   // it rather than replacing it.
   stats: Object.assign({}, prev.stats, {
     built: new Date().toISOString().slice(0, 10),
+    // Category 8. The page reads stats.categories for labels and
+    // stats.targetCategories for which chips to show, so both must learn it.
+    categories: Object.assign({}, prev.stats.categories, { it_software: 'IT & software' }),
+    targetCategories: (prev.stats.targetCategories || []).concat(
+      (prev.stats.targetCategories || []).includes('it_software') ? [] : ['it_software']),
     crm: Object.assign({}, prev.stats.crm, {
       total: companies.length,
       byLayer,
