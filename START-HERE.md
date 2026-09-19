@@ -24,16 +24,28 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies | **29,365** |
-| **Drawn** | **26,224** |
-| — exact geocoded street address | 1,705 and rising |
-| — scattered inside a known area | 723 |
-| — scattered inside a known emirate | 23,796 |
-| Counted, not drawn (UAE, no emirate) | 2,662 |
-| Not UAE | 479 |
+| **Drawn** | **27,384** |
+| — exact geocoded street address | 3,649 |
+| — scattered inside a known area | 7,543 |
+| — scattered inside a known emirate | 16,192 |
+| Counted, not drawn (UAE, no emirate) | 1,364 |
+| Not UAE | 617 |
 | OpenStreetMap universe | 18,018 — **Dubai only, by decision** |
 
-Dubai 21,096 · Abu Dhabi 2,916 · Sharjah 1,357 · Ajman 409 · Ras Al Khaimah 296 ·
-Fujairah 94 · Umm Al Quwain 56.
+Dubai 21,886 · Abu Dhabi 3,112 · Sharjah 1,436 · Ajman 442 · Ras Al Khaimah 323 ·
+Fujairah 103 · Umm Al Quwain 82.
+
+**Coverage against each source**, so the gap is not mistaken for completeness:
+
+| | | |
+|---|---:|---:|
+| HubSpot companies in the portal | 47,516 | |
+| …drawn on the map | 27,384 | 58% |
+| …of the 28,675 established as UAE | 27,384 | **95%** |
+| Admin-app clients | 8,534 | |
+| …matched to a CRM company | 718 | **8.4%** |
+| Funded clients | 372 | |
+| …drawn on the map | 46 | **12%** |
 
 Closed won 220 / AED 49.9M · in process 742 / AED 444.2M · closed lost 438 / AED 215.8M.
 
@@ -90,15 +102,34 @@ Closed won 220 / AED 49.9M · in process 742 / AED 444.2M · closed lost 438 / A
 
 ## What is still open
 
-1. **The outstanding book is BLOCKED, and not by tokens.** See `lookups/outstanding-book.md`.
-   Only **48 of 372** funded clients can be placed at all, and they sit in 4 areas with 1–2 clients
-   each — so an area-level book would expose individual balances. The blocker is the broken
-   name join, not effort. **Ask the user before spending anything here.**
-2. **2,662 companies are UAE with no emirate.** More contact slices would resolve some.
-3. **Small-emirate contact evidence is missing** (~150 companies). Cross-object pulls must be cut by
-   `createdate`, one city per query.
-4. **The universe layer outside Dubai** — parked by decision 2 above.
+**The map side is done.** Everything below is blocked on something other than effort.
+
+1. **THE ONE THING WORTH DOING NEXT: pull `legalAddresses` per admin client.** One call each for
+   372 funded clients. It gives funded clients a location of their OWN and stops the map depending
+   on the 8.4% name join — taking funded clients on the map from 46 toward 372, and unblocking the
+   outstanding book as a side effect. The same ~372 calls that would buy balances buy *locations*
+   instead, which is the thing actually missing.
+   **Blocked as of the end of this session: the FlapKap-Admin connector dropped out of the session
+   and is no longer listed.** It needs re-enabling before this can run.
+2. **The outstanding book is BLOCKED, and not by tokens.** See `lookups/outstanding-book.md`.
+   Only 48 of 372 funded clients can be placed at all, and they sit in 4 areas with 1–2 clients
+   each — so an area-level book would expose individual balances. Fixed by item 1, not by
+   more API calls. **Ask the user before spending anything here.**
+3. **1,364 companies are UAE with no emirate. This route is EXHAUSTED** — only 28 of them have a
+   contact carrying any city, and most of those are genuinely ambiguous (contacts in both Dubai and
+   Abu Dhabi). They really do say only "UAE". Do not spend more here.
+4. **The universe layer outside Dubai** — parked by decision 2 above. Pick this up now that the
+   CRM/admin side is finished.
 5. **`data/map-uae.json` is 7.0 MB** and committed. If that becomes awkward, gitignore it and rebuild.
+
+## Two more traps, both paid for late in the session
+
+- **Reading an artifact before republishing costs ~30K tokens.** It saves the full page to a file,
+  but still returns a long head — for this page that is inlined Leaflet. Read it ONCE per session;
+  after that, republish by the same `file_path` and it keeps the URL.
+- **Publishing is cheap; round trips are not.** A 13 MB publish costs ~400 tokens because the file
+  never passes through the conversation. The round trip carrying it costs ~300K at a large context.
+  Batch publishes to milestones — the file size is irrelevant, the number of stops is everything.
 
 ## How the user wants this done
 

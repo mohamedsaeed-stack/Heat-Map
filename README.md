@@ -35,15 +35,15 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Total | **29,365** |
-| **Drawn** | **26,224** |
-| — exact, geocoded street address | ~3,000 |
-| — scattered inside a known area | ~530 |
-| — scattered inside a known emirate | ~22,700 |
-| Counted, not drawn — UAE, no emirate | 2,662 |
-| Not UAE | 479 |
+| **Drawn** | **27,384** |
+| — exact, geocoded street address | 3,649 |
+| — scattered inside a known area | 7,543 |
+| — scattered inside a known emirate | 16,192 |
+| Counted, not drawn — UAE, no emirate | 1,364 |
+| Not UAE | 617 |
 
-Dubai 21,096 · Abu Dhabi 2,916 · Sharjah 1,357 · Ajman 409 · Ras Al Khaimah 296 ·
-Fujairah 94 · Umm Al Quwain 56.
+Dubai 21,886 · Abu Dhabi 3,112 · Sharjah 1,436 · Ajman 442 · Ras Al Khaimah 323 ·
+Fujairah 103 · Umm Al Quwain 82.
 
 Closed won 220 / AED 49.9M · in process 742 / AED 444.2M · closed lost 438 / AED 215.8M.
 
