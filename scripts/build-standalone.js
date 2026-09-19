@@ -21,10 +21,10 @@ const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'map.json'), 'utf
 const pinned = map.companies.filter(c => c.y != null);
 
 const LAYERS = [
-  { key: 'closed_won',  label: 'Closed won',  color: '#0b8043', r: 8 },
-  { key: 'in_process',  label: 'In process',  color: '#1a73e8', r: 7 },
-  { key: 'closed_lost', label: 'Closed lost', color: '#d93025', r: 6 },
-  { key: 'crm',         label: 'On the CRM',  color: '#7d8894', r: 4 },
+  { key: 'closed_won',  label: 'Closed won',  color: '#0b8043', r: 9 },
+  { key: 'in_process',  label: 'In process',  color: '#f5a623', r: 8 },
+  { key: 'closed_lost', label: 'Closed lost', color: '#d93025', r: 7 },
+  { key: 'crm',         label: 'On the CRM',  color: '#9aa0a6', r: 6 },
 ];
 const CAT_COLOR = {
   hospitality_fnb: '#e8590c', medical_healthcare: '#1098ad', marketing_advertising: '#c2255c',
@@ -216,7 +216,7 @@ ${V('MarkerCluster.Default.css')}
     el.onclick=function(){ setBase(el.getAttribute('data-k')); };});
   setBase('streets');
 
-  var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
+  var on={closed_won:true,in_process:true,closed_lost:true,crm:false,universe:false};
   var catOn={}; DATA.target.forEach(function(c){catOn[c]=true;}); catOn.other=true; catOn.blank=true;
   var showLabels=false, sizeByValue=false;
 
@@ -284,8 +284,10 @@ ${V('MarkerCluster.Default.css')}
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
       var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#f9ab00' : L0.color;
-      var m=L.circleMarker([c.y,c.x],{radius:radiusFor(c,L0.r),color:'#fff',weight:2,opacity:1,
-        fillColor:color,fillOpacity:.95});
+      var quiet = (c.l==='crm');
+      var m=L.circleMarker([c.y,c.x],{radius:radiusFor(c,quiet?4:L0.r),
+        color:'#fff',weight:quiet?1:2,opacity:quiet?.75:1,
+        fillColor:color,fillOpacity:quiet?.6:.95});
       m.bindPopup(popupFor(c,color));
       if(showLabels) m.bindTooltip(c.n,{permanent:true,direction:'right',offset:[6,0],className:'lbl'});
       else m.bindTooltip(c.n,{direction:'top',className:'lbl'});
@@ -389,7 +391,9 @@ ${V('MarkerCluster.Default.css')}
   document.getElementById('note').innerHTML =
     '<span class="x" onclick="this.parentNode.style.display=\\'none\\'">&times;</span>'+
     '<b>Every pin is a real record.</b> Green is a funded client, blue an open deal, red a loss, '+
-    'amber a Risk rejection, grey a CRM company with no deal. Click any pin for its deal value, stage, '+
+    'amber a Risk rejection. The grey <b>On the CRM</b> layer is '+fmt(s.byLayer.crm||0)+' companies and '+
+    'starts switched off because it covers the city - click it in the legend to bring it in. '+
+    'Click any pin for its deal value, stage, '+
     'owner and close date. '+fmt(s.byLocation.geocoded)+' sit at a geocoded street address; '+
     fmt(s.byLocation.community)+' on their area centroid because the CRM has no street address for them.';
 
@@ -399,10 +403,17 @@ ${V('MarkerCluster.Default.css')}
 
   // The container has no size until layout settles. Fitting before that lands on
   // the whole world, which is what happened the first time.
+  function pct(arr,p){ var a=arr.slice().sort(function(x,y){return x-y;}); return a[Math.floor((a.length-1)*p)]; }
   function fit(){
     map.invalidateSize();
-    var pts=DATA.companies.map(function(c){return [c.y,c.x];});
-    if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.03));
+    var lats=DATA.companies.map(function(c){return c.y;});
+    var lngs=DATA.companies.map(function(c){return c.x;});
+    if(!lats.length) return;
+    // 4th to 96th percentile: covers the bulk of the book, ignores the far
+    // outliers that would otherwise zoom the whole city out of view.
+    var b=L.latLngBounds([pct(lats,0.04),pct(lngs,0.04)],[pct(lats,0.96),pct(lngs,0.96)]);
+    map.fitBounds(b,{padding:[30,30]});
+    if(map.getZoom()<11) map.setZoom(11);
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
