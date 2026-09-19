@@ -131,7 +131,9 @@ function main() {
     [...areaPool].map(([k, v]) => k + '=' + v.length).join('  '));
   console.log('');
 
-  const stats = { exact: 0, area: 0, emirate: 0, notdrawn_uae: 0, notdrawn_none: 0, scatter_failed: 0 };
+  const stats = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn_none: 0, scatter_failed: 0 };
+  // Every populated anchor in the country, for pins we can only place at UAE level.
+  const allAnchors = [].concat(...[...areaPool.values()]);
   const perEmirate = {};
   const out = [];
 
@@ -183,12 +185,23 @@ function main() {
       }
     }
 
+    // 4. UAE, but no source names an emirate. The user's rule, 19 Sep 2026:
+    //    place it at the closest thing we DO know and flag it, rather than
+    //    leaving it off the map entirely. The closest thing we know here is
+    //    "the UAE", so the pin goes at a random populated point in the country
+    //    and is labelled UNTRACEABLE. It carries no information below national
+    //    level and the page says exactly that.
+    if (!placement && c.precision === 'uae') {
+      const a = allAnchors[Math.floor(rnd() * allAnchors.length)];
+      if (a) { const p = scatterInArea(rnd, a, 0.030); lat = p[0]; lon = p[1]; placement = 'uae'; }
+    }
+
     if (placement) {
       stats[placement]++;
-      perEmirate[c.emirate] = perEmirate[c.emirate] || { exact: 0, area: 0, emirate: 0 };
-      perEmirate[c.emirate][placement]++;
-    } else if (c.precision === 'uae') stats.notdrawn_uae++;
-    else stats.notdrawn_none++;
+      const key = c.emirate || 'UAE (untraceable)';
+      perEmirate[key] = perEmirate[key] || { exact: 0, area: 0, emirate: 0, uae: 0 };
+      perEmirate[key][placement]++;
+    } else stats.notdrawn_none++;
 
     out.push({
       id: c.id, name: c.name, industry: c.industry, stage: c.lifecyclestage,
@@ -206,9 +219,9 @@ function main() {
   console.log('  ' + pad('exact (geocoded address)', 30) + num(stats.exact));
   console.log('  ' + pad('area scatter', 30) + num(stats.area));
   console.log('  ' + pad('emirate scatter', 30) + num(stats.emirate));
-  console.log('  ' + pad('DRAWN TOTAL', 30) + num(stats.exact + stats.area + stats.emirate));
-  console.log('  ' + pad('not drawn - UAE, no emirate', 30) + num(stats.notdrawn_uae));
-  console.log('  ' + pad('not drawn - not UAE', 30) + num(stats.notdrawn_none));
+  console.log('  ' + pad('UAE only (untraceable)', 30) + num(stats.uae));
+  console.log('  ' + pad('DRAWN TOTAL', 30) + num(stats.exact + stats.area + stats.emirate + stats.uae));
+  console.log('  ' + pad('not drawn - not UAE at all', 30) + num(stats.notdrawn_none));
   if (stats.scatter_failed) console.log('  ' + pad('scatter FAILED', 30) + num(stats.scatter_failed));
   console.log('');
   console.log('PER EMIRATE            exact     area  emirate');

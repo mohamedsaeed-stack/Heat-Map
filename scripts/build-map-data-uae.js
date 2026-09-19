@@ -42,11 +42,22 @@ function categoryOf(industry) {
 // ---- companies ---------------------------------------------------------------
 const companies = [];
 const byEmirate = {};
-const byPlacement = { exact: 0, area: 0, emirate: 0, notdrawn: 0 };
+const byPlacement = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
 const byLayer = {};
 const byCategory = {};
 
+let excludedNotUAE = 0;
 for (const p of pins) {
+  // Companies that are not in the UAE at all are DROPPED, by the user's
+  // instruction of 19 Sep 2026: "the ones who are not totally in the UAE,
+  // there is no need to include them."
+  //
+  // After the UAE-level tier was added, every company with any UAE evidence at
+  // all gets drawn - so an undrawn record is now, by definition, one that said
+  // it is somewhere else. These are real foreign companies: New York, London,
+  // Cairo, Mumbai, San Jose. They are counted here and nowhere else.
+  if (!p.placement) { excludedNotUAE++; continue; }
+
   const old = prevById.get(String(p.id));
 
   // The record's own industry value wins over the Dubai build's stored bucket,
@@ -83,8 +94,8 @@ for (const p of pins) {
   for (const k of Object.keys(rec)) if (rec[k] === null || rec[k] === undefined) delete rec[k];
   companies.push(rec);
 
-  const em = p.emirate || (p.placement ? 'UAE' : 'unplaced');
-  byEmirate[em] = byEmirate[em] || { total: 0, exact: 0, area: 0, emirate: 0, notdrawn: 0 };
+  const em = p.emirate || (p.placement ? 'UAE (untraceable)' : 'not UAE');
+  byEmirate[em] = byEmirate[em] || { total: 0, exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
   byEmirate[em].total++;
   if (p.placement) { byEmirate[em][p.placement]++; byPlacement[p.placement]++; }
   else { byEmirate[em].notdrawn++; byPlacement.notdrawn++; }
@@ -135,7 +146,7 @@ const out = {
       byLocation: byPlacement,
     }),
     total: companies.length,
-    drawn: byPlacement.exact + byPlacement.area + byPlacement.emirate,
+    drawn: byPlacement.exact + byPlacement.area + byPlacement.emirate + byPlacement.uae,
     byPlacement,
     byEmirate,
     byLayer,
@@ -150,12 +161,13 @@ const out = {
 fs.writeFileSync(path.join(ROOT, 'data/map-uae.json'), JSON.stringify(out));
 
 const num = n => Number(n).toLocaleString().padStart(9);
-console.log('companies        ' + num(companies.length));
+console.log('companies on the map ' + num(companies.length));
 console.log('  drawn          ' + num(out.stats.drawn));
 console.log('    exact        ' + num(byPlacement.exact));
 console.log('    area         ' + num(byPlacement.area));
 console.log('    emirate      ' + num(byPlacement.emirate));
-console.log('  not drawn      ' + num(byPlacement.notdrawn));
+console.log('    UAE only     ' + num(byPlacement.uae));
+console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely)');
 console.log('universe (Dubai) ' + num(prev.universe.length));
 console.log('areas ranked     ' + num(Object.keys(areas).length));
 console.log('');

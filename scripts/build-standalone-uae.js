@@ -317,8 +317,8 @@ ${V('MarkerCluster.Default.css')}
   // is actually meaningful, which is the honest view of the map.
   var EMIRATES=Object.keys(DATA.stats.byEmirate||{}).filter(function(k){return k!=='unplaced';});
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
-  var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only']];
-  var precOn={exact:true,area:true,emirate:true};
+  var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE only — untraceable']];
+  var precOn={exact:true,area:true,emirate:true,uae:true};
   var showLabels=false, sizeByValue=false;
 
   function clusterIcon(bg){
@@ -369,6 +369,8 @@ ${V('MarkerCluster.Default.css')}
       ? 'Located by matching the business name to an OpenStreetMap record.'
       : c.h==='area'
       ? '<b>Approximate &mdash; area only.</b> No street address on record. This pin is placed at a random point inside <b>'+esc(c.a||'')+'</b>, which is where we know the business is. It is <i>not</i> the building.'
+      : c.h==='uae'
+      ? '<b>Untraceable.</b> We know this business is in the UAE, but no source we hold names an emirate — not its own record, not its contacts, not its website. This pin sits at a random populated point in the country and tells you <i>nothing</i> below national level.'
       : c.h==='emirate'
       ? '<b>Approximate &mdash; emirate only.</b> No street address and no area on record. This pin is placed at a random point inside <b>'+esc(c.e||'')+'</b>. All it tells you is the emirate.'
       : 'No usable location on record.';
@@ -409,7 +411,7 @@ ${V('MarkerCluster.Default.css')}
       // a white ring is a real geocoded address. Anything scattered inside an
       // area or an emirate is drawn weaker and ringless, so a full-looking map
       // can never be mistaken for a precise one.
-      var area = (c.h==='area'), vague = (c.h==='emirate');
+      var area = (c.h==='area'), vague = (c.h==='emirate'||c.h==='uae'), untraced = (c.h==='uae');
       // Approximate pins must be TELLABLE APART from exact ones without
       // becoming invisible. A first attempt dropped them to 20% opacity with no
       // stroke and they vanished entirely at country zoom, which is worse than
@@ -417,9 +419,9 @@ ${V('MarkerCluster.Default.css')}
       // An exact pin keeps the white ring; approximate pins lose the ring and
       // are softened, but stay clearly readable.
       var fo = quiet?.62:.95;
-      if(area) fo*=.85; if(vague) fo*=.7;
+      if(area) fo*=.85; if(vague) fo*=.7; if(untraced) fo*=.62;
       var m=L.circleMarker([c.y,c.x],{
-        radius: radiusFor(c,quiet?4:L0.r) * (vague?.85:(area?.92:1)),
+        radius: radiusFor(c,quiet?4:L0.r) * (untraced?.7:(vague?.85:(area?.92:1))),
         color: (area||vague)?color:'#fff',
         weight: vague?0.5:(area?1:(quiet?1:2)),
         opacity: (area||vague)?.65:(quiet?.75:1),
