@@ -237,7 +237,7 @@ async function main() {
       done[t.host] = r || { none: true };
       if (r) ok++; else none++;
       const n = ok + none;
-      if (n % 50 === 0) {
+      if (n % 20 === 0) {
         fs.writeFileSync(OUT, JSON.stringify(done));
         console.log(n + '/' + targets.length + '  located=' + ok + '  nothing=' + none);
       }
