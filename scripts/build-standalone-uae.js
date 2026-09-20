@@ -508,8 +508,8 @@ ${V('MarkerCluster.Default.css')}
     scope:{h:'What this map is NOT showing',b:function(){var s=DATA.stats.crmScope;if(!s)return '';return ''+
       '<dl><dt>The whole CRM, split three ways</dt><dd><code>says United Arab Emirates  '+fmt(s.uaeCountry)+'\\nsays somewhere else       '+fmt(s.elsewhere)+'\\nsays nothing at all       '+fmt(s.noCountry)+'\\n                        --------\\ntotal in HubSpot          '+fmt(s.total)+'</code></dd>'+
       '<dt>This map shows the first group</dt><dd><b>'+fmt(s.onMap)+'</b> companies. The '+fmt(s.elsewhere)+' that name another country are out of scope &mdash; this is a UAE map, and a company in Philadelphia or Cairo is not the market.</dd>'+
-      '<dt>The ones nobody can place</dt><dd><b>'+fmt(s.noLocationAtAll)+'</b> companies say <i>nothing</i> about where they are &mdash; no city, no country, no region, no address, no postcode. They are not on this map and they are not counted as UAE, because nothing says they are. <b>They might be. '+fmt(s.noLocationNoContacts)+' of them have no contacts either</b>, so there is nothing left to ask.</dd>'+
-      '<dt>Why this matters</dt><dd>'+fmt(s.noLocationAtAll)+' is 17% of the CRM sitting in the dark. If even half of them are Emirati, this map is missing thousands of real UAE companies &mdash; not because they could not be placed, but because nobody filled in a field. That is a CRM hygiene number, not a mapping one.</dd></dl>';}},
+      '<dt>The ones nobody can place</dt><dd><b>'+fmt(s.noLocationAtAll)+'</b> companies said <i>nothing</i> about where they are &mdash; no city, no country, no region, no address, no postcode. Since then <b>'+fmt(s.noLocationDrawn||0)+'</b> of them have been placed from the address on their own website, their phone area code, a .ae domain or a contact, and are on the map. <b>'+fmt((s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll))+'</b> still cannot be placed anywhere; they are not on this map and are not counted as UAE, because a company nobody can place could be anywhere.</dd>'+
+      '<dt>Why this matters</dt><dd>'+fmt((s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll))+' companies &mdash; '+Math.round(100*(s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll)/(s.total||47516))+'% of the CRM &mdash; are still in the dark. If even half of them are Emirati, this map is missing thousands of real UAE companies, not because they could not be placed but because nobody filled in where they are. That is a CRM data-quality item, not a map item.</dd></dl>';}},
 
     closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
       '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
@@ -535,12 +535,11 @@ ${V('MarkerCluster.Default.css')}
       '<dt>Why this way</dt><dd>City is the only location field HubSpot fills reliably. The deal clause adds every company that has a deal anywhere, so no won or lost business is missed because its city is blank.</dd>'+
       '<dt>What would make it wrong</dt><dd>A company trading in Dubai but registered elsewhere, with no deal, is not here. '+fmt(s.byCategory.blank||0)+' of these have no industry at all.</dd></dl>';}},
 
-    pins:{h:'Why only some are pinned',b:function(){var s=DATA.stats.crm;return ''+
-      '<dl><dt>The number</dt><dd><b>'+fmt(s.byLocation.geocoded+(s.byLocation.named||0)+s.byLocation.community)+'</b> of '+fmt(s.total)+' companies can be placed. '+fmt(s.byLocation.unlocated)+' cannot.</dd>'+
-      '<dt>How a pin is placed</dt><dd><code>1 street address -> geocoded    '+fmt(s.byLocation.geocoded)+'\\n2 business name  -> OSM match    '+fmt(s.byLocation.named||0)+'\\n3 address text   -> area centre  '+fmt(s.byLocation.community)+'\\n4 otherwise      -> not drawn    '+fmt(s.byLocation.unlocated)+'</code></dd>'+
-      '<dt>Why so many cannot be placed</dt><dd>Only about a quarter of companies hold a street address, and 41% of those resolve in OpenStreetMap. '+fmt(s.genericAddressesRefused||0)+' more say only "Dubai" or "UAE", which would geocode to the city centre and stack unrelated businesses on one point, so they are refused.</dd>'+
-      '<dt>Routes already tried</dt><dd>Contacts were checked as a fallback: <b>only 53 contacts in the whole CRM carry a street address</b>, so they can confirm a company is in the UAE but cannot place one. Paid lookups such as Google Places are excluded by the no-credits rule.</dd>'+
-      '<dt>What would make it wrong</dt><dd>An area-centroid pin marks the AREA, not the building. No coordinate here is guessed.</dd></dl>';}}
+    pins:{h:'How every pin is placed',b:function(){var s=DATA.stats, b=s.byPlacement||{}, sc=s.crmScope||{};return ''+
+      '<dl><dt>The number</dt><dd><b>'+fmt(s.drawn||0)+'</b> companies are on the map. '+fmt(s.excludedNotUAE||0)+' name another country and are left off; '+fmt(sc.noLocationStillUnknown||0)+' say nothing about where they are and cannot be placed.</dd>'+
+      '<dt>How a pin is placed</dt><dd><code>1 street address, geocoded &rarr; solid pin, white ring &nbsp;'+fmt(b.exact||0)+'<br>2 area known &rarr; scattered inside that area &nbsp;'+fmt(b.area||0)+'<br>3 emirate known &rarr; scattered inside that emirate &nbsp;'+fmt(b.emirate||0)+'<br>4 UAE only &rarr; a populated point in the country &nbsp;'+fmt(b.uae||0)+'</code></dd>'+
+      '<dt>Where the evidence comes from</dt><dd>The company record itself first (city, region, address, then name), then the address it publishes on its own website, then its phone area code or .ae domain, then its contacts. A contact can name an emirate but never produces a street pin: only 53 contacts in the whole CRM carry an address. No phone number is stored anywhere; only the emirate its area code names.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Reading a scattered pin as the building. Only the '+fmt(b.exact||0)+' ringed pins are real addresses; every other pin is inside the right place but at a chosen point, seeded from the record id so it never moves between rebuilds. No place is invented.</dd></dl>';}}
   };
 
   function openInfo(k){
@@ -563,7 +562,7 @@ ${V('MarkerCluster.Default.css')}
     // anywhere. Not UAE, not foreign - unknown. Shown beside the map's own
     // totals so the 28,748 is never read as "all our companies".
     var sc=DATA.stats.crmScope;
-    if(sc) rows.push({k:'scope',n:fmt(sc.noLocationAtAll),l:'Location unknown',c:'#b06000',
+    if(sc) rows.push({k:'scope',n:fmt(sc.noLocationStillUnknown!=null?sc.noLocationStillUnknown:sc.noLocationAtAll),l:'Location unknown',c:'#b06000',
       a:'not on this map &middot; might be UAE'});
     document.getElementById('stats').innerHTML=rows.map(function(r){
       return '<div class="stat"><div class="num" style="color:'+r.c+'">'+r.n+'</div>'+
@@ -575,14 +574,16 @@ ${V('MarkerCluster.Default.css')}
 
   function redraw(){
     var shown=drawCRM(); drawUniverse(); renderStats();
-    var s=DATA.stats.crm, pin=s.byLocation.geocoded+s.byLocation.community;
+    var s=DATA.stats, b=s.byPlacement||{}, sc=s.crmScope||{};
     document.getElementById('locnote').innerHTML=
       'Drawing <b>'+fmt(shown)+'</b> pins from the layers you have switched on. '+
-      '<b>'+fmt(pin)+'</b> companies have a location in total &mdash; '+
-      fmt(s.byLocation.geocoded)+' from a geocoded street address, '+
-      fmt(s.byLocation.named||0)+' matched by name to an OpenStreetMap business, '+
-      fmt(s.byLocation.community)+' on an area centroid. '+
-      fmt(s.byLocation.unlocated)+' could not be placed at all. '+
+      '<b>'+fmt(s.drawn||0)+'</b> companies are on the map &mdash; '+
+      fmt(b.exact||0)+' at an exact street address, '+
+      fmt(b.area||0)+' inside a known area, '+
+      fmt(b.emirate||0)+' inside a known emirate, '+
+      fmt(b.uae||0)+' somewhere in the UAE. '+
+      fmt(s.excludedNotUAE||0)+' name another country and are left off; '+
+      fmt(sc.noLocationStillUnknown||0)+' say nothing about where they are. '+
       '<button class="i" id="ipins" title="Why">i</button>';
     var ip=document.getElementById('ipins'); if(ip) ip.onclick=function(){ openInfo('pins'); };
   }
@@ -620,8 +621,8 @@ ${V('MarkerCluster.Default.css')}
     'amber a Risk rejection. The grey <b>On the CRM</b> layer is '+fmt(s.byLayer.crm||0)+' companies and '+
     'starts switched off because it covers the city - click it in the legend to bring it in. '+
     'Click any pin for its deal value, stage, '+
-    'owner and close date. '+fmt(s.byLocation.geocoded)+' sit at a geocoded street address; '+
-    fmt(s.byLocation.community)+' on their area centroid because the CRM has no street address for them.';
+    'owner and close date. '+fmt((DATA.stats.byPlacement||{}).exact||0)+' pins sit at a real geocoded street address and keep the white ring; '+
+    'every other pin is scattered inside the area or emirate the business is known to be in, and is drawn without it.';
 
   var disN=DATA.companies.filter(function(c){return c.hs;}).length;
   if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';

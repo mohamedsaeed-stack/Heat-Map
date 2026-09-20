@@ -11,7 +11,8 @@
 //   exact     a geocoded street address           -> solid pin
 //   area      random point inside a real area     -> hollow pin, "area only"
 //   emirate   random point inside a real emirate  -> faint pin, "emirate only"
-//   none      no emirate at all                   -> counted, NOT drawn
+//   uae       random populated point in the UAE   -> faint pin, "UAE only"
+//   none      names another country, or nothing  -> NOT drawn, counted
 //
 // Two properties this guarantees:
 //
@@ -131,7 +132,7 @@ function main() {
     [...areaPool].map(([k, v]) => k + '=' + v.length).join('  '));
   console.log('');
 
-  const stats = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn_none: 0, scatter_failed: 0 };
+  const stats = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn_none: 0, notdrawn_unknown: 0, scatter_failed: 0 };
   // Every populated anchor in the country, for pins we can only place at UAE level.
   const allAnchors = [].concat(...[...areaPool.values()]);
   const perEmirate = {};
@@ -201,7 +202,7 @@ function main() {
       const key = c.emirate || 'UAE (untraceable)';
       perEmirate[key] = perEmirate[key] || { exact: 0, area: 0, emirate: 0, uae: 0 };
       perEmirate[key][placement]++;
-    } else stats.notdrawn_none++;
+    } else if (c.unknown) stats.notdrawn_unknown++; else stats.notdrawn_none++;
 
     out.push({
       id: c.id, name: c.name, industry: c.industry, stage: c.lifecyclestage,
@@ -209,6 +210,7 @@ function main() {
       lat: lat === null ? null : Number(lat.toFixed(6)),
       lon: lon === null ? null : Number(lon.toFixed(6)),
       placement,
+      unknown: !!c.unknown, nolocation: !!c.nolocation,
     });
   }
 
@@ -221,7 +223,8 @@ function main() {
   console.log('  ' + pad('emirate scatter', 30) + num(stats.emirate));
   console.log('  ' + pad('UAE only (untraceable)', 30) + num(stats.uae));
   console.log('  ' + pad('DRAWN TOTAL', 30) + num(stats.exact + stats.area + stats.emirate + stats.uae));
-  console.log('  ' + pad('not drawn - not UAE at all', 30) + num(stats.notdrawn_none));
+  console.log('  ' + pad('not drawn - names another country', 36) + num(stats.notdrawn_none));
+  console.log('  ' + pad('not drawn - location unknown', 36) + num(stats.notdrawn_unknown));
   if (stats.scatter_failed) console.log('  ' + pad('scatter FAILED', 30) + num(stats.scatter_failed));
   console.log('');
   console.log('PER EMIRATE            exact     area  emirate');

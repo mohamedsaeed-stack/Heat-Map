@@ -46,8 +46,11 @@ const byPlacement = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
 const byLayer = {};
 const byCategory = {};
 
-let excludedNotUAE = 0;
+let excludedNotUAE = 0, excludedUnknown = 0;
+// The 8,040 that said nothing about where they are, split by what became of them.
+const noLoc = { drawn: 0, unknown: 0, foreign: 0 };
 for (const p of pins) {
+  if (p.nolocation) { if (p.placement) noLoc.drawn++; else if (p.unknown) noLoc.unknown++; else noLoc.foreign++; }
   // Companies that are not in the UAE at all are DROPPED, by the user's
   // instruction of 19 Sep 2026: "the ones who are not totally in the UAE,
   // there is no need to include them."
@@ -56,7 +59,11 @@ for (const p of pins) {
   // all gets drawn - so an undrawn record is now, by definition, one that said
   // it is somewhere else. These are real foreign companies: New York, London,
   // Cairo, Mumbai, San Jose. They are counted here and nowhere else.
-  if (!p.placement) { excludedNotUAE++; continue; }
+  //
+  // Since 20 Sep 2026 there is a second kind of undrawn record: one of the
+  // no-location companies that nothing at all could place. Those are UNKNOWN,
+  // counted apart, and never called foreign.
+  if (!p.placement) { if (p.unknown) excludedUnknown++; else excludedNotUAE++; continue; }
 
   const old = prevById.get(String(p.id));
 
@@ -124,9 +131,13 @@ for (const c of companies) {
   else if (c.l === "closed_lost") { money.lost += c.m || 0; money.lostN++; }
 }
 
+// OpenStreetMap names occasionally carry a phone number typed into the name
+// field. The page promises no phone numbers anywhere, so they are stripped.
+const stripPhone = v => v == null ? v : String(v).replace(/\+?\d[\d\s().-]{7,}\d/g, '').replace(/\s{2,}/g, ' ').trim();
+
 const out = {
   companies,
-  universe: prev.universe,           // Dubai only, by decision
+  universe: prev.universe.map(u => Object.assign({}, u, { n: stripPhone(u.n) })),   // Dubai only, by decision
   areas,
   emirates: byEmirate,
   // The page reads stats.crm.* and stats.categories, so the Dubai build's shape
@@ -151,6 +162,8 @@ const out = {
     byEmirate,
     byLayer,
     byCategory,
+    excludedNotUAE,
+    excludedUnknown,
     money,
     universeScope: 'Dubai only',
     // The whole CRM, split three ways, so the map's total is never mistaken
@@ -161,7 +174,12 @@ const out = {
       uaeCountry: 29355,      // country field says United Arab Emirates
       elsewhere: 9974,        // country field names another country
       noCountry: 8187,        // no country at all
-      noLocationAtAll: 8040,  // …and no city, state, address or zip either
+      noLocationAtAll: 8040,  // …and no city, state, address or zip either (measured 19 Sep)
+      // What became of those 8,040. The page's "Location unknown" tile shows the
+      // still-unknown figure, because the drawn ones ARE on the map now.
+      noLocationDrawn: noLoc.drawn,
+      noLocationForeign: noLoc.foreign,
+      noLocationStillUnknown: noLoc.unknown,
       noLocationNoContacts: 795, // …and no contacts to ask, so nothing to go on
       onMap: byPlacement.exact + byPlacement.area + byPlacement.emirate + byPlacement.uae,
     },
@@ -180,6 +198,8 @@ console.log('    area         ' + num(byPlacement.area));
 console.log('    emirate      ' + num(byPlacement.emirate));
 console.log('    UAE only     ' + num(byPlacement.uae));
 console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely)');
+console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
+console.log('the 8,040 no-location companies: drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
 console.log('universe (Dubai) ' + num(prev.universe.length));
 console.log('areas ranked     ' + num(Object.keys(areas).length));
 console.log('');

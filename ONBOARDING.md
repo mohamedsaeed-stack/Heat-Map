@@ -11,7 +11,7 @@ Read this file, then `START-HERE.md` (the full trap list), then `README.md`.
 # Node 24 is installed but NOT on PATH. Every shell needs this first.
 export PATH="/c/Users/Mohamed/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.19.0-win-x64:$PATH"
 
-# Rebuild the deliverable end to end (~90 seconds, no network needed)
+# Rebuild the deliverable end to end (~5 seconds, no network needed)
 node scripts/allocate-places.js       # company -> emirate + area, by evidence
 node scripts/scatter-pins.js          # -> one coordinate per company
 node scripts/build-map-data-uae.js    # -> data/map-uae.json
@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 574 OpenStreetMap tiles are base64 inside it. Also published privately at
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 10). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 11, 20 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -43,15 +43,16 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **28,748** |
+| **Drawn** | **30,377** |
 | — exact geocoded street address | 3,649 |
-| — inside a named area | 7,543 |
-| — inside a named emirate | 16,192 |
-| — UAE, emirate unknown | 1,364 |
-| Dropped as foreign | 617 |
+| — inside a named area | 7,784 |
+| — inside a named emirate | 16,407 |
+| — UAE, emirate unknown | 2,537 |
+| Location unknown — counted on the page, not drawn | 5,120 |
+| Dropped as foreign | 514 |
 
-Dubai 21,886 · Abu Dhabi 3,112 · Sharjah 1,436 · Ajman 442 · Ras Al Khaimah 323 ·
-Fujairah 103 · Umm Al Quwain 82.
+Dubai 22,248 · Abu Dhabi 3,171 · Sharjah 1,448 · Ajman 447 · Ras Al Khaimah 328 ·
+Fujairah 114 · Umm Al Quwain 84.
 
 Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
 
@@ -60,11 +61,12 @@ Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / A
 | | | |
 |---|---:|---|
 | HubSpot portal | 47,516 | |
-| …says United Arab Emirates | 29,355 | → 28,748 on the map |
+| …says United Arab Emirates | 29,355 | most of the map |
 | …says somewhere else | 9,974 | out of scope |
-| …says nothing at all | 8,187 | see §5 |
+| …says nothing at all | 8,187 | 8,040 had no location field at all: **2,920 now placed, 5,120 still unknown** — see §5 |
 | Admin-app clients | 8,534 | only **718 (8.4%)** join to the CRM |
 | Funded clients | 372 | only **46** are on the map |
+| **On the map** | **30,377** | 64% of the portal; every record with any UAE evidence is drawn |
 
 ---
 
@@ -78,7 +80,10 @@ Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / A
 3. **UAE only.** A company that says it is in Philadelphia or Cairo is dropped. This is a UAE map.
 4. **Unknown is its own answer.** A company nothing can place is neither UAE nor foreign. Count it,
    flag it, do not guess it onto the map.
-5. **Location evidence is emirate names, city names and UAE names.** Nothing else.
+5. **Location evidence is emirate names, city names, UAE names — and, since 20 Sep 2026, the company's own
+   phone area code and a `.ae` domain.** Mohamed's words: "+971 are all UAE". A +9714 landline names Dubai,
+   +9712 Abu Dhabi, +9717 Ras Al Khaimah, +9719 Fujairah; a +9715 mobile or a `.ae` domain proves the country
+   only. The number is read once, an emirate is derived, and the number is discarded. Ranked above contacts.
 6. **Contacts count, but never pin.** A contact's city attributes the *company* to an emirate; it
    never produces a street-level pin (only 53 contacts CRM-wide have an address).
 7. **No paid credits.** No Clay, Apollo, Lusha, Apify, Google Places. No search-engine scraping.
@@ -117,11 +122,14 @@ produced 331M tokens.
 
 **Everything on the map side is done.** What is left is blocked on data, not effort.
 
-1. **8,040 companies say nothing about where they are** — 17% of the portal. 2,072 have now been
-   recovered as UAE from **phone area codes** (`+9714` = Dubai, `+9712` = Abu Dhabi) and **`.ae`
-   domains**; a website sweep over their 7,448 domains is the current lift. See
-   `scripts/recover-unlocated.js`. **Privacy: the phone is read, an emirate is derived, the number
-   is discarded. No phone number reaches `raw/`, `data/` or the page.**
+1. **8,040 companies say nothing about where they are** — 17% of the portal. As of 20 Sep 2026,
+   **2,920 of them are on the map** (the address on their own website, their phone area code, a `.ae`
+   domain, or a contact) and **5,120 remain unknown** — the page's "Location unknown" tile. They are
+   never called foreign: nothing on them says anywhere. The website sweep over their 7,448 domains is
+   **resumable and was still running** when this was written: 1,820 swept, 523 located (**28.7%**,
+   against 56% for companies with CRM data — a record with no city and a dead domain is usually a dead
+   lead). `bash scripts/sweep-until-done.sh` continues it; then rebuild. **Privacy: the phone is read, an
+   emirate is derived, the number is discarded. No phone number reaches `raw/`, `data/` or the page.**
 2. **The admin app is the weak half — 46 of 372 funded clients on the map.** The join is by company
    name and reaches 8.4%. `legalAddresses` is **empty**, including on funded clients — the brief was
    wrong about that. The location actually lives in `businessInfo.licenseNumbers`
@@ -152,6 +160,10 @@ Full list in `START-HERE.md`. The three that bite hardest:
   literal, so `company's` closes the string and the map renders blank. `\n` has the same problem.
   **No build check catches this. The only reliable test is opening the page in a browser**, which
   you should do before every publish.
+- **The website sweep crashes Node on some hosts** — an assertion inside undici that cannot be caught.
+  Before 20 Sep the restart retried the same host, crashed again, and 60 restarts gained 20 records. It
+  now writes each host to `raw/website-inflight.log` *before* fetching it and writes a host off after
+  two crashes (`raw/website-suspects.json`). Do not delete those files mid-sweep.
 
 ---
 

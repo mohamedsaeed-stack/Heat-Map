@@ -29,6 +29,15 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const OUT = path.join(ROOT, 'raw/website-locations.json');
+// Write-ahead records, so a crash never loses work and never repeats itself.
+// Node itself dies on some hosts (an assertion inside undici's HTTP parser when
+// a TLS socket ends mid-response) and that cannot be caught. Before this, the
+// restart retried the same host, crashed again, and 60 restarts gained 20
+// records - measured 20 Sep 2026.
+const INFLIGHT = path.join(ROOT, 'raw/website-inflight.log');    // host, written BEFORE its fetch
+const RESULTS = path.join(ROOT, 'raw/website-results.jsonl');    // host + result, written AFTER
+const SUSPECTS = path.join(ROOT, 'raw/website-suspects.json');   // host -> crashes it was in flight for
+const NL = String.fromCharCode(10);
 const UA = 'FlapKap-Coverage-Map/1.0 (RevOps internal; mohamed.saeed@flapkap.com)';
 
 const PLACES = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/uae-places.json'), 'utf8'));
@@ -167,6 +176,27 @@ async function main() {
   let done = {};
   try { done = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch (e) {}
 
+  // Recover from the last run. Results logged after the last checkpoint are
+  // real and are kept. Hosts started but never finished were in flight when
+  // the process died - one of them killed it. They are retried once, one at a
+  // time so a second crash names exactly one host; a host in flight at TWO
+  // crashes is written off and never fetched again.
+  const lines = file => { try { return fs.readFileSync(file, 'utf8').split(NL).filter(Boolean); } catch (e) { return []; } };
+  for (const l of lines(RESULTS)) { try { const { h, r } = JSON.parse(l); if (done[h] === undefined) done[h] = r; } catch (e) {} }
+  let suspects = {}; try { suspects = JSON.parse(fs.readFileSync(SUSPECTS, 'utf8')); } catch (e) {}
+  const retryFirst = [];
+  for (const h of new Set(lines(INFLIGHT))) {
+    if (done[h] !== undefined) continue;
+    suspects[h] = (suspects[h] || 0) + 1;
+    if (suspects[h] >= 2) done[h] = { none: true, crash: true };
+    else retryFirst.push(h);
+  }
+  fs.writeFileSync(OUT, JSON.stringify(done));
+  fs.writeFileSync(SUSPECTS, JSON.stringify(suspects));
+  fs.writeFileSync(INFLIGHT, ''); fs.writeFileSync(RESULTS, '');
+  const writtenOff = Object.values(suspects).filter(n => n >= 2).length;
+  if (retryFirst.length || writtenOff) console.log('recovery: retrying ' + retryFirst.length + ' host(s) one at a time; ' + writtenOff + ' written off as crashers');
+
   const limitArg = process.argv.indexOf('--limit');
   const LIMIT = limitArg > -1 ? Number(process.argv[limitArg + 1]) : Infinity;
 
@@ -229,13 +259,21 @@ async function main() {
   // more load - this only widens how many distinct servers are in flight.
   const CONC = 16;
   let i = 0, ok = 0, none = 0;
+  async function fetchOne(host) {
+    fs.appendFileSync(INFLIGHT, host + NL);              // before: if we die, this names the suspect
+    let r = null;
+    try { r = await locate(host); } catch (e) {}
+    done[host] = r || { none: true };
+    fs.appendFileSync(RESULTS, JSON.stringify({ h: host, r: done[host] }) + NL);   // after: never lost
+    if (r) ok++; else none++;
+  }
+  // Suspects from the last crash go first, alone, so a second crash names exactly one host.
+  for (const h of retryFirst) await fetchOne(h);
+  targets = targets.filter(t => done[t.host] === undefined);
   async function worker() {
     while (i < targets.length) {
       const t = targets[i++];
-      let r = null;
-      try { r = await locate(t.host); } catch (e) {}
-      done[t.host] = r || { none: true };
-      if (r) ok++; else none++;
+      await fetchOne(t.host);
       const n = ok + none;
       if (n % 20 === 0) {
         fs.writeFileSync(OUT, JSON.stringify(done));

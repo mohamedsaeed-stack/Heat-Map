@@ -166,6 +166,20 @@ function allocate(c, contactCities, webHit) {
     }
   }
 
+  // 4c: the company's own phone area code, and a .ae domain.
+  //
+  // The user's decision, 20 Sep 2026: "+971 are all UAE". A UAE landline names
+  // its emirate (+9714 Dubai, +9712 Abu Dhabi, +9717 RAK, +9719 Fujairah); a
+  // +9715 mobile or a .ae domain proves the country and nothing more. The
+  // emirate was derived in recover-unlocated.js and the number discarded there,
+  // so no phone number exists anywhere in this pipeline. Ranked above contacts
+  // because it is the company's own line, not a person who may sit anywhere.
+  if (c._recovered) {
+    const r = c._recovered;
+    if (!out.emirate && r.emirate) { out.emirate = r.emirate; out.route = 'phone area code'; }
+    if (!out.uae && r.uae) { out.uae = true; if (!out.route) out.route = /^domain/.test(r.why || '') ? 'domain .ae' : 'phone +971'; }
+  }
+
   // 5: contacts, only if the company itself gave nothing.
   if (!out.emirate && contactCities && contactCities.length) {
     const hits = new Set();
@@ -252,6 +266,25 @@ function main() {
     contactOnly++;
   }
 
+  // The 8,040 companies that carry no location field at all. They were never in
+  // any location-filtered pull, so most of them reach the pool only here. What
+  // can still place one: the address on its own website (route 4b), its phone
+  // area code or .ae domain (4c, from recover-unlocated.js), or a contact (5).
+  // For the ones already here through another pull this only fills a missing
+  // domain and attaches the phone evidence. Every one of them is flagged,
+  // because a record that ends with no evidence at all is UNKNOWN, not foreign -
+  // nothing on it says anywhere - and the two are kept apart below.
+  let noLocationOnly = 0;
+  for (const r of load('unlocated-recovered.json')) {
+    const id = String(r.id);
+    const rec = { uae: !!r.uae, emirate: r.emirate || null, why: r.why || null };
+    const prev = byId.get(id);
+    if (prev) { prev._noLocation = true; prev._recovered = rec; if (!prev.domain && r.domain) prev.domain = r.domain; continue; }
+    byId.set(id, { hs_object_id: id, name: r.name, domain: r.domain, industry: r.industry,
+                   lifecyclestage: r.lifecyclestage, _src: 'no-location', _noLocation: true, _recovered: rec });
+    noLocationOnly++;
+  }
+
   const tally = {};
   const precision = {};
   const routes = {};
@@ -272,7 +305,10 @@ function main() {
     const h = hostOf(c.website || c.domain);
     const wh = h && webLoc[h] && !webLoc[h].none ? webLoc[h] : null;
     const a = allocate(c, e ? Object.keys(e.contact_cities || {}) : null, wh);
-    const em = a.emirate || (a.uae ? 'UAE (emirate unknown)' : 'not UAE');
+    // Nothing on the record, nothing off it, and no country saying elsewhere:
+    // that is unknown, not foreign.
+    a.unknown = !a.emirate && !a.uae && !!c._noLocation && !(c.country && !isUAE(c.country));
+    const em = a.emirate || (a.uae ? 'UAE (emirate unknown)' : a.unknown ? 'location unknown' : 'not UAE');
     tally[em] = (tally[em] || 0) + 1;
     precision[a.precision || 'none'] = (precision[a.precision || 'none'] || 0) + 1;
     if (a.route) routes[a.route] = (routes[a.route] || 0) + 1;
@@ -281,6 +317,7 @@ function main() {
       industry: c.industry || null, lifecyclestage: c.lifecyclestage || null,
       address: c.address || null,
       emirate: a.emirate, area: a.area, precision: a.precision, route: a.route, src: c._src,
+      unknown: a.unknown, nolocation: !!c._noLocation,
     });
   }
 
@@ -288,6 +325,7 @@ function main() {
   const num = n => n.toLocaleString().padStart(8);
 
   console.log('DISTINCT COMPANIES  ' + byId.size.toLocaleString());
+  console.log('  found only in the no-location file: ' + noLocationOnly.toLocaleString());
   console.log('  found only via a contact\'s city: ' + contactOnly.toLocaleString());
   console.log('');
   console.log('BY EMIRATE');

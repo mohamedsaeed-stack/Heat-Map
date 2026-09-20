@@ -34,34 +34,43 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 
 | | Companies |
 |---|---:|
-| Total | **29,365** |
-| **Drawn** | **27,384** |
+| Companies in the pool | **36,011** |
+| **Drawn** | **30,377** |
 | — exact, geocoded street address | 3,649 |
-| — scattered inside a known area | 7,543 |
-| — scattered inside a known emirate | 16,192 |
-| Counted, not drawn — UAE, no emirate | 1,364 |
-| Not UAE | 617 |
+| — scattered inside a known area | 7,784 |
+| — scattered inside a known emirate | 16,407 |
+| — scattered somewhere in the UAE, emirate unknown | 2,537 |
+| Location unknown — counted on the page, not drawn | 5,120 |
+| Not UAE — dropped | 514 |
 
-Dubai 21,886 · Abu Dhabi 3,112 · Sharjah 1,436 · Ajman 442 · Ras Al Khaimah 323 ·
-Fujairah 103 · Umm Al Quwain 82.
+Dubai 22,248 · Abu Dhabi 3,171 · Sharjah 1,448 · Ajman 447 · Ras Al Khaimah 328 ·
+Fujairah 114 · Umm Al Quwain 84.
 
-Closed won 220 / AED 49.9M · in process 742 / AED 444.2M · closed lost 438 / AED 215.8M.
+Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
 
 ## How a company gets onto the map
 
 Evidence is taken in strict precedence, and the **first** field that names a place wins:
 
 ```
-1 the company's own city        22,000+
-2 its own state / region           247
-3 its own address text             128
-4 its own name                     237   refused if its country says elsewhere
-5 a contact's city               2,728   counts the emirate, never a street pin
+1 the company's own city         22,549
+2 its own state / region            252
+3 its own address text              199
+4 its own name                      238   refused if its country says elsewhere
+5 the address on its own website  2,455   the only route that regularly yields an AREA
+6 its own phone area code           312   +9714 Dubai · +9712 Abu Dhabi · +9717 RAK · +9719 Fujairah
+7 a +9715 mobile or a .ae domain  1,173   proves the UAE only, never which emirate
+8 a contact's city                1,832   counts the emirate, never a street pin
    its country alone            -> proves UAE only, never which emirate
 ```
 
-Only **emirate names, city names and UAE names** count as location. That scope was set deliberately;
-nothing else is treated as evidence.
+Emirate names, city names and UAE names count as location — and, since 20 Sep 2026 ("+971 are all UAE"),
+the company's own phone area code and a `.ae` domain. The phone number is read once, turned into an
+emirate and discarded; it exists nowhere in `raw/`, `data/` or the page. Nothing else is evidence.
+
+**Nothing could place 5,120 companies.** They carry no city, country, region, address or postcode, their
+website (if any) names no place, and no contact helps. They are **unknown, not foreign**: the page counts
+them in the "Location unknown" tile and does not draw them. The 514 that name another country are dropped.
 
 **The name route has a guard that earns its keep.** The sweep returned companies called "219 Dubai",
 "UAE Clearing" and "HZ UAE" whose own country field says India, Czechia and the United States. The
@@ -120,6 +129,8 @@ Node 24 is installed but **not on PATH** — every shell needs the export above.
 | `geocode-uae-places.js` | Emirate polygons and area centroids from Nominatim. Resumable. |
 | `geocode-uae-addresses.js` | Street addresses → points. Refuses generic ones. Resumable. |
 | `scatter-pins.js` | One coordinate per company, deterministic, inside the real shape. |
+| `recover-unlocated.js` | The 8,040 no-location companies: emirate from the phone area code, UAE from a `.ae` domain. Discards the number. |
+| `locate-by-website.js` | Reads the address off each company's own website. Resumable; isolates hosts that crash Node. `sweep-until-done.sh` restarts it until done. |
 | `fetch-tiles-uae.js` | Embedded tiles. `--plan` prints the budget and enforces OSM policy. |
 | `serve.js` | Serves the repo locally so the page can be checked before publishing. |
 
