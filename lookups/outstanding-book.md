@@ -110,3 +110,6 @@ session or switches it to a mode that asks him per call. Then the pull is the li
 fresh agents, one call per funded UAE client (317), each agent writing `{id, outstanding, asOf}` and
 nothing else. Which field is "outstanding" is confirmed on the first response — the financials
 endpoint documents `openAmount` per snapshot; the credit-balance DTO is undocumented.
+## Parked 20 Sep 2026
+
+Mohamed, after the permission block was explained: "It is a nice idea, but it is unnecessary right now. We can do this later. Keep it as an idea. I do like it." Everything above stays built and hidden; nothing more is spent here until he asks.

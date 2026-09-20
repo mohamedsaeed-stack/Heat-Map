@@ -115,7 +115,7 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
    finding was a three-client sample); the licence authority names the emirate on 193 more; 55
    funded clients are Egyptian and are dropped as foreign. **319 funded pins on the map, from 46.**
    `scripts/admin-licence-emirate.js` merges the pull; `lookups/admin-license-emirate.md` has the detail.
-2. **The outstanding book — decided 20 Sep 2026: emirate level, all seven emirates.** Built and hidden
+2. **The outstanding book — parked 20 Sep 2026 ("a nice idea, unnecessary right now, keep it"). When it comes back: emirate level, all seven emirates.** Built and hidden
    until `raw/admin-balances.json` exists. Blocked on **permission**: the balance endpoints were refused
    by the session's permission classifier (PII); Mohamed has to allow them. Then: 8 agents, one
    `flapkap_get_credit_balance` (or `flapkap_get_financials`, latest `openAmount`) per funded UAE client,

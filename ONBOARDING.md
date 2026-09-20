@@ -138,7 +138,7 @@ produced 331M tokens.
    Result: **319 funded pins** on the map (from 46) — 14 exact, 111 area, 123 emirate, 71 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
-3. **The outstanding book — DECIDED 20 Sep 2026: emirate level, all seven emirates.** Mohamed's words:
+3. **The outstanding book — PARKED 20 Sep 2026. Mohamed likes it, wants it later, not now.** When it comes back: emirate level, all seven emirates. Mohamed's words:
    "I wanted on Emirates level, not Dubai level." Funded pins per emirate: Dubai 184, Abu Dhabi 33,
    Sharjah 13, Ajman 13, Fujairah 3, Umm Al Quwain 2, emirate unknown 71. Rows under 5 clients are
    merged so nothing reads back to one merchant. **The data side and the page panel are built and
