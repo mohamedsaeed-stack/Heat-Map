@@ -32,7 +32,7 @@ hours and the files are on disk.
 ## 2. What this is
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
-because 574 OpenStreetMap tiles are base64 inside it. Also published privately at
+because 613 OpenStreetMap tiles are base64 inside it. Also published privately at
 **https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 12, 20 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live

@@ -100,6 +100,8 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
 - **Tile policy: max 250 tiles at z13+.** Currently 229. `fetch-tiles-uae.js --plan` prints the
   budget and refuses to run if the plan breaks it.
 - Nominatim is 1 req/s. Overpass needs a real User-Agent and 9s between queries.
+- **Nominatim can hand back the wrong place with the right name.** "Al Jurf, Ajman" resolved to the Al Jurf on the Abu Dhabi coast, 100 km away, and 23 Ajman pins were drawn there until 20 Sep 2026. Every approximate pin is now tested against its emirate polygon; an area anchor that fails falls back to the emirate tier. Area pins are spread as a soft cluster, not a uniform box - the box read as a literal square at street zoom.
+- **Tiles: where none exists at a zoom, the page scales up the nearest coarser embedded tile** instead of showing grey. Deep tiles now cover Dubai, Abu Dhabi, Al Ain, Sharjah-Ajman, RAK, Fujairah and UAQ cores: 613 tiles, 238 at z13 (budget 250), page 14.9 MB (limit 16).
 - **The website sweep crashes Node on some hosts** (an undici assertion; uncatchable). Before 20 Sep it
   retried the same host forever — 60 restarts, 20 records. It now logs each host before fetching and
   writes a host off after two crashes. Keep `raw/website-inflight.log` and `raw/website-suspects.json`.

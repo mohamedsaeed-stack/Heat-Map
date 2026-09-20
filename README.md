@@ -20,7 +20,7 @@ Owner: Mohamed Saeed, RevOps. Agreed as a side project with Amr Ibrahim, Head of
 
 ## The deliverable
 
-**`dist/flapkap-uae-map.html`** — one file, opens by double-click, **needs no network**. 574
+**`dist/flapkap-uae-map.html`** — one file, opens by double-click, **needs no network**. 613
 OpenStreetMap tiles are base64 inside it, because the artifact viewer and the app's file preview both
 block external images and the map would otherwise be pins floating on grey.
 
@@ -163,7 +163,7 @@ Node 24 is installed but **not on PATH** — every shell needs the export above.
 
 - **No paid credits.** Not Clay, Apollo, Lusha, Apify or Google Places. Overpass and Nominatim only,
   inside their published policies — 1 request/second, identifying User-Agent.
-- **Tile policy: no more than 250 tiles at zoom 13 or deeper.** Currently 229. The fetcher refuses to
+- **Tile policy: no more than 250 tiles at zoom 13 or deeper.** Currently 238. The fetcher refuses to
   run if a plan breaks it.
 - OpenStreetMap data is ODbL — attributed on the page, fine for internal use.
 - **Everything pulled is saved to `raw/` and searched on disk.** Never re-query for something already

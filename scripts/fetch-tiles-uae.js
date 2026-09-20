@@ -52,6 +52,21 @@ const BOXES = [
     minLat: 25.00, maxLat: 25.34, minLng: 55.05, maxLng: 55.45 },
   { name: 'Abu Dhabi core (deep)', zooms: [12, 13],
     minLat: 24.40, maxLat: 24.53, minLng: 54.32, maxLng: 54.53 },
+
+  // 20 Sep 2026: the other cities were grey past z11. One zoom deeper for each,
+  // and z13 for Al Ain's centre only. Still inside the 250-tile z13 budget.
+  { name: 'Al Ain city', zooms: [12],
+    minLat: 24.14, maxLat: 24.30, minLng: 55.62, maxLng: 55.86 },
+  { name: 'Al Ain centre (deep)', zooms: [13],
+    minLat: 24.19, maxLat: 24.25, minLng: 55.72, maxLng: 55.80 },
+  { name: 'Sharjah + Ajman core', zooms: [12],
+    minLat: 25.28, maxLat: 25.44, minLng: 55.36, maxLng: 55.58 },
+  { name: 'Ras Al Khaimah city', zooms: [12],
+    minLat: 25.74, maxLat: 25.84, minLng: 55.92, maxLng: 56.04 },
+  { name: 'Fujairah city', zooms: [12],
+    minLat: 25.08, maxLat: 25.18, minLng: 56.30, maxLng: 56.38 },
+  { name: 'Umm Al Quwain', zooms: [12],
+    minLat: 25.50, maxLat: 25.60, minLng: 55.52, maxLng: 55.62 },
 ];
 
 const lon2x = (lon, z) => Math.floor((lon + 180) / 360 * Math.pow(2, z));

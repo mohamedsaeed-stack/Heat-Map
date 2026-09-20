@@ -86,16 +86,43 @@ function scatterInGeom(rnd, g, bbox, tries = 400) {
   return null;                                    // refuse rather than guess
 }
 
-// Areas have a centroid and Nominatim's extent. Scatter inside that extent but
-// never wider than ~2.5 km, so an area pin still reads as "this neighbourhood".
-function scatterInArea(rnd, a, max) {
+// Areas have a centroid and Nominatim's extent. Pins are spread around the
+// centroid as a soft cluster - dense in the middle, thinning outward - never
+// wider than the extent or ~2.5 km, and never outside the emirate polygon.
+//
+// A uniform box was used first. At country zoom it read as a cluster; at
+// street zoom it read as a literal square, and on the Al Ain anchor it pushed
+// pins across the Oman border (seen by the user, 20 Sep 2026). The gaussian
+// shape is still deterministic per company id; it is only presentation, and
+// the claim stays "somewhere in this area".
+function gauss(rnd) {
+  let u = 0, v = 0;
+  while (u === 0) u = rnd();
+  while (v === 0) v = rnd();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+function scatterInArea(rnd, a, max, geom) {
   const MAX = max || 0.022;                       // ~2.5 km in degrees latitude
   let [s, n, w, e] = a.bbox;
   const cLat = a.lat, cLon = a.lon;
   s = Math.max(s, cLat - MAX); n = Math.min(n, cLat + MAX);
   w = Math.max(w, cLon - MAX); e = Math.min(e, cLon + MAX);
   if (!(n > s && e > w)) { s = cLat - 0.004; n = cLat + 0.004; w = cLon - 0.004; e = cLon + 0.004; }
-  return [s + rnd() * (n - s), w + rnd() * (e - w)];
+  const sdLat = (n - s) / 5, sdLon = (e - w) / 5;  // the extent is ~2.5 sigma each side
+  let last = null;
+  for (let i = 0; i < 60; i++) {
+    const lat = cLat + gauss(rnd) * sdLat, lon = cLon + gauss(rnd) * sdLon;
+    if (lat < s || lat > n || lon < w || lon > e) continue;
+    last = [lat, lon];
+    if (!geom || inGeom(lon, lat, geom)) return last;
+  }
+  // Sixty misses means the anchor sits on or outside the polygon's edge (Ajman
+  // is tiny and interleaved with Sharjah; Nominatim's centroid for an Ajman
+  // area can fall a street into Sharjah). The centroid is used if it is inside;
+  // otherwise the caller falls back a level rather than draw outside the border.
+  if (!geom) return last || [cLat, cLon];
+  if (inGeom(cLon, cLat, geom)) return [cLat, cLon];
+  return null;
 }
 
 function main() {
@@ -126,13 +153,13 @@ function main() {
     const P = polys[em];
     if (P && P.geojson && !inGeom(a.lon, a.lat, P.geojson)) continue;
     if (!areaPool.has(em)) areaPool.set(em, []);
-    areaPool.get(em).push(a);
+    areaPool.get(em).push(Object.assign({}, a, { emirate: em }));
   }
   console.log('populated anchors per emirate: ' +
     [...areaPool].map(([k, v]) => k + '=' + v.length).join('  '));
   console.log('');
 
-  const stats = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn_none: 0, notdrawn_unknown: 0, scatter_failed: 0 };
+  const stats = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn_none: 0, notdrawn_unknown: 0, scatter_failed: 0, area_anchor_outside: 0 };
   // Every populated anchor in the country, for pins we can only place at UAE level.
   const allAnchors = [].concat(...[...areaPool.values()]);
   const perEmirate = {};
@@ -152,7 +179,11 @@ function main() {
       // 2. inside the named area
       if (!placement && c.area) {
         const a = areaByKey.get(c.emirate + '|' + c.area);
-        if (a) { const p = scatterInArea(rnd, a); lat = p[0]; lon = p[1]; placement = 'area'; }
+        if (a) {
+          const p = scatterInArea(rnd, a, null, (polys[c.emirate] || {}).geojson);
+          if (p) { lat = p[0]; lon = p[1]; placement = 'area'; }
+          else stats.area_anchor_outside++;          // falls through to the emirate tier
+        }
       }
       // 3. inside the emirate itself, but across the parts of it where
       //    businesses actually are.
@@ -172,9 +203,11 @@ function main() {
       if (!placement) {
         const pool = areaPool.get(c.emirate);
         if (pool && pool.length) {
-          const a = pool[Math.floor(rnd() * pool.length)];
-          const p = scatterInArea(rnd, a, 0.030);      // ~3.3 km spread
-          lat = p[0]; lon = p[1]; placement = 'emirate';
+          const G = (polys[c.emirate] || {}).geojson;
+          let p = null;
+          for (let t = 0; t < 5 && !p; t++) p = scatterInArea(rnd, pool[Math.floor(rnd() * pool.length)], 0.030, G);   // ~3.3 km spread
+          if (!p && polys[c.emirate] && polys[c.emirate].geojson) p = scatterInGeom(rnd, polys[c.emirate].geojson, polys[c.emirate].bbox);
+          if (p) { lat = p[0]; lon = p[1]; placement = 'emirate'; } else stats.scatter_failed++;
         } else {
           const P = polys[c.emirate];
           if (P && P.geojson) {
@@ -194,7 +227,9 @@ function main() {
     //    level and the page says exactly that.
     if (!placement && c.precision === 'uae') {
       const a = allAnchors[Math.floor(rnd() * allAnchors.length)];
-      if (a) { const p = scatterInArea(rnd, a, 0.030); lat = p[0]; lon = p[1]; placement = 'uae'; }
+      let p = null;
+      for (let t = 0; t < 5 && !p; t++) { const a2 = allAnchors[Math.floor(rnd() * allAnchors.length)]; if (a2) p = scatterInArea(rnd, a2, 0.030, (polys[a2.emirate] || {}).geojson); }
+      if (p) { lat = p[0]; lon = p[1]; placement = 'uae'; }
     }
 
     if (placement) {
@@ -227,6 +262,8 @@ function main() {
   console.log('  ' + pad('DRAWN TOTAL', 30) + num(stats.exact + stats.area + stats.emirate + stats.uae));
   console.log('  ' + pad('not drawn - names another country', 36) + num(stats.notdrawn_none));
   console.log('  ' + pad('not drawn - location unknown', 36) + num(stats.notdrawn_unknown));
+  if (stats.area_anchor_outside) console.log('  ' + pad('area anchor outside its emirate -> emirate tier', 48) + num(stats.area_anchor_outside));
+  if (stats.scatter_failed) console.log('  ' + pad('scatter failed', 36) + num(stats.scatter_failed));
   if (stats.scatter_failed) console.log('  ' + pad('scatter FAILED', 30) + num(stats.scatter_failed));
   console.log('');
   console.log('PER EMIRATE            exact     area  emirate');

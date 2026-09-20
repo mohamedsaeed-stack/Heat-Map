@@ -265,8 +265,11 @@ ${V('MarkerCluster.Default.css')}
   var CAT_COLOR = ${JSON.stringify(CAT_COLOR)};
   var BY_KEY = {}; LAYERS.forEach(function(l){ BY_KEY[l.key]=l; });
 
+  // The offline street map stops at zoom 15: the sharpest embedded tiles are z13,
+  // two levels of scaling is still a map, four is a blur - and approximate pins
+  // do not justify street-level zoom. The online base maps keep their own maximum.
   var BASEMAPS = [
-    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:19,
+    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
      attr:'&copy; OpenStreetMap contributors'},
     {k:'detailed',label:'Detailed',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',max:19,
      attr:'Esri, HERE, Garmin'},
@@ -287,9 +290,33 @@ ${V('MarkerCluster.Default.css')}
   var map = L.map('map',{zoomControl:true,preferCanvas:true}).setView([25.05,55.45],9);
   L.control.scale({imperial:false}).addTo(map);
 
-  // Embedded first, network second. A blocked or absent network changes
-  // nothing inside the covered area.
+  // Embedded first; where no tile exists at this zoom, the nearest coarser
+  // embedded tile is scaled up rather than leaving grey (seen in Al Ain, 20 Sep
+  // 2026: only Dubai and Abu Dhabi city had deep tiles). Network last.
   var EmbeddedTiles = L.TileLayer.extend({
+    createTile: function(c, done){
+      var k = c.z + '_' + c.x + '_' + c.y;
+      if (TILES[k]) return L.TileLayer.prototype.createTile.call(this, c, done);
+      var z = c.z, x = c.x, y = c.y, d = 0, pk = null;
+      while (z > 6) {
+        z--; x = Math.floor(x / 2); y = Math.floor(y / 2); d++;
+        if (TILES[z + '_' + x + '_' + y]) { pk = z + '_' + x + '_' + y; break; }
+      }
+      if (!pk) return L.TileLayer.prototype.createTile.call(this, c, done);
+      var size = this.getTileSize(), tile = document.createElement('canvas');
+      tile.width = size.x; tile.height = size.y;
+      var img = new Image();
+      img.onload = function(){
+        var n = Math.pow(2, d), sw = img.width / n, sh = img.height / n;
+        var sx = (c.x - x * n) * sw, sy = (c.y - y * n) * sh;
+        var ctx = tile.getContext('2d'); ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size.x, size.y);
+        done(null, tile);
+      };
+      img.onerror = function(e){ done(e, tile); };
+      img.src = 'data:image/png;base64,' + TILES[pk];
+      return tile;
+    },
     getTileUrl: function(c){
       var k = c.z + '_' + c.x + '_' + c.y;
       if (TILES[k]) return 'data:image/png;base64,' + TILES[k];
@@ -603,7 +630,7 @@ ${V('MarkerCluster.Default.css')}
     var q=e.target.value.trim().toLowerCase();
     var box=document.getElementById('hits');
     if(q.length<2){ box.innerHTML=''; return; }
-    var hits=markerIndex.filter(function(x){return x.c.n.toLowerCase().indexOf(q)>=0;}).slice(0,25);
+    var hits=markerIndex.filter(function(x){return (x.c.n||'').toLowerCase().indexOf(q)>=0;}).slice(0,25);
     box.innerHTML=hits.map(function(x,i){
       return '<div class="hit" data-i="'+i+'">'+esc(x.c.n)+' <i>'+esc(STAGE[x.c.l])+'</i></div>';}).join('')
       || '<div class="hit"><i>No pinned business matches</i></div>';
