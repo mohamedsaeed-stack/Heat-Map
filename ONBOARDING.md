@@ -138,13 +138,18 @@ produced 331M tokens.
    Result: **319 funded pins** on the map (from 46) — 14 exact, 111 area, 123 emirate, 71 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
-3. **The outstanding book — re-measure before deciding, and ask Mohamed first.** Item 2 changed the
-   picture: 319 funded pins, 117 of them with an area across 51 areas. Only 5 areas hold 5 or more
-   (Bur Dubai 13, Business Bay 9, Al Quoz 8, Downtown Dubai 7, Al Karama 6); 41 areas hold 1–2, so an
-   area-level total would still expose individual balances in most of them. Emirate-level totals
-   (Dubai 184, Abu Dhabi 33, Sharjah 13, Ajman 13) would not. See `lookups/outstanding-book.md`.
-4. **Market universe outside Dubai** — parked by Mohamed's decision until the CRM/admin side is
-   finished. That point has now been reached, so this is available to pick up.
+3. **The outstanding book — DECIDED 20 Sep 2026: emirate level, all seven emirates.** Mohamed's words:
+   "I wanted on Emirates level, not Dubai level." Funded pins per emirate: Dubai 184, Abu Dhabi 33,
+   Sharjah 13, Ajman 13, Fujairah 3, Umm Al Quwain 2, emirate unknown 71. Rows under 5 clients are
+   merged so nothing reads back to one merchant. **The data side and the page panel are built and
+   hidden until `raw/admin-balances.json` exists** (`[{id, outstanding, asOf}]`, one row per funded
+   client). **Blocked on permission, not data:** the session's permission classifier refused
+   `flapkap_get_credit_balance` and `flapkap_get_financials` (PII). Mohamed must allow the tool or
+   switch the session to a mode that asks him; then it is the licence-pull recipe again (8 agents,
+   ~6 min). See `lookups/outstanding-book.md`.
+4. **Market universe outside Dubai — KEPT FOR LATER, by Mohamed's decision (20 Sep 2026).** With the
+   book done, he considers the project ~80% complete; "businesses who are not on the CRM" is the
+   remaining 20%. `lookups/uae-emirate-areas.json` already holds all seven boundary relations.
 5. **19 stale deals** open in HubSpot for merchants the admin app already closed —
    `lookups/stale-deals.md`. A RevOps data-quality item, not a map item.
 
@@ -179,6 +184,7 @@ START-HERE.md                    the handoff: state, decisions, every trap
 README.md                        what it is, how to refresh, the rules
 lookups/outstanding-book.md      why the revenue view is blocked, measured
 lookups/admin-license-emirate.md the licence pull: how it was run, what it found, the authority table
+lookups/data-quality-findings.md THE FINDINGS LOG - every measured data problem, for the CRM owner and the Head of RevOps. Append to it.
 lookups/stale-deals.md           19 deals to fix in HubSpot
 lookups/uae-places.json          the gazetteer: emirates, areas, 60 landmarks/misspellings
 scripts/                         pull, locate, scatter, build - all Node

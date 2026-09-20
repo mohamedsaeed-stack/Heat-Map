@@ -307,7 +307,7 @@ function main() {
     const hsId = hsByAdmin.get(r.id);
     const prev = hsId ? byId.get(hsId) : null;
     if (prev) {
-      prev._admin = ev;
+      prev._admin = ev; prev._adminId = r.id;
       if (!prev.website && !prev.domain && r.website) prev.domain = r.website;
       if (!prev.address && r.address) prev.address = r.address;
       adminJoined++; continue;

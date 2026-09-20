@@ -13,6 +13,8 @@ Owner: Mohamed Saeed, RevOps. Agreed as a side project with Amr Ibrahim, Head of
 - `PLAN.md` — the original approved plan. Scope has moved on; START-HERE is authoritative.
 - `lookups/outstanding-book.md` — why the revenue view is blocked, measured.
 - `lookups/stale-deals.md` — 19 deals open in HubSpot that the admin app has already closed.
+- `lookups/data-quality-findings.md` — **the findings log**: every measured data problem, for the CRM
+  owner to fix and the Head of RevOps to review. Mohamed will ask for it at the end; keep appending.
 - `heatmap-project-brief.md` — the predecessor brief, kept as history. **Its Abu Dhabi demo numbers
   are not reused**; that demo's lead pins were invented coordinates.
 

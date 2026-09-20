@@ -66,6 +66,7 @@ const byLayer = {};
 const byCategory = {};
 
 let excludedNotUAE = 0, excludedUnknown = 0, adminOnlyFunded = 0;
+const emirateByAdmin = new Map();
 // The funded book as the admin app holds it: how many clients, how many of them
 // are Egyptian merchants (outside a UAE map), how many are UAE. Measured from the
 // per-client pull, 20 Sep 2026.
@@ -121,6 +122,10 @@ for (const p of pins) {
     d: 0, lc: 0, ad: 0, af: 0, src: 'hubspot', hs: null, ai: null,
   };
 
+  // Which emirate each funded client's pin sits in, for the outstanding book.
+  // Kept here, never written to the record: the page needs the totals, not the id.
+  if (p.adminId) emirateByAdmin.set(p.adminId, p.emirate || 'UAE, emirate unknown');
+
   rec.i = String(p.id);
   if (p.name) rec.n = p.name;
   rec.c = cat;
@@ -174,6 +179,42 @@ for (const c of companies) {
 // field. The page promises no phone numbers anywhere, so they are stripped.
 const stripPhone = v => v == null ? v : String(v).replace(/\+?\d[\d\s().-]{7,}\d/g, '').replace(/\s{2,}/g, ' ').trim();
 
+// ---- outstanding book, emirate level ------------------------------------------
+// Balances are pulled one funded client at a time into raw/admin-balances.json
+// ([{id, outstanding, asOf}]) and aggregated HERE, before anything reaches the
+// page: no merchant's balance is written to data/ or drawn, only emirate totals.
+// Mohamed's decision, 20 Sep 2026: emirate level, all seven emirates. Emirates
+// with fewer than 5 funded clients are merged into one row so that no row can be
+// read back to a single client. Clients whose pin is foreign are excluded.
+let book = null;
+try {
+  const bal = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-balances.json'), 'utf8'));
+  const rows = {}; let asOf = null, withBalance = 0, noBalance = 0, notOnMap = 0;
+  for (const b of bal) {
+    if (!b || !b.id) continue;
+    if (b.asOf && (!asOf || b.asOf > asOf)) asOf = b.asOf;
+    const em = emirateByAdmin.get(b.id);
+    if (!em) { notOnMap++; continue; }
+    if (typeof b.outstanding !== 'number') { noBalance++; continue; }
+    withBalance++;
+    rows[em] = rows[em] || { emirate: em, clients: 0, outstanding: 0 };
+    rows[em].clients++; rows[em].outstanding += b.outstanding;
+  }
+  const MIN = 5;
+  const shown = [], merged = { emirate: 'Other emirates (fewer than ' + MIN + ' clients each)', clients: 0, outstanding: 0, merged: [] };
+  for (const r of Object.values(rows)) {
+    if (r.clients >= MIN) shown.push(r);
+    else { merged.clients += r.clients; merged.outstanding += r.outstanding; merged.merged.push(r.emirate); }
+  }
+  shown.sort((a, b) => b.outstanding - a.outstanding);
+  // A merged row of a single emirate would still be that emirate; only show it when it hides two or more.
+  if (merged.clients > 0 && (merged.merged.length >= 2 || merged.clients >= MIN)) shown.push(merged);
+  const total = Object.values(rows).reduce((s, r) => s + r.outstanding, 0);
+  book = { asOf, rows: shown, total, clientsWithBalance: withBalance, clientsNoBalance: noBalance, clientsNotOnMap: notOnMap, minClients: MIN,
+           suppressedClients: merged.clients > 0 && !(merged.merged.length >= 2 || merged.clients >= MIN) ? merged.clients : 0 };
+  console.log('outstanding book: ' + withBalance + ' clients with a balance, ' + noBalance + ' without, ' + notOnMap + ' not on the map; ' + shown.length + ' rows');
+} catch (e) { /* no balances pulled yet: the page hides the panel */ }
+
 const out = {
   companies,
   universe: prev.universe.map(u => Object.assign({}, u, { n: stripPhone(u.n) })),   // Dubai only, by decision
@@ -208,6 +249,7 @@ const out = {
     fundedOnMap: companies.filter(c => c.af).length,
     adminOnlyFunded,
     fundedScope,
+    book,
     money,
     universeScope: 'Dubai only',
     // The whole CRM, split three ways, so the map's total is never mistaken

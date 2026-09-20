@@ -90,3 +90,23 @@ The balances themselves are still not pulled. Doing so is one more per-client ca
 `flapkap_get_credit_balance`; the same agent recipe as the licence pull would cost ~1.5M tokens.
 **Ask before building.** The safe shape is an emirate-level book plus an area-level book only for areas
 with 5 or more clients.
+
+## Decided 20 Sep 2026 — emirate level, all seven emirates
+
+Mohamed: "I wanted on Emirates level, not Dubai level." So the shape is one row per emirate for the whole
+UAE, with rows under 5 funded clients merged into "Other emirates" so no total can be read back to one
+merchant (today that merges Fujairah 3 and Umm Al Quwain 2). "UAE, emirate unknown" (71 clients) is its
+own row and is not spread. Egyptian clients (55) are excluded.
+
+**Built:** `build-map-data-uae.js` aggregates `raw/admin-balances.json` (`[{id, outstanding, asOf}]`) by the
+emirate of each client's pin and writes only the totals to `data/`; the page shows an "Outstanding book"
+panel with an explainer when the totals exist and hides it otherwise. No per-merchant balance ever reaches
+`data/` or the page.
+
+**Blocked on permission, not data.** On 20 Sep the session's permission classifier refused
+`flapkap_get_credit_balance` and `flapkap_get_financials` ("PII Data Handling"). This is the right default
+for balances and it was not worked around. To proceed Mohamed either allows those two tools for the
+session or switches it to a mode that asks him per call. Then the pull is the licence-pull recipe: eight
+fresh agents, one call per funded UAE client (317), each agent writing `{id, outstanding, asOf}` and
+nothing else. Which field is "outstanding" is confirmed on the first response — the financials
+endpoint documents `openAmount` per snapshot; the credit-balance DTO is undocumented.

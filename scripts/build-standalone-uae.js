@@ -223,6 +223,9 @@ ${V('MarkerCluster.Default.css')}
   <h4>Emirate</h4>
   <div class="cats" id="ems"></div>
 
+  <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
+  <div id="book" style="display:none"></div>
+
   <h4>How exact is the pin?</h4>
   <div class="cats" id="prec"></div>
   <div class="muted" style="margin-top:4px">A solid dot with a white ring is a real street address. Faded, ringless pins are scattered inside the area or emirate we know the business is in &mdash; they are not the building.</div>
@@ -505,6 +508,12 @@ ${V('MarkerCluster.Default.css')}
       '<dt>Why this way</dt><dd>A company we know is in Al Quoz but have no address for is drawn <i>inside Al Quoz</i>, at a point chosen from its own record id so it never moves between rebuilds. The place is real and measured; only the exact spot within it is not. Nothing is ever drawn in a place we did not verify.</dd>'+
       '<dt>What would make it wrong</dt><dd>Reading a faded pin as a real address. Only '+fmt(b.exact||0)+' pins are true geocoded addresses &mdash; switch off the other precision filters to see just those. An emirate-only pin tells you the emirate and nothing more.</dd></dl>';}},
 
+    book:{h:'Outstanding book, by emirate',b:function(){var b=DATA.stats.book;if(!b)return '';return ''+
+      '<dl><dt>What it counts</dt><dd>The amount funded clients currently owe FlapKap &mdash; the open principal, not what was disbursed and not fees &mdash; added up by the emirate each client sits in.</dd>'+
+      '<dt>Formula</dt><dd><code>for each funded client (admin.financingStatus = REFINANCING):<br>&nbsp;&nbsp;outstanding = latest open amount from the admin app<br>book[emirate] = sum of outstanding for clients whose pin is in that emirate</code></dd>'+
+      '<dt>Why this way</dt><dd>You asked for the book at emirate level, for the whole UAE. Balances are the most sensitive figure in the system, so they are added up <i>before</i> anything reaches this page: no single merchant\u2019s balance exists in it. Emirates with fewer than '+b.minClients+' funded clients are merged into one row, because a total over two or three clients can be read back to one of them.</dd>'+
+      '<dt>Coverage</dt><dd>'+fmt(b.clientsWithBalance)+' funded clients have a balance and a pin; '+fmt(b.clientsNoBalance)+' returned no balance; '+fmt(b.clientsNotOnMap)+' are outside the UAE and excluded. Balances as of '+esc(b.asOf||'the pull date')+'.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Balances move daily; this is a snapshot. The row &ldquo;UAE, emirate unknown&rdquo; is real money that no source could place in an emirate &mdash; do not spread it across the others. Egyptian merchants are not in any row.</dd></dl>';}},
     scope:{h:'What this map is NOT showing',b:function(){var s=DATA.stats.crmScope;if(!s)return '';return ''+
       '<dl><dt>The whole CRM, split three ways</dt><dd><code>says United Arab Emirates  '+fmt(s.uaeCountry)+'\\nsays somewhere else       '+fmt(s.elsewhere)+'\\nsays nothing at all       '+fmt(s.noCountry)+'\\n                        --------\\ntotal in HubSpot          '+fmt(s.total)+'</code></dd>'+
       '<dt>This map shows the first group</dt><dd><b>'+fmt(s.onMap)+'</b> companies. The '+fmt(s.elsewhere)+' that name another country are out of scope &mdash; this is a UAE map, and a company in Philadelphia or Cairo is not the market.</dd>'+
@@ -627,7 +636,18 @@ ${V('MarkerCluster.Default.css')}
 
   var disN=DATA.companies.filter(function(c){return c.hs;}).length;
   if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';
-  renderLegend(); renderCats(); renderEms(); renderPrec(); redraw();
+  function renderBook(){
+    var b=DATA.stats.book; if(!b||!b.rows||!b.rows.length) return;
+    var h='<table style="width:100%;font-size:11.5px;border-collapse:collapse">';
+    b.rows.forEach(function(r){ h+='<tr><td style="padding:2px 0;color:#444">'+esc(r.emirate)+'</td><td style="text-align:right;color:#9a9a9a">'+fmt(r.clients)+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;color:#111">'+esc(aed(r.outstanding))+'</td></tr>'; });
+    h+='<tr><td style="padding-top:4px;border-top:1px solid #eee;font-weight:600">Total</td><td style="text-align:right;border-top:1px solid #eee;color:#9a9a9a">'+fmt(b.clientsWithBalance)+'</td><td style="text-align:right;border-top:1px solid #eee;font-weight:600">'+esc(aed(b.total))+'</td></tr></table>';
+    h+='<div class="muted" style="margin-top:4px">Funded clients and what they currently owe, by emirate. As of '+esc(b.asOf||'the pull date')+'. Rows with fewer than '+b.minClients+' clients are merged.</div>';
+    document.getElementById('book').innerHTML=h;
+    document.getElementById('book').style.display='';
+    document.getElementById('bookh').style.display='';
+    var ib=document.getElementById('ibook'); if(ib) ib.onclick=function(){ openInfo('book'); };
+  }
+  renderLegend(); renderCats(); renderEms(); renderPrec(); renderBook(); redraw();
 
   // The container has no size until layout settles. Fitting before that lands on
   // the whole world, which is what happened the first time.
