@@ -211,6 +211,8 @@ function main() {
       lon: lon === null ? null : Number(lon.toFixed(6)),
       placement,
       unknown: !!c.unknown, nolocation: !!c.nolocation,
+      adminFunded: !!c.adminFunded, adminId: c.adminId || null,
+      adminIndustry: c.adminIndustry || null, disbursed: c.disbursed || null,
     });
   }
 

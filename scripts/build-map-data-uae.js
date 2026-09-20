@@ -33,6 +33,25 @@ const places = R('lookups/uae-places.json');
 const prevById = new Map();
 for (const c of prev.companies) prevById.set(String(c.i), c);
 
+// The admin app's industry picklist, for the funded clients HubSpot has no
+// record of. Everything not listed is "other"; nothing is "blank" if a value exists.
+const ADMIN_CATEGORY = {
+  FOODSERVICE_HOSPITALITY: 'hospitality_fnb', RESTAURANTS: 'hospitality_fnb', CATERING: 'hospitality_fnb', HOTELS: 'hospitality_fnb',
+  FOOD_BEVERAGE_RETAIL: 'retail', RETAIL: 'retail', E_COMMERCE: 'retail', FASHION_RETAIL: 'retail', GROCERY: 'retail',
+  HEALTHCARE_PROVIDERS: 'medical_healthcare', HEALTHCARE: 'medical_healthcare', PHARMACY: 'medical_healthcare', CLINICS: 'medical_healthcare',
+  CONSTRUCTION_CONTRACTING: 'contracting_fitout', PROPERTY_MAINTENANCE: 'contracting_fitout', INTERIOR_FITOUT: 'contracting_fitout', BUILDING_MATERIALS: 'contracting_fitout',
+  MARKETING_ADVERTISING: 'marketing_advertising', MEDIA: 'marketing_advertising', EVENTS: 'marketing_advertising',
+  AUTO_REPAIR: 'auto_automotive', AUTOMOTIVE: 'auto_automotive', AUTO_PARTS: 'auto_automotive', CAR_RENTAL: 'auto_automotive',
+  MANUFACTURING: 'manufacturing_trading', OTHER_LIGHT_MANUFACTURING: 'manufacturing_trading', PLASTICS_PAPER_RUBBER: 'manufacturing_trading',
+  TRADING: 'manufacturing_trading', OTHER_TRADE: 'manufacturing_trading', GENERAL_TRADING: 'manufacturing_trading', WHOLESALE: 'manufacturing_trading',
+  IT_SOFTWARE_DATA: 'it_software', SOFTWARE: 'it_software', TECHNOLOGY: 'it_software',
+};
+function adminCategoryOf(v) {
+  if (!v) return null;
+  const k = String(v).toUpperCase();
+  return ADMIN_CATEGORY[k] || 'other';
+}
+
 function categoryOf(industry) {
   if (!industry) return 'blank';
   const key = String(industry).replace(/&amp;/g, '&');
@@ -46,7 +65,17 @@ const byPlacement = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
 const byLayer = {};
 const byCategory = {};
 
-let excludedNotUAE = 0, excludedUnknown = 0;
+let excludedNotUAE = 0, excludedUnknown = 0, adminOnlyFunded = 0;
+// The funded book as the admin app holds it: how many clients, how many of them
+// are Egyptian merchants (outside a UAE map), how many are UAE. Measured from the
+// per-client pull, 20 Sep 2026.
+const fundedScope = { total: 372, foreign: 0, uae: 372 };
+try {
+  const lic = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-licence-emirate.json'), 'utf8'));
+  fundedScope.total = lic.length;
+  fundedScope.foreign = lic.filter(r => r.foreign).length;
+  fundedScope.uae = fundedScope.total - fundedScope.foreign;
+} catch (e) { /* pull not run yet */ }
 // The 8,040 that said nothing about where they are, split by what became of them.
 const noLoc = { drawn: 0, unknown: 0, foreign: 0 };
 for (const p of pins) {
@@ -67,14 +96,20 @@ for (const p of pins) {
 
   const old = prevById.get(String(p.id));
 
+  // A funded client the admin app knows and HubSpot does not. There is no deal
+  // record to carry, so the pin says only what the admin app says: funded,
+  // when last disbursed, which industry. No money, no owner, no stage.
+  const adminOnly = !!p.adminFunded && !old;
+  if (adminOnly) adminOnlyFunded++;
+
   // The record's own industry value wins over the Dubai build's stored bucket,
   // so re-bucketing (IT & software became category 8 on 19 Sep) takes effect
   // everywhere instead of only on records pulled since. The stored bucket is
   // the fallback for records that carry no industry.
-  const fromIndustry = p.industry ? categoryOf(p.industry) : null;
+  const fromIndustry = p.industry ? categoryOf(p.industry) : adminCategoryOf(p.adminIndustry);
   const cat = (fromIndustry && fromIndustry !== 'blank') ? fromIndustry
             : (old && old.c ? old.c : 'blank');
-  const layer = old && old.l ? old.l : 'crm';
+  const layer = adminOnly ? 'closed_won' : (old && old.l ? old.l : 'crm');
 
   // Copy the Dubai build's record WHOLESALE rather than re-listing its fields.
   // Its keys are terse and easy to mistake for each other - `m` is the deal
@@ -90,6 +125,10 @@ for (const p of pins) {
   if (p.name) rec.n = p.name;
   rec.c = cat;
   if (!rec.l) rec.l = 'crm';
+  if (adminOnly) {
+    rec.l = 'closed_won'; rec.src = 'admin'; rec.ao = 1; rec.ad = 1; rec.af = 1;
+    rec.ai = p.adminIndustry || null; rec.cd = p.disbursed || null;
+  }
   // Geography is always taken from the new allocation, which supersedes the
   // Dubai-only placement.
   rec.y = p.lat; rec.x = p.lon;
@@ -124,9 +163,9 @@ for (const c of companies) {
 }
 
 // ---- deal money, carried through -------------------------------------------
-const money = { won: 0, open: 0, lost: 0, wonN: 0, openN: 0, lostN: 0 };
+const money = { won: 0, open: 0, lost: 0, wonN: 0, openN: 0, lostN: 0, wonNoValue: 0 };
 for (const c of companies) {
-  if (c.l === "closed_won") { money.won += c.m || 0; money.wonN++; }
+  if (c.l === "closed_won") { money.won += c.m || 0; money.wonN++; if (!c.m) money.wonNoValue++; }
   else if (c.l === "in_process") { money.open += c.m || 0; money.openN++; }
   else if (c.l === "closed_lost") { money.lost += c.m || 0; money.lostN++; }
 }
@@ -164,6 +203,11 @@ const out = {
     byCategory,
     excludedNotUAE,
     excludedUnknown,
+    // Funded clients: how many the map now carries, and how many of those exist
+    // only in the admin app (no HubSpot record, so no deal value).
+    fundedOnMap: companies.filter(c => c.af).length,
+    adminOnlyFunded,
+    fundedScope,
     money,
     universeScope: 'Dubai only',
     // The whole CRM, split three ways, so the map's total is never mistaken
@@ -199,6 +243,7 @@ console.log('    emirate      ' + num(byPlacement.emirate));
 console.log('    UAE only     ' + num(byPlacement.uae));
 console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely)');
 console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
+console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + adminOnlyFunded.toLocaleString() + ' are admin-app-only pins');
 console.log('the 8,040 no-location companies: drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
 console.log('universe (Dubai) ' + num(prev.universe.length));
 console.log('areas ranked     ' + num(Object.keys(areas).length));

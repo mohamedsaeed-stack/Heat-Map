@@ -145,6 +145,19 @@ function allocate(c, contactCities, webHit) {
     if (em) { out.emirate = em; out.route = 'name'; }
   }
 
+  // 4a: the admin app's trade licence, for funded clients. Its issuing
+  // authority names the emirate (DET-Dubai, EDD-Sharjah, ADDED...). It is the
+  // company's registered home, so it ranks below the CRM's own city - where
+  // someone at FlapKap said the business trades - and above its website and
+  // contacts. The merge in admin-licence-emirate.js may also have fallen back
+  // to the client's phone area code or website; the route says which.
+  if (c._admin) {
+    const a = c._admin;
+    if (!out.emirate && a.emirate) { out.emirate = a.emirate; out.route = 'admin ' + (a.route || 'licence'); if (a.area) out.area = a.area; }
+    else if (out.emirate && !out.area && a.area && a.emirate === out.emirate) { out.area = a.area; out.route += ' + admin area'; }
+    if (!out.uae && a.uae) { out.uae = true; if (!out.route) out.route = 'admin app, UAE'; }
+  }
+
   // 4b: the address the company publishes on ITS OWN WEBSITE.
   //
   // Ranked above contacts because it is the company's own public statement
@@ -274,6 +287,41 @@ function main() {
   // domain and attaches the phone evidence. Every one of them is flagged,
   // because a record that ends with no evidence at all is UNKNOWN, not foreign -
   // nothing on it says anywhere - and the two are kept apart below.
+  // Funded admin-app clients, from the licence pull (admin-licence-emirate.js).
+  // A client that joins to a CRM company lends that company its licence
+  // evidence and, if the CRM record has no address, its registered office
+  // address. A client that joins to nothing becomes a pin of its own: the
+  // admin app is the authority on who is funded, and a funded client with no
+  // CRM record is still a funded client somewhere in the UAE. Its legal address
+  // goes through the same address matcher as everyone else's (route 3), and
+  // its country through the same UAE-only rule - the 47 Egyptian merchants in
+  // the funded book fall out as "not UAE" like any other foreign record.
+  let adminJoined = 0, adminOnly = 0;
+  const hsByAdmin = new Map();
+  try {
+    const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-match.json'), 'utf8'));
+    for (const [hsId, v] of Object.entries(m)) if (v && v.adminId && !hsByAdmin.has(v.adminId)) hsByAdmin.set(v.adminId, String(hsId));
+  } catch (err) { /* no join file */ }
+  for (const r of load('admin-licence-emirate.json')) {
+    const ev = { emirate: r.emirate || null, area: r.area || null, route: r.route || null, uae: !!r.uae };
+    const hsId = hsByAdmin.get(r.id);
+    const prev = hsId ? byId.get(hsId) : null;
+    if (prev) {
+      prev._admin = ev;
+      if (!prev.website && !prev.domain && r.website) prev.domain = r.website;
+      if (!prev.address && r.address) prev.address = r.address;
+      adminJoined++; continue;
+    }
+    byId.set('admin:' + r.id, {
+      hs_object_id: 'admin:' + r.id, name: r.name, domain: r.website || null, industry: null,
+      address: r.address || null, country: r.country || null,
+      _src: 'admin-funded', _admin: ev, _adminFunded: true, _adminId: r.id,
+      _adminIndustry: (Array.isArray(r.industry) && r.industry[0]) || null,
+      _disbursed: r.lastDisbursementDate || null,
+    });
+    adminOnly++;
+  }
+
   let noLocationOnly = 0;
   for (const r of load('unlocated-recovered.json')) {
     const id = String(r.id);
@@ -307,7 +355,7 @@ function main() {
     const a = allocate(c, e ? Object.keys(e.contact_cities || {}) : null, wh);
     // Nothing on the record, nothing off it, and no country saying elsewhere:
     // that is unknown, not foreign.
-    a.unknown = !a.emirate && !a.uae && !!c._noLocation && !(c.country && !isUAE(c.country));
+    a.unknown = !a.emirate && !a.uae && !!(c._noLocation || c._adminFunded) && !(c.country && !isUAE(c.country));
     const em = a.emirate || (a.uae ? 'UAE (emirate unknown)' : a.unknown ? 'location unknown' : 'not UAE');
     tally[em] = (tally[em] || 0) + 1;
     precision[a.precision || 'none'] = (precision[a.precision || 'none'] || 0) + 1;
@@ -318,6 +366,8 @@ function main() {
       address: c.address || null,
       emirate: a.emirate, area: a.area, precision: a.precision, route: a.route, src: c._src,
       unknown: a.unknown, nolocation: !!c._noLocation,
+      adminFunded: !!c._adminFunded, adminId: c._adminId || null,
+      adminIndustry: c._adminIndustry || null, disbursed: c._disbursed || null,
     });
   }
 
@@ -326,6 +376,7 @@ function main() {
 
   console.log('DISTINCT COMPANIES  ' + byId.size.toLocaleString());
   console.log('  found only in the no-location file: ' + noLocationOnly.toLocaleString());
+  console.log('  funded admin clients: ' + adminJoined.toLocaleString() + ' joined to a CRM company, ' + adminOnly.toLocaleString() + ' drawn as their own pin');
   console.log('  found only via a contact\'s city: ' + contactOnly.toLocaleString());
   console.log('');
   console.log('BY EMIRATE');

@@ -358,7 +358,7 @@ ${V('MarkerCluster.Default.css')}
     if(c.m) kv+='<dt>Deal value</dt><dd>'+esc(aed(c.m))+'</dd>';
     if(c.s) kv+='<dt>Stage</dt><dd>'+esc(c.s)+'</dd>';
     if(c.o) kv+='<dt>Owner</dt><dd>'+esc(c.o)+'</dd>';
-    if(c.cd) kv+='<dt>Close date</dt><dd>'+esc(c.cd)+'</dd>';
+    if(c.cd) kv+='<dt>'+(c.ao?'Last disbursed':'Close date')+'</dt><dd>'+esc(c.cd)+'</dd>';
     if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
     if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
     if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
@@ -381,7 +381,7 @@ ${V('MarkerCluster.Default.css')}
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
-      '<div class="pid">HubSpot company '+esc(c.i)+'</div></div>';
+      '<div class="pid">'+(c.ao?'Admin-app client '+esc(String(c.i).replace(/^admin:/,''))+' &middot; no HubSpot record':'HubSpot company '+esc(c.i))+'</div></div>';
   }
 
   function drawCRM(){
@@ -515,6 +515,7 @@ ${V('MarkerCluster.Default.css')}
       '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
       '<dt>Formula</dt><dd><code>admin.financingStatus = REFINANCING\\n  OR HubSpot stage = Money Disbursed\\n  OR HubSpot lifecyclestage = customer</code></dd>'+
       '<dt>Why this way</dt><dd>You said the admin app is more reliable than HubSpot for won and lost, so it overrides the deal stage. '+fmt(s.adminOverrode||0)+' companies were reclassified by it.</dd>'+
+      '<dt>Funded clients on the map</dt><dd>The admin app holds <b>'+fmt((DATA.stats.fundedScope||{}).total||372)+'</b> funded clients; <b>'+fmt((DATA.stats.fundedScope||{}).foreign||0)+'</b> are Egyptian merchants and outside a UAE map, leaving <b>'+fmt((DATA.stats.fundedScope||{}).uae||372)+'</b>. <b>'+fmt(DATA.stats.fundedOnMap||0)+'</b> pins carry the funded flag: '+fmt(DATA.stats.adminOnlyFunded||0)+' exist only in the admin app &mdash; HubSpot has no record of them &mdash; and are placed by their registered address or the emirate their trade licence was issued in (DET-Dubai, EDD-Sharjah, ADDED&hellip;); the rest reached the map through a CRM company matched by name. Admin-only pins carry no deal value, so the AED figure covers only the '+fmt(((DATA.stats.money||{}).wonN||0)-((DATA.stats.money||{}).wonNoValue||0))+' funded clients that have a HubSpot deal.</dd>'+
       '<dt>What would make it wrong</dt><dd>REFINANCING marks a client who is refinancing, so it catches those funded at least once. The admin app has no DISBURSED status. Read this as a floor, not a total.</dd></dl>';}},
 
     in_process:{h:'In process',b:function(){return ''+

@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 574 OpenStreetMap tiles are base64 inside it. Also published privately at
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 11, 20 Sep 2026). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 12, 20 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -43,18 +43,18 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **30,377** |
+| **Drawn** | **31,771** |
 | — exact geocoded street address | 3,649 |
-| — inside a named area | 7,784 |
-| — inside a named emirate | 16,407 |
-| — UAE, emirate unknown | 2,537 |
-| Location unknown — counted on the page, not drawn | 5,120 |
-| Dropped as foreign | 514 |
+| — inside a named area | 8,966 |
+| — inside a named emirate | 16,956 |
+| — UAE, emirate unknown | 2,200 |
+| Location unknown — counted on the page, not drawn | 3,997 |
+| Dropped as foreign | 561 |
 
-Dubai 22,248 · Abu Dhabi 3,171 · Sharjah 1,448 · Ajman 447 · Ras Al Khaimah 328 ·
-Fujairah 114 · Umm Al Quwain 84.
+Dubai 23,631 · Abu Dhabi 3,349 · Sharjah 1,532 · Ajman 483 · Ras Al Khaimah 354 ·
+Fujairah 125 · Umm Al Quwain 97.
 
-Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
+Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
 
 ### Coverage, so the totals are never oversold
 
@@ -63,10 +63,10 @@ Closed won 198 / AED 49.9M · in process 742 / AED 444.2M · closed lost 427 / A
 | HubSpot portal | 47,516 | |
 | …says United Arab Emirates | 29,355 | most of the map |
 | …says somewhere else | 9,974 | out of scope |
-| …says nothing at all | 8,187 | 8,040 had no location field at all: **2,920 now placed, 5,120 still unknown** — see §5 |
+| …says nothing at all | 8,187 | 8,040 had no location field at all: **4,043 now placed, 3,997 still unknown** — see §5 |
 | Admin-app clients | 8,534 | only **718 (8.4%)** join to the CRM |
-| Funded clients | 372 | only **46** are on the map |
-| **On the map** | **30,377** | 64% of the portal; every record with any UAE evidence is drawn |
+| Funded clients | 372 | 55 are Egyptian merchants, outside a UAE map → **317 UAE**. **319 funded pins on the map** (267 admin-app-only + 52 via the CRM name join) |
+| **On the map** | **31,771** | 67% of the portal; every record with any UAE evidence is drawn |
 
 ---
 
@@ -122,22 +122,27 @@ produced 331M tokens.
 
 **Everything on the map side is done.** What is left is blocked on data, not effort.
 
-1. **8,040 companies say nothing about where they are** — 17% of the portal. As of 20 Sep 2026,
-   **2,920 of them are on the map** (the address on their own website, their phone area code, a `.ae`
-   domain, or a contact) and **5,120 remain unknown** — the page's "Location unknown" tile. They are
-   never called foreign: nothing on them says anywhere. The website sweep over their 7,448 domains is
-   **resumable and was still running** when this was written: 1,820 swept, 523 located (**28.7%**,
-   against 56% for companies with CRM data — a record with no city and a dead domain is usually a dead
-   lead). `bash scripts/sweep-until-done.sh` continues it; then rebuild. **Privacy: the phone is read, an
-   emirate is derived, the number is discarded. No phone number reaches `raw/`, `data/` or the page.**
-2. **The admin app is the weak half — 46 of 372 funded clients on the map.** The join is by company
-   name and reaches 8.4%. `legalAddresses` is **empty**, including on funded clients — the brief was
-   wrong about that. The location actually lives in `businessInfo.licenseNumbers`
-   (`"636960 DET-Dubai"`). See `lookups/admin-license-emirate.md`. No bulk route exists; **run it in
-   a fresh session** where it costs ~20M instead of ~220M.
-3. **The outstanding book is blocked and should not be built yet.** Only 48 funded clients are
-   placeable and they sit in 4 areas with 1–2 clients each, so an area total would expose individual
-   balances. See `lookups/outstanding-book.md`.
+1. **8,040 companies say nothing about where they are — DONE as far as it goes.** The website sweep
+   finished on 20 Sep 2026: all 7,446 domains visited, **2,330 located (31.3%)**, against ~56% for
+   companies with CRM data. With website, phone area code, `.ae` domain and contacts combined,
+   **4,043 of the 8,040 are on the map and 3,997 remain unknown** — the page's "Location unknown"
+   tile. Nothing else on these records can place them; the fix is in HubSpot, not on the map.
+   Privacy: the phone is read, an emirate is derived, the number is discarded — no phone number
+   reaches `raw/`, `data/` or the page.
+2. **The admin app now has its own location — DONE 20 Sep 2026.** One `flapkap_get_client` call per
+   funded client, 372 calls across 8 fresh agents, **~1.5M tokens and 6 minutes in total** (the
+   ~20M–220M estimates were far too high; agents with a small context are the way). Findings:
+   `legalAddresses` is **filled on 113 of 372** — real street addresses naming an area — so the old
+   "always empty" claim came from a three-client sample; the licence authority names the emirate on
+   193 more; **55 funded clients are Egyptian** (country EGY, +20 phones) and are counted, not drawn.
+   Result: **319 funded pins** on the map (from 46) — 14 exact, 111 area, 123 emirate, 71 UAE-only.
+   Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
+   Re-run: only if the funded book changes — the per-client pull is the expensive part.
+3. **The outstanding book — re-measure before deciding, and ask Mohamed first.** Item 2 changed the
+   picture: 319 funded pins, 117 of them with an area across 51 areas. Only 5 areas hold 5 or more
+   (Bur Dubai 13, Business Bay 9, Al Quoz 8, Downtown Dubai 7, Al Karama 6); 41 areas hold 1–2, so an
+   area-level total would still expose individual balances in most of them. Emirate-level totals
+   (Dubai 184, Abu Dhabi 33, Sharjah 13, Ajman 13) would not. See `lookups/outstanding-book.md`.
 4. **Market universe outside Dubai** — parked by Mohamed's decision until the CRM/admin side is
    finished. That point has now been reached, so this is available to pick up.
 5. **19 stale deals** open in HubSpot for merchants the admin app already closed —
@@ -173,7 +178,7 @@ Full list in `START-HERE.md`. The three that bite hardest:
 START-HERE.md                    the handoff: state, decisions, every trap
 README.md                        what it is, how to refresh, the rules
 lookups/outstanding-book.md      why the revenue view is blocked, measured
-lookups/admin-license-emirate.md legalAddresses is empty; licenceNumbers is the signal
+lookups/admin-license-emirate.md the licence pull: how it was run, what it found, the authority table
 lookups/stale-deals.md           19 deals to fix in HubSpot
 lookups/uae-places.json          the gazetteer: emirates, areas, 60 landmarks/misspellings
 scripts/                         pull, locate, scatter, build - all Node

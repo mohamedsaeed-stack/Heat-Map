@@ -76,3 +76,17 @@ thing actually missing, and would raise placeable funded clients from 48 toward 
 No balance was pulled. No merchant balance appears anywhere in this repo, in `data/`, or on the page.
 The rule from `lookups/admin-fields.md` still stands: aggregate by area **before** anything is drawn,
 and do not draw it at all if the cells are too small — which is exactly what this measurement found.
+
+
+## Re-measured 20 Sep 2026, after the licence pull
+
+319 funded pins are now on the map (from 48 placeable). **117 carry an area, across 51 areas.** Only
+**5 areas hold 5 or more** funded clients — Bur Dubai 13, Business Bay 9, Al Quoz 8, Downtown Dubai 7,
+Al Karama 6 — and **41 areas hold 1–2**, so an area-level book would still expose individual balances
+in four areas out of five. Emirate-level totals (Dubai 184, Abu Dhabi 33, Sharjah 13, Ajman 13,
+Fujairah 3, Umm Al Quwain 2, emirate unknown 71) would not expose anyone.
+
+The balances themselves are still not pulled. Doing so is one more per-client call, or a read of
+`flapkap_get_credit_balance`; the same agent recipe as the licence pull would cost ~1.5M tokens.
+**Ask before building.** The safe shape is an emirate-level book plus an area-level book only for areas
+with 5 or more clients.
