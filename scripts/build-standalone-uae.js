@@ -271,11 +271,12 @@ ${V('MarkerCluster.Default.css')}
   // The offline street map stops at zoom 15: the sharpest embedded tiles are z13,
   // two levels of scaling is still a map, four is a blur - and approximate pins
   // do not justify street-level zoom. The online base maps keep their own maximum.
-  // Source-record links. HubSpot portal 25308329. The admin app's client-page
-  // route is not public; set ADMIN_CLIENT_URL (with {id}) once confirmed and
-  // admin-only pins link there too.
+  // Source-record links. HubSpot portal 25308329. The admin app is a Flutter web
+  // app with hash routing; its bundle declares the route /clients/:clientId, and
+  // the sign-in page lands on /#/login - measured 22 Sep 2026 from the public
+  // front-end, no login needed.
   var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
-  var ADMIN_CLIENT_URL = null;
+  var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
   var BASEMAPS = [
     {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
      attr:'&copy; OpenStreetMap contributors'},
@@ -419,11 +420,11 @@ ${V('MarkerCluster.Default.css')}
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
-      '<div class="pid">'+(c.ao
-        ? (ADMIN_CLIENT_URL
-            ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(String(c.i).replace(/^admin:/,'')))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a> <span>no HubSpot record</span>'
-            : 'Admin-app client '+esc(String(c.i).replace(/^admin:/,''))+' &middot; no HubSpot record')
-        : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a> <span>'+esc(c.i)+'</span>')+'</div></div>';
+      '<div class="pid">'+
+        (c.ao ? '' : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a>')+
+        (c.aid && ADMIN_CLIENT_URL ? (c.ao?'':' &middot; ')+'<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(c.aid))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a>' : '')+
+        (c.ao ? ' <span>no HubSpot record</span>' : '')+
+      '</div></div>';
   }
 
   function drawCRM(){

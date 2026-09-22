@@ -67,6 +67,13 @@ const byCategory = {};
 
 let excludedNotUAE = 0, excludedUnknown = 0, adminOnlyFunded = 0;
 const emirateByAdmin = new Map();
+// HubSpot company -> admin client, from the name join, so the page can link a
+// joined record to its admin-app client page as well as to HubSpot.
+const adminIdByHs = new Map();
+try {
+  for (const [hsId, v] of Object.entries(JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-match.json'), 'utf8'))))
+    if (v && v.adminId) adminIdByHs.set(String(hsId), v.adminId);
+} catch (e) { /* no join file */ }
 // The funded book as the admin app holds it: how many clients, how many of them
 // are Egyptian merchants (outside a UAE map), how many are UAE. Measured from the
 // per-client pull, 20 Sep 2026.
@@ -133,6 +140,9 @@ for (const p of pins) {
   if (adminOnly) {
     rec.l = 'closed_won'; rec.src = 'admin'; rec.ao = 1; rec.ad = 1; rec.af = 1;
     rec.ai = p.adminIndustry || null; rec.cd = p.disbursed || null;
+    rec.aid = p.adminId || null;
+  } else if (p.adminId || adminIdByHs.has(String(p.id))) {
+    rec.aid = p.adminId || adminIdByHs.get(String(p.id));      // joined: both links
   }
   // Geography is always taken from the new allocation, which supersedes the
   // Dubai-only placement.
