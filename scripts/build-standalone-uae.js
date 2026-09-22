@@ -24,7 +24,7 @@ const LAYERS = [
   { key: 'closed_won',  label: 'Closed won',  color: '#0b8043', r: 9 },
   { key: 'in_process',  label: 'In process',  color: '#f5a623', r: 8 },
   { key: 'closed_lost', label: 'Closed lost', color: '#d93025', r: 7 },
-  { key: 'crm',         label: 'On the CRM',  color: '#9aa0a6', r: 6 },
+  { key: 'crm',         label: 'On the CRM',  color: '#2f6fd6', r: 6 },   // blue, not grey: a CRM record is a real prospect
 ];
 const CAT_COLOR = {
   hospitality_fnb: '#e8590c', medical_healthcare: '#1098ad', marketing_advertising: '#c2255c',
@@ -158,7 +158,10 @@ ${V('MarkerCluster.Default.css')}
   .kv dt{color:#9a9a9a}
   .kv dd{color:#333;font-variant-numeric:tabular-nums}
   .pnote{font-size:10.5px;color:#999;line-height:1.45;margin-top:8px;border-top:1px solid #eee;padding-top:6px}
-  .pid{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#bbb;margin-top:3px}
+  .pid{font-size:11px;color:#777;margin-top:5px}
+  .pid a{color:#1a73e8;text-decoration:none;font-weight:600}
+  .pid a:hover{text-decoration:underline}
+  .pid span{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#999;margin-left:6px}
 
   .lbl{background:rgba(255,255,255,.92);border:1px solid rgba(0,0,0,.12);border-radius:4px;
     padding:1px 5px;font-size:11px;color:#222;font-weight:500;white-space:nowrap;
@@ -268,6 +271,11 @@ ${V('MarkerCluster.Default.css')}
   // The offline street map stops at zoom 15: the sharpest embedded tiles are z13,
   // two levels of scaling is still a map, four is a blur - and approximate pins
   // do not justify street-level zoom. The online base maps keep their own maximum.
+  // Source-record links. HubSpot portal 25308329. The admin app's client-page
+  // route is not public; set ADMIN_CLIENT_URL (with {id}) once confirmed and
+  // admin-only pins link there too.
+  var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
+  var ADMIN_CLIENT_URL = null;
   var BASEMAPS = [
     {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
      attr:'&copy; OpenStreetMap contributors'},
@@ -411,7 +419,11 @@ ${V('MarkerCluster.Default.css')}
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
-      '<div class="pid">'+(c.ao?'Admin-app client '+esc(String(c.i).replace(/^admin:/,''))+' &middot; no HubSpot record':'HubSpot company '+esc(c.i))+'</div></div>';
+      '<div class="pid">'+(c.ao
+        ? (ADMIN_CLIENT_URL
+            ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(String(c.i).replace(/^admin:/,'')))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a> <span>no HubSpot record</span>'
+            : 'Admin-app client '+esc(String(c.i).replace(/^admin:/,''))+' &middot; no HubSpot record')
+        : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a> <span>'+esc(c.i)+'</span>')+'</div></div>';
   }
 
   function drawCRM(){
@@ -435,7 +447,7 @@ ${V('MarkerCluster.Default.css')}
       if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
-      var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#f9ab00' : L0.color;
+      var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : L0.color;   // purple: Risk rejection, distinct from in-process amber
       var quiet = (c.l==='crm');
       // A pin's STRENGTH encodes how well we know where it is. A solid dot with
       // a white ring is a real geocoded address. Anything scattered inside an
@@ -448,13 +460,13 @@ ${V('MarkerCluster.Default.css')}
       // not distinguishing them at all - the map just looked empty.
       // An exact pin keeps the white ring; approximate pins lose the ring and
       // are softened, but stay clearly readable.
-      var fo = quiet?.62:.95;
-      if(area) fo*=.85; if(vague) fo*=.7; if(untraced) fo*=.62;
+      var fo = quiet?.8:.95;
+      if(area) fo*=.95; if(vague) fo*=.85; if(untraced) fo*=.75;
       var m=L.circleMarker([c.y,c.x],{
         radius: radiusFor(c,quiet?4:L0.r) * (untraced?.7:(vague?.85:(area?.92:1))),
         color: (area||vague)?color:'#fff',
         weight: vague?0.5:(area?1:(quiet?1:2)),
-        opacity: (area||vague)?.65:(quiet?.75:1),
+        opacity: (area||vague)?.85:1,
         fillColor:color, fillOpacity:fo});
       m.bindPopup(popupFor(c,color));
       if(showLabels) m.bindTooltip(c.n,{permanent:true,direction:'right',offset:[6,0],className:'lbl'});
@@ -637,7 +649,7 @@ ${V('MarkerCluster.Default.css')}
     Array.prototype.forEach.call(box.querySelectorAll('.hit[data-i]'),function(el){
       el.onclick=function(){
         var h=hits[Number(el.getAttribute('data-i'))];
-        map.flyTo([h.c.y,h.c.x],17,{duration:.7});
+        map.flyTo([h.c.y,h.c.x],Math.min(17,map.getMaxZoom()),{duration:.7});   // never past the layer maximum: Leaflet throws NaN
         if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
         else h.m.openPopup();
       };});
@@ -654,8 +666,8 @@ ${V('MarkerCluster.Default.css')}
 
   document.getElementById('note').innerHTML =
     '<span class="x" onclick="this.parentNode.style.display=\\'none\\'">&times;</span>'+
-    '<b>Every pin is a real record.</b> Green is a funded client, blue an open deal, red a loss, '+
-    'amber a Risk rejection. The grey <b>On the CRM</b> layer is '+fmt(s.byLayer.crm||0)+' companies and '+
+    '<b>Every pin is a real record.</b> Green is a funded client, amber an open deal, red a loss, '+
+    'purple a Risk rejection, blue a company on the CRM with no deal yet. The <b>On the CRM</b> layer is '+fmt(s.byLayer.crm||0)+' companies and '+
     'starts switched off because it covers the city - click it in the legend to bring it in. '+
     'Click any pin for its deal value, stage, '+
     'owner and close date. '+fmt((DATA.stats.byPlacement||{}).exact||0)+' pins sit at a real geocoded street address and keep the white ring; '+
