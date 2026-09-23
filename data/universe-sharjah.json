@@ -1,0 +1,73 @@
+{
+  "_emirate": "Sharjah",
+  "_pulled": "2026-09-23",
+  "_source": "OpenStreetMap via Overpass",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "categories": {
+    "hospitality_fnb": {
+      "label": "Hospitality & F&B",
+      "credible": true,
+      "elements": 1489,
+      "places": 1412,
+      "unnamed_dropped": 77,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-hospitality_fnb.json",
+      "bytes": 120235
+    },
+    "medical_healthcare": {
+      "label": "Medical clinics & healthcare",
+      "credible": true,
+      "elements": 553,
+      "places": 536,
+      "unnamed_dropped": 17,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-medical_healthcare.json",
+      "bytes": 46541
+    },
+    "auto_automotive": {
+      "label": "Auto parts & automotive trading",
+      "credible": true,
+      "elements": 552,
+      "places": 515,
+      "unnamed_dropped": 37,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-auto_automotive.json",
+      "bytes": 43586
+    },
+    "retail": {
+      "label": "Retail",
+      "credible": true,
+      "elements": 5122,
+      "places": 4049,
+      "unnamed_dropped": 133,
+      "reclassified_elsewhere": 940,
+      "file": "universe-sharjah-retail.json",
+      "bytes": 352828
+    },
+    "contracting_fitout": {
+      "label": "Contracting, fitouts, FFE",
+      "error": "HTTP 504 from https://overpass.private.coffee/api/interpreter",
+      "places": 0
+    },
+    "marketing_advertising": {
+      "label": "Marketing & advertising",
+      "credible": false,
+      "elements": 12,
+      "places": 12,
+      "unnamed_dropped": 0,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-marketing_advertising.json",
+      "bytes": 1497
+    },
+    "manufacturing_trading": {
+      "label": "Manufacturing & general trading",
+      "credible": false,
+      "elements": 191,
+      "places": 109,
+      "unnamed_dropped": 82,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-manufacturing_trading.json",
+      "bytes": 10059
+    }
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "_emirate": "Ajman",
+  "_pulled": "2026-09-23",
+  "_source": "OpenStreetMap via Overpass",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "categories": {
+    "hospitality_fnb": {
+      "label": "Hospitality & F&B",
+      "credible": true,
+      "elements": 822,
+      "places": 779,
+      "unnamed_dropped": 43,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-hospitality_fnb.json",
+      "bytes": 65514
+    },
+    "medical_healthcare": {
+      "label": "Medical clinics & healthcare",
+      "credible": true,
+      "elements": 206,
+      "places": 197,
+      "unnamed_dropped": 9,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-medical_healthcare.json",
+      "bytes": 17026
+    },
+    "auto_automotive": {
+      "label": "Auto parts & automotive trading",
+      "credible": true,
+      "elements": 195,
+      "places": 184,
+      "unnamed_dropped": 11,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-auto_automotive.json",
+      "bytes": 15137
+    },
+    "retail": {
+      "label": "Retail",
+      "credible": true,
+      "elements": 2694,
+      "places": 2283,
+      "unnamed_dropped": 52,
+      "reclassified_elsewhere": 359,
+      "file": "universe-ajman-retail.json",
+      "bytes": 188416
+    },
+    "contracting_fitout": {
+      "label": "Contracting, fitouts, FFE",
+      "credible": false,
+      "elements": 169,
+      "places": 168,
+      "unnamed_dropped": 1,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-contracting_fitout.json",
+      "bytes": 14753
+    },
+    "marketing_advertising": {
+      "label": "Marketing & advertising",
+      "credible": false,
+      "elements": 6,
+      "places": 6,
+      "unnamed_dropped": 0,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-marketing_advertising.json",
+      "bytes": 832
+    },
+    "manufacturing_trading": {
+      "label": "Manufacturing & general trading",
+      "credible": false,
+      "elements": 87,
+      "places": 85,
+      "unnamed_dropped": 2,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ajman-manufacturing_trading.json",
+      "bytes": 7653
+    }
+  }
+}

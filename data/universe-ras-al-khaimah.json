@@ -1,0 +1,68 @@
+{
+  "_emirate": "Ras Al Khaimah",
+  "_pulled": "2026-09-23",
+  "_source": "OpenStreetMap via Overpass",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "categories": {
+    "hospitality_fnb": {
+      "label": "Hospitality & F&B",
+      "credible": true,
+      "elements": 237,
+      "places": 203,
+      "unnamed_dropped": 34,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ras-al-khaimah-hospitality_fnb.json",
+      "bytes": 17693
+    },
+    "medical_healthcare": {
+      "label": "Medical clinics & healthcare",
+      "credible": true,
+      "elements": 43,
+      "places": 31,
+      "unnamed_dropped": 12,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ras-al-khaimah-medical_healthcare.json",
+      "bytes": 3028
+    },
+    "auto_automotive": {
+      "label": "Auto parts & automotive trading",
+      "credible": true,
+      "elements": 97,
+      "places": 70,
+      "unnamed_dropped": 27,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ras-al-khaimah-auto_automotive.json",
+      "bytes": 5650
+    },
+    "retail": {
+      "label": "Retail",
+      "credible": true,
+      "elements": 275,
+      "places": 138,
+      "unnamed_dropped": 96,
+      "reclassified_elsewhere": 41,
+      "file": "universe-ras-al-khaimah-retail.json",
+      "bytes": 12025
+    },
+    "contracting_fitout": {
+      "label": "Contracting, fitouts, FFE",
+      "credible": false,
+      "elements": 17,
+      "places": 14,
+      "unnamed_dropped": 3,
+      "reclassified_elsewhere": 0,
+      "file": "universe-ras-al-khaimah-contracting_fitout.json",
+      "bytes": 1734
+    },
+    "marketing_advertising": {
+      "label": "Marketing & advertising",
+      "error": "0 elements from https://overpass.private.coffee/api/interpreter - treated as throttling, not as an answer",
+      "places": 0
+    },
+    "manufacturing_trading": {
+      "label": "Manufacturing & general trading",
+      "error": "HTTP 504 from https://overpass.private.coffee/api/interpreter",
+      "places": 0
+    }
+  }
+}
