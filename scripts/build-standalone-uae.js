@@ -16,6 +16,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const V = f => fs.readFileSync(path.join(ROOT, 'page', 'vendor', f), 'utf8');
+const zlib = require('zlib');
 const map = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'map-uae.json'), 'utf8'));
 
 const pinned = map.companies.filter(c => c.y != null);
@@ -249,10 +250,16 @@ ${V('MarkerCluster.Default.css')}
 
 <script>${V('leaflet.min.js')}</script>
 <script>${V('leaflet.markercluster.min.js')}</script>
-<script>var DATA = ${JSON.stringify(payload)};
+<script>
+// The pin data travels gzipped and base64-encoded (5.2 MB -> 1.6 MB, measured
+// 23 Sep 2026) and is unpacked on open by the browser's built-in
+// DecompressionStream - no library, identical output. Every current browser has
+// it; an old one gets a plain message instead of a blank map.
+var DATA_GZ = "${zlib.gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }).toString('base64')}";
+var DATA = null;
 // Expand the dictionary-encoded fields back to their real values, so every
 // other line below sees the same shape the Dubai build produced.
-(function(){
+function __expand(){
   var D=DATA.dict||{}, C=DATA.companies, ks=Object.keys(D);
   for(var i=0;i<C.length;i++){
     var c=C[i];
@@ -260,10 +267,10 @@ ${V('MarkerCluster.Default.css')}
     if(c.lc===undefined)c.lc=0; if(c.ad===undefined)c.ad=0;
     if(c.af===undefined)c.af=0; if(c.d===undefined)c.d=0;
   }
-})();</script>
+}</script>
 <script>var TILES = ${JSON.stringify(TILES)};</script>
 <script>
-(function(){
+function __main(){
   var LAYERS = ${JSON.stringify(LAYERS)};
   var CAT_COLOR = ${JSON.stringify(CAT_COLOR)};
   var BY_KEY = {}; LAYERS.forEach(function(l){ BY_KEY[l.key]=l; });
@@ -650,7 +657,10 @@ ${V('MarkerCluster.Default.css')}
     Array.prototype.forEach.call(box.querySelectorAll('.hit[data-i]'),function(el){
       el.onclick=function(){
         var h=hits[Number(el.getAttribute('data-i'))];
-        map.flyTo([h.c.y,h.c.x],Math.min(17,map.getMaxZoom()),{duration:.7});   // never past the layer maximum: Leaflet throws NaN
+        // Never past the layer maximum, and never an animated fly on a map whose
+        // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
+        var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
+        if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
         if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
         else h.m.openPopup();
       };});
@@ -709,6 +719,21 @@ ${V('MarkerCluster.Default.css')}
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
+}
+// Unpack the data, then run the page.
+(function(){
+  function fail(e){
+    document.body.innerHTML='<div style="padding:40px;font:15px -apple-system,Segoe UI,sans-serif;max-width:560px;line-height:1.5">'+
+      '<b>This map needs a current browser</b> - Chrome, Edge, Safari 16.4 or newer, Firefox 113 or newer.<br><br>'+
+      '<span style="color:#888">'+String(e&&e.message||e)+'</span></div>';
+  }
+  try{
+    var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+      .then(function(t){ DATA=JSON.parse(t); __expand(); __main(); })
+      .catch(fail);
+  }catch(e){ fail(e); }
 })();
 </script>
 </body>
