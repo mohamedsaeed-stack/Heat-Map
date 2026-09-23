@@ -10,6 +10,7 @@ URL on every change. Never make it public.
 Owner: Mohamed Saeed, RevOps. Agreed as a side project with Amr Ibrahim, Head of RevOps.
 
 - `START-HERE.md` — **read this first.** What is done, what is blocked, every trap.
+- `DEPLOY.md` — hosting the page on Railway, and the password it must go behind first.
 - `PLAN.md` — the original approved plan. Scope has moved on; START-HERE is authoritative.
 - `lookups/outstanding-book.md` — why the revenue view is blocked, measured.
 - `lookups/stale-deals.md` — 19 deals open in HubSpot that the admin app has already closed.
