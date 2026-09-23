@@ -1,7 +1,7 @@
 # Executive brief — FlapKap UAE Coverage Map
 
-Written 22 Sep 2026 for a C-level presentation. Every figure is measured from build v13 of the map
-(`dist/flapkap-uae-map.html`, 20 Sep 2026); nothing is estimated. Re-measure before reusing.
+Written 22 Sep 2026 for a C-level presentation, updated 23 Sep 2026 to build v17 of the map
+(`dist/flapkap-uae-map.html`); nothing is estimated. Re-measure before reusing.
 
 ## Why the map exists
 
@@ -13,8 +13,9 @@ explained on the page.
 
 | KPI | Today (measured) | Reasoning — why track it, what it decides |
 |---|---|---|
-| **Market coverage** — CRM records per 100 visible businesses, by category (Dubai) | Retail **12** · Hospitality 52 · Auto 69 · Medical, Contracting >100 | Shows where we've barely prospected vs. saturated. Retail is the biggest visible market and our thinnest coverage → that is where new prospecting effort should go. |
+| **Market coverage** — CRM records per 100 visible businesses, by category (UAE-wide, 23 Sep 2026) | Retail **7** · Hospitality 31 · Auto 38 · Medical 60 (contracting, manufacturing, marketing exceed 100: OpenStreetMap barely sees office-based firms) | Shows where we have barely prospected vs. saturated. Retail is the largest visible market and our thinnest coverage → that is where new prospecting effort should go. |
 | **Emirate share of CRM** | Dubai **74%** · Abu Dhabi 10% · Sharjah 5% · rest 3% | Tests whether "UAE expansion" is real. Three-quarters of all prospecting in one emirate is a growth ceiling, not a strategy. |
+| **Emirate coverage vs. visible market** — CRM records per 100 visible businesses | Ajman **13** · Sharjah 23 · Fujairah 23 · Umm Al Quwain 23 · Abu Dhabi 36 · RAK 77 · Dubai 129 | The white space by emirate. Ajman and Sharjah have thousands of visible shops and restaurants and almost no CRM presence. |
 | **Funded concentration** | Dubai holds **68%** of funded clients · HHI **6,525** | Portfolio risk. A Dubai-specific shock (rents, regulation, one sector) hits two-thirds of the book. Above 2,500 on HHI is "highly concentrated" in lenders' language — a board-level number. |
 | **CRM → funded conversion, by emirate** | UAE **1.5%** · Dubai 1.35% · **Ajman 3.3%** · **RAK 0%** (354 records, no client) | Shows where effort converts. Ajman converts at over twice the rate with almost no effort → cheapest growth. RAK has 354 prospects and zero clients → untouched or wrong market; decide which. |
 | **White space** — dense CRM areas, no funded client | Trade Centre: 178 companies, **0 funded** · Silicon Oasis: 454, **1 funded** | Records already exist, so a targeted push there costs nothing to source. Either a sales gap or a fit problem — both worth knowing. |
@@ -32,7 +33,7 @@ shares of funded clients by emirate, known emirates only.
 
 ## What the project delivered
 
-- 31,771 companies placed, all seven emirates, one file, no login, refreshes in 5 seconds.
+- 31,354 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
 - Funded clients on the map: **46 → 319** (all UAE funded clients).
 - Companies with no location: **8,040 → 3,997**, free sources only.
 - 22 measured data-quality findings, each with a count and a fix.
@@ -46,7 +47,7 @@ approximate by design — right area, not the building.
 ## What each team would use it for — three things each
 
 **Sales / Commercial**
-1. Pick where to prospect: retail in Dubai has 12 CRM records per 100 visible businesses — the thinnest coverage of any category.
+1. Pick where to prospect: retail has 7 CRM records per 100 visible businesses UAE-wide — the thinnest coverage of any category; Ajman and Sharjah are the thinnest emirates (13 and 23 per 100).
 2. Work the white space: Trade Centre (178 prospects, 0 funded) and Silicon Oasis (454, 1 funded) — records already exist, no sourcing cost.
 3. Plan territories by emirate and area instead of by rep memory; RAK has 354 prospects and nobody has closed one.
 
@@ -72,5 +73,5 @@ approximate by design — right area, not the building.
 
 ## Next
 
-Visible market for the other six emirates → coverage and white space UAE-wide. Outstanding book by emirate
+Visible market now covers all seven emirates (38,950 businesses). Outstanding book by emirate
 is built and parked. CRM fixes lift the data-health KPIs.

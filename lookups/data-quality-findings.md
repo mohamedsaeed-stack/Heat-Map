@@ -24,6 +24,8 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | A5 | **Phone number typed into the website / domain field** — e.g. `971549984434.com`, `506868717.com` | **179** | regex over the domain field of the 8,040 | Validation on the website field; move the digits to the phone field. |
 | A6 | **Contacts almost never carry an address** | **53** contacts in the whole CRM | `COUNT(*)` on contacts with address | Not worth fixing; noted so nobody expects contacts to place a company. |
 | A7 | **City spelt many ways** — Dubai alone has dozens of variants (see `lookups/dubai-city-variants.tsv`) | dozens | distinct-value count on `city` | Make city a dropdown of the 7 emirates + major cities. |
+| A8 | **Duplicate company records.** The same company appears more than once in the same place — twice in HubSpot, or once in HubSpot and once in the admin app under a slightly different legal name | **314** companies, **417** extra records; 11 span both systems | name match after stripping legal suffixes, same emirate and area | Merge in HubSpot; the map already shows one pin. A shared key with the admin app (D1) prevents the cross-system kind. |
+| A9 | **Company name is a job title** — "Chief Executive Officer" x12, "CEO" x6, "General Manager" x1 | **19** | exact name match | Fix the names; these records cannot be matched, mapped or deduplicated. |
 
 ## B. HubSpot — deals and money
 
@@ -57,10 +59,10 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 
 ## E. Map-side notes for the reviewer (not CRM fixes)
 
-- The map draws every company with any UAE evidence: **31,771**. Foreign records (561) are dropped; unplaceable ones (3,997) are counted, not drawn.
+- The map draws every company with any UAE evidence — **31,354 pins after merging 417 duplicates** (one pin per company per place; branches stay). Foreign records (561) are dropped; unplaceable ones (3,997) are counted, not drawn.
 - **Pins are exact only when a street address geocoded** — 3,649 of them. Everything else is scattered inside the real area or emirate and labelled as such.
-- **Won money on the page is the HubSpot deal amount of 74 deals**; 395 of the 469 funded pins carry no amount (B1 + the 267 admin-only clients). The explainer on the tile says this.
-- The market universe (OpenStreetMap businesses) covers **Dubai only, by decision**; the other six emirates show what FlapKap already holds. Kept for later.
+- **Won money on the page is the HubSpot deal amount of 74 deals**; most of the 462 funded pins carry no amount (B1 + the 267 admin-only clients). The explainer on the tile says this.
+- The market universe (OpenStreetMap businesses) covers **all seven emirates: 38,950** named businesses (23 Sep 2026). It is a floor — blind to office-based firms.
 
 ---
 
@@ -68,3 +70,5 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
+
+- **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).

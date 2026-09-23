@@ -32,8 +32,8 @@ hours and the files are on disk.
 ## 2. What this is
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
-because 613 OpenStreetMap tiles are base64 inside it. Also published privately at
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 12, 20 Sep 2026). Never make it public.
+because 596 OpenStreetMap tiles are base64 inside it and the pin data is gzipped (11.7 MB against a 16 MB limit).
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 17, 23 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -43,18 +43,20 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **31,771** |
+| **Drawn** | **31,354** |
 | — exact geocoded street address | 3,649 |
-| — inside a named area | 8,966 |
-| — inside a named emirate | 16,956 |
-| — UAE, emirate unknown | 2,200 |
+| — inside a named area | 8,907 |
+| — inside a named emirate | 16,602 |
+| — UAE, emirate unknown | 2,196 |
+| Duplicate pins merged away (same company, same place) | 417 |
 | Location unknown — counted on the page, not drawn | 3,997 |
 | Dropped as foreign | 561 |
+| **Market universe (OpenStreetMap), all seven emirates** | **38,950** |
 
-Dubai 23,631 · Abu Dhabi 3,349 · Sharjah 1,532 · Ajman 483 · Ras Al Khaimah 354 ·
-Fujairah 125 · Umm Al Quwain 97.
+Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
+Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
+Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
 
 ### Coverage, so the totals are never oversold
 
@@ -66,7 +68,7 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
 | …says nothing at all | 8,187 | 8,040 had no location field at all: **4,043 now placed, 3,997 still unknown** — see §5 |
 | Admin-app clients | 8,534 | only **718 (8.4%)** join to the CRM |
 | Funded clients | 372 | 55 are Egyptian merchants, outside a UAE map → **317 UAE**. **319 funded pins on the map** (267 admin-app-only + 52 via the CRM name join) |
-| **On the map** | **31,771** | 67% of the portal; every record with any UAE evidence is drawn |
+| **On the map** | **31,354** | every record with any UAE evidence, one pin per company per place |
 
 ---
 
@@ -91,6 +93,13 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
 8. **Every figure carries an explainer** with the formula and what would make it wrong.
 9. **The admin app outranks HubSpot on won and lost.** HubSpot keeps pipeline.
 10. **Save what you pull; search it on disk.** Never re-query for something already in `raw/`.
+11. **One pin per company per place** (23 Sep 2026). Same name, same emirate, same area (or no area) is one
+    company: the copies merge into the best-located one, which takes the most advanced stage. Two street
+    addresses in one area are branches and stay. Job-title "names" (Chief Executive Officer x12) are not
+    merged - they are a CRM finding.
+12. **Simple controls, UAE only** (23 Sep 2026). Emirate, pin precision and category are dropdowns (All or
+    one). The street map is the only base map; no business-name labels. The view is locked to the UAE and
+    the shallowest zoom fits the country to the screen - there is only "zoom in".
 
 ---
 
@@ -147,9 +156,14 @@ produced 331M tokens.
    `flapkap_get_credit_balance` and `flapkap_get_financials` (PII). Mohamed must allow the tool or
    switch the session to a mode that asks him; then it is the licence-pull recipe again (8 agents,
    ~6 min). See `lookups/outstanding-book.md`.
-4. **Market universe outside Dubai — KEPT FOR LATER, by Mohamed's decision (20 Sep 2026).** With the
-   book done, he considers the project ~80% complete; "businesses who are not on the CRM" is the
-   remaining 20%. `lookups/uae-emirate-areas.json` already holds all seven boundary relations.
+4. **Market universe for all seven emirates — DONE 23 Sep 2026.** 38,950 named OpenStreetMap
+   businesses: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 6,633 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 412. Pulled with
+   `pull-osm-universe.js --emirate`, ~1 minute each at the mandatory 9 s spacing; `count-osm-universe.js`
+   measures without downloading. **Known gaps:** the contractors category timed out on every Overpass
+   mirror for Sharjah and Umm Al Quwain, and marketing for Umm Al Quwain - small categories, retry when
+   the mirrors are quiet. OpenStreetMap is a floor: it is blind to office-based firms, so CRM records per
+   100 visible businesses exceed 100 for contracting, manufacturing and marketing. Read the ratio for
+   shops, restaurants, clinics and garages only.
 5. **19 stale deals** open in HubSpot for merchants the admin app already closed —
    `lookups/stale-deals.md`. A RevOps data-quality item, not a map item.
 

@@ -21,7 +21,7 @@ Owner: Mohamed Saeed, RevOps. Agreed as a side project with Amr Ibrahim, Head of
 
 ## The deliverable
 
-**`dist/flapkap-uae-map.html`** — one file, opens by double-click, **needs no network**. 613
+**`dist/flapkap-uae-map.html`** — one file, 11.7 MB, opens by double-click, **needs no network**. 596
 OpenStreetMap tiles are base64 inside it, because the artifact viewer and the app's file preview both
 block external images and the map would otherwise be pins floating on grey.
 
@@ -38,18 +38,20 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **31,771** |
-| — exact, geocoded street address | 3,649 |
-| — scattered inside a known area | 8,966 |
-| — scattered inside a known emirate | 16,956 |
-| — scattered somewhere in the UAE, emirate unknown | 2,200 |
+| **Drawn** | **31,354** |
+| — exact geocoded street address | 3,649 |
+| — inside a named area | 8,907 |
+| — inside a named emirate | 16,602 |
+| — UAE, emirate unknown | 2,196 |
+| Duplicate pins merged away (same company, same place) | 417 |
 | Location unknown — counted on the page, not drawn | 3,997 |
-| Not UAE — dropped | 561 |
+| Dropped as foreign | 561 |
+| **Market universe (OpenStreetMap), all seven emirates** | **38,950** |
 
-Dubai 23,631 · Abu Dhabi 3,349 · Sharjah 1,532 · Ajman 483 · Ras Al Khaimah 354 ·
-Fujairah 125 · Umm Al Quwain 97.
+Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
+Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
+Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
 
 ## How a company gets onto the map
 
@@ -123,15 +125,39 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
 
-## The universe layer: Dubai only, by decision
+## The universe layer: all seven emirates
 
-18,018 real businesses from OpenStreetMap, inside the Dubai emirate boundary. **The other six
-emirates deliberately show only what we already hold in the CRM and admin app** — finding businesses
-we do *not* have is parked until the CRM/admin side is finished.
+38,950 real businesses from OpenStreetMap, inside each emirate boundary: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 6,633 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 412.
+Pulled 18-23 Sep 2026 with `pull-osm-universe.js`, seven category queries per emirate. Each place carries
+its emirate, so the emirate dropdown filters the universe too.
 
-OpenStreetMap is volunteer-mapped: strong on shops, restaurants, clinics and workshops, weak on
-anything trading from an office. It is a floor on the market, never a census. **87% of our own CRM
-companies do not exist on OpenStreetMap at all**, which is the measurement of that.
+OpenStreetMap is volunteer-mapped: strong on shops, restaurants, clinics and workshops, weak on anything
+trading from an office. It is a floor on the market, never a census. Measured 23 Sep 2026, CRM records per
+100 visible businesses: retail 7 · hospitality 31 · auto 38 · medical 60 — but contracting 153,
+manufacturing 462 and marketing 1,996, which says OpenStreetMap barely sees those categories. By emirate:
+Ajman 13 · Sharjah 23 · Fujairah 23 · Umm Al Quwain 23 · Abu Dhabi 36 · Ras Al Khaimah 77 · Dubai 129.
+
+**Known gaps:** the contractors category timed out on every Overpass mirror for Sharjah and Umm Al Quwain,
+and marketing for Umm Al Quwain. Re-run `pull-osm-universe.js --emirate "<name>"`; only the missing
+category is fetched, the rest is cached.
+
+## One pin per company
+
+Mohamed, 23 Sep 2026: no duplicate pins. The same company can sit in HubSpot twice, or once in HubSpot and
+once in the admin app. Records with the same name (legal suffixes and punctuation ignored) in the same
+emirate are one company; copies in the same area, or with no area, merge into the best-located copy, which
+takes the most advanced stage (won > lost > in process > on the CRM; the admin app wins), the deal fields
+and both source links. Two street addresses in one area are **branches** and stay separate. Measured:
+417 pins merged across 314 companies, 11 of them HubSpot + admin-app copies of one merchant.
+Company names that are job titles (Chief Executive Officer x12, CEO x6) are left alone and logged as a
+CRM finding.
+
+## The controls
+
+Emirate, pin precision and category are dropdowns — "All" or one value. The street map is the only base
+map. The view is locked to the UAE: it cannot pan away, and the shallowest zoom is the one that fits the
+country to the screen. Every popup links to the HubSpot record and, where the company exists in the admin
+app, to its client page there.
 
 ## Categories
 
@@ -156,6 +182,7 @@ Node 24 is installed but **not on PATH** — every shell needs the export above.
 | `scatter-pins.js` | One coordinate per company, deterministic, inside the real shape. |
 | `recover-unlocated.js` | The 8,040 no-location companies: emirate from the phone area code, UAE from a `.ae` domain. Discards the number. |
 | `locate-by-website.js` | Reads the address off each company's own website. Resumable; isolates hosts that crash Node. `sweep-until-done.sh` restarts it until done. |
+| `count-osm-universe.js` | One Overpass count per emirate, no download: how big the universe would be before pulling it. |
 | `admin-licence-emirate.js` | Funded admin-app clients → emirate, from the licence authority, legal address, phone area code or website. Reads `raw/admin-licence-part-*.json`. |
 | `fetch-tiles-uae.js` | Embedded tiles. `--plan` prints the budget and enforces OSM policy. |
 | `serve.js` | Serves the repo locally so the page can be checked before publishing. |

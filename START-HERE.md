@@ -24,31 +24,33 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **31,771** |
+| **Drawn** | **31,354** |
 | — exact geocoded street address | 3,649 |
-| — scattered inside a known area | 8,966 |
-| — scattered inside a known emirate | 16,956 |
-| — scattered somewhere in the UAE (emirate unknown) | 2,200 |
-| Location unknown — counted, not drawn | 3,997 |
-| Not UAE — dropped | 561 |
-| OpenStreetMap universe | 18,018 — **Dubai only, by decision** |
+| — inside a named area | 8,907 |
+| — inside a named emirate | 16,602 |
+| — UAE, emirate unknown | 2,196 |
+| Duplicate pins merged away (same company, same place) | 417 |
+| Location unknown — counted on the page, not drawn | 3,997 |
+| Dropped as foreign | 561 |
+| **Market universe (OpenStreetMap), all seven emirates** | **38,950** |
+| OpenStreetMap universe, by emirate | Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 6,633 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 412 |
 
-Dubai 23,631 · Abu Dhabi 3,349 · Sharjah 1,532 · Ajman 483 · Ras Al Khaimah 354 ·
-Fujairah 125 · Umm Al Quwain 97.
+Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
+Fujairah 124 · Umm Al Quwain 96.
 
 **Coverage against each source**, so the gap is not mistaken for completeness:
 
 | | | |
 |---|---:|---:|
 | HubSpot companies in the portal | 47,516 | |
-| …drawn on the map | 31,771 | 67% |
-| …established as UAE by any evidence | 31,771 | **all drawn** |
+| …drawn on the map | 31,354 | 66% (after merging 417 duplicate pins) |
+| …established as UAE by any evidence | 31,771 | all drawn, then merged to one pin per company per place |
 | Admin-app clients | 8,534 | |
 | …matched to a CRM company | 718 | **8.4%** |
 | Funded clients | 372 | 55 Egyptian, outside a UAE map → **317 UAE** |
 | …funded pins on the map | 319 | 267 admin-app-only + 52 via the CRM name join |
 
-Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in process 742 / AED 444.2M · closed lost 427 / AED 215.8M.
+Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
 
 ## Decisions the user took, 19 Sep 2026
 
@@ -102,6 +104,13 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
 - Nominatim is 1 req/s. Overpass needs a real User-Agent and 9s between queries.
 - **Nominatim can hand back the wrong place with the right name.** "Al Jurf, Ajman" resolved to the Al Jurf on the Abu Dhabi coast, 100 km away, and 23 Ajman pins were drawn there until 20 Sep 2026. Every approximate pin is now tested against its emirate polygon; an area anchor that fails falls back to the emirate tier. Area pins are spread as a soft cluster, not a uniform box - the box read as a literal square at street zoom.
 - **Tiles: where none exists at a zoom, the page scales up the nearest coarser embedded tile** instead of showing grey. Deep tiles now cover Dubai, Abu Dhabi, Al Ain, Sharjah-Ajman, RAK, Fujairah and UAQ cores: 613 tiles, 238 at z13 (budget 250), page 14.9 MB (limit 16).
+- **Overpass mirrors 504 on the heavier categories** (contractors: office+craft+shop union). The script
+  falls through three mirrors; when all three fail the category is skipped and the summary says so.
+  Node fetch also dies on very long-running count queries - `count-osm-universe.js` notes the curl route.
+- **A hidden browser tab has a 0x0 map.** Leaflet flyTo/fitBounds on a zero-size container throws
+  `Invalid LatLng (NaN, NaN)`. The page guards both; the test pane in the desktop app is often hidden.
+- **Duplicates are merged at build time, not in the source.** 417 pins across 314 companies (23 Sep).
+  If a merge looks wrong, the rule is in build-map-data-uae.js under "one pin per company per place".
 - **The website sweep crashes Node on some hosts** (an undici assertion; uncatchable). Before 20 Sep it
   retried the same host forever — 60 restarts, 20 records. It now logs each host before fetching and
   writes a host off after two crashes. Keep `raw/website-inflight.log` and `raw/website-suspects.json`.
@@ -127,8 +136,10 @@ Closed won 469 (AED 49.9M, held by the 74 with a HubSpot deal value) · in proce
    all failed to name an emirate. **3,997 more say nothing at all** — the "Location unknown" tile,
    not drawn, never called foreign. The website sweep is finished (7,446 domains, 31.3% hit rate);
    nothing else on these records can place them.
-4. **The universe layer outside Dubai** — parked by decision 2 above. Pick this up now that the
-   CRM/admin side is finished.
+4. **The universe layer covers all seven emirates (23 Sep 2026):** 38,950 OpenStreetMap
+   businesses. Gaps: contractors for Sharjah and Umm Al Quwain, marketing for Umm Al Quwain - Overpass
+   504s on every mirror that day. `node scripts/pull-osm-universe.js --emirate "Sharjah"` retries only
+   the missing category (the rest is cached in raw/osm).
 5. **`data/map-uae.json` is 7.0 MB** and committed. If that becomes awkward, gitignore it and rebuild.
 
 ## Two more traps, both paid for late in the session
