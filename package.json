@@ -1,0 +1,15 @@
+{
+  "name": "flapkap-coverage-map",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FlapKap UAE coverage map - where our merchants are across all seven emirates",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "node scripts/serve.js",
+    "dev": "node scripts/serve.js 8099",
+    "build:page": "node scripts/build-page.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
