@@ -225,9 +225,38 @@ try {
   console.log('outstanding book: ' + withBalance + ' clients with a balance, ' + noBalance + ' without, ' + notOnMap + ' not on the map; ' + shown.length + ' rows');
 } catch (e) { /* no balances pulled yet: the page hides the panel */ }
 
+// ---- market universe, every emirate that has been pulled -----------------------
+// One summary per emirate (data/universe-<slug>.json, written by
+// pull-osm-universe.js) lists that emirate's category files. Every place gets
+// its emirate so the page's emirate chips filter it like a CRM pin. Dubai was
+// the only emirate until 23 Sep 2026; the other six were pulled that day
+// (lookups/osm-universe-counts.json has the counts measured beforehand).
+const universe = [];
+const universeByEmirate = {};
+{
+  const areas = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/uae-emirate-areas.json'), 'utf8')).emirates;
+  for (const emirate of Object.keys(areas)) {
+    const slug = emirate.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const sumFile = path.join(ROOT, 'data', 'universe-' + slug + '.json');
+    if (!fs.existsSync(sumFile)) continue;
+    const sum = JSON.parse(fs.readFileSync(sumFile, 'utf8'));
+    let n = 0;
+    for (const [key, meta] of Object.entries(sum.categories || {})) {
+      if (!meta.file) continue;
+      const catFile = path.join(ROOT, 'data', meta.file);
+      if (!fs.existsSync(catFile)) continue;
+      for (const p of JSON.parse(fs.readFileSync(catFile, 'utf8')).places) {
+        universe.push({ n: stripPhone(p.n), y: p.y, x: p.x, c: key, k: p.k, e: emirate });
+        n++;
+      }
+    }
+    universeByEmirate[emirate] = n;
+  }
+}
+
 const out = {
   companies,
-  universe: prev.universe.map(u => Object.assign({}, u, { n: stripPhone(u.n) })),   // Dubai only, by decision
+  universe,
   areas,
   emirates: byEmirate,
   // The page reads stats.crm.* and stats.categories, so the Dubai build's shape
@@ -261,7 +290,8 @@ const out = {
     fundedScope,
     book,
     money,
-    universeScope: 'Dubai only',
+    universeScope: Object.keys(universeByEmirate).length === 7 ? 'all seven emirates' : Object.keys(universeByEmirate).join(', '),
+    universeByEmirate,
     // The whole CRM, split three ways, so the map's total is never mistaken
     // for the portal's. Measured against HubSpot on 19 Sep 2026; the three
     // rows below add to 47,516 exactly.
@@ -297,7 +327,7 @@ console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely
 console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
 console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + adminOnlyFunded.toLocaleString() + ' are admin-app-only pins');
 console.log('the 8,040 no-location companies: drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
-console.log('universe (Dubai) ' + num(prev.universe.length));
+console.log('universe          ' + num(universe.length) + '   ' + Object.entries(universeByEmirate).map(([k, v]) => k + ' ' + v.toLocaleString()).join(' · '));
 console.log('areas ranked     ' + num(Object.keys(areas).length));
 console.log('');
 console.log('LAYERS');

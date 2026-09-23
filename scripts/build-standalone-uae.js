@@ -493,11 +493,12 @@ function __main(){
     if(map.hasLayer(uother)) map.removeLayer(uother);
     DATA.universe.forEach(function(p){
       if(!catOn[p.c]) return;
+      if(p.e && !emOn[p.e]) return;
       var m=L.circleMarker([p.y,p.x],{radius:3.5,color:'#fff',weight:1,opacity:.9,
         fillColor:CAT_COLOR[p.c]||'#009694',fillOpacity:.85});
       m.bindPopup('<div class="pn">'+esc(p.n)+'</div><div class="pi">'+esc(DATA.categories[p.c]||p.c)+
         ' &middot; '+esc(String(p.k).replace(/_/g,' '))+'</div>'+
-        '<div class="pnote">Market universe, from OpenStreetMap. Not a CRM record.</div>');
+        '<div class="pnote">Market universe, from OpenStreetMap'+(p.e?' &middot; '+esc(p.e):'')+'. Not a CRM record.</div>');
       if(showLabels) m.bindTooltip(p.n,{permanent:true,direction:'right',offset:[5,0],className:'lbl'});
       else m.bindTooltip(p.n,{direction:'top',className:'lbl'});
       utarget.addLayer(m);

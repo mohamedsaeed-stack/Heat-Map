@@ -1,0 +1,78 @@
+{
+  "_emirate": "Abu Dhabi",
+  "_pulled": "2026-09-23",
+  "_source": "OpenStreetMap via Overpass",
+  "_licence": "OpenStreetMap contributors, ODbL",
+  "categories": {
+    "hospitality_fnb": {
+      "label": "Hospitality & F&B",
+      "credible": true,
+      "elements": 3978,
+      "places": 3314,
+      "unnamed_dropped": 664,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-hospitality_fnb.json",
+      "bytes": 281013
+    },
+    "medical_healthcare": {
+      "label": "Medical clinics & healthcare",
+      "credible": true,
+      "elements": 878,
+      "places": 721,
+      "unnamed_dropped": 157,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-medical_healthcare.json",
+      "bytes": 63765
+    },
+    "auto_automotive": {
+      "label": "Auto parts & automotive trading",
+      "credible": true,
+      "elements": 806,
+      "places": 700,
+      "unnamed_dropped": 106,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-auto_automotive.json",
+      "bytes": 58793
+    },
+    "retail": {
+      "label": "Retail",
+      "credible": true,
+      "elements": 6374,
+      "places": 3715,
+      "unnamed_dropped": 1681,
+      "reclassified_elsewhere": 978,
+      "file": "universe-abu-dhabi-retail.json",
+      "bytes": 318201
+    },
+    "contracting_fitout": {
+      "label": "Contracting, fitouts, FFE",
+      "credible": false,
+      "elements": 642,
+      "places": 417,
+      "unnamed_dropped": 225,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-contracting_fitout.json",
+      "bytes": 37624
+    },
+    "marketing_advertising": {
+      "label": "Marketing & advertising",
+      "credible": false,
+      "elements": 8,
+      "places": 8,
+      "unnamed_dropped": 0,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-marketing_advertising.json",
+      "bytes": 1044
+    },
+    "manufacturing_trading": {
+      "label": "Manufacturing & general trading",
+      "credible": false,
+      "elements": 627,
+      "places": 304,
+      "unnamed_dropped": 323,
+      "reclassified_elsewhere": 0,
+      "file": "universe-abu-dhabi-manufacturing_trading.json",
+      "bytes": 26513
+    }
+  }
+}
