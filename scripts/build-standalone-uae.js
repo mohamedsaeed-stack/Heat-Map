@@ -40,11 +40,26 @@ const CAT_COLOR = {
 // network.
 const TILE_DIR = path.join(ROOT, 'raw', 'tiles');
 const TILES = {};
+// The page is locked to the UAE (23 Sep 2026), so a tile that never touches the
+// country is dead weight: the generous country box reached into Oman, Saudi
+// Arabia and the Gulf, and z6 sits below the shallowest zoom the lock allows.
+const UAE_BBOX = { s: 22.6, n: 26.5, w: 51.4, e: 56.6 };
+function tileTouchesUAE(z, x, y) {
+  const n = Math.pow(2, z);
+  const lonW = x / n * 360 - 180, lonE = (x + 1) / n * 360 - 180;
+  const latN = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
+  const latS = Math.atan(Math.sinh(Math.PI * (1 - 2 * (y + 1) / n))) * 180 / Math.PI;
+  return lonE > UAE_BBOX.w && lonW < UAE_BBOX.e && latN > UAE_BBOX.s && latS < UAE_BBOX.n;
+}
+let tilesSkipped = 0;
 if (fs.existsSync(TILE_DIR)) {
   for (const f of fs.readdirSync(TILE_DIR)) {
     if (!f.endsWith('.png')) continue;
+    const [z, x, y] = f.replace(/.png$/, '').split('_').map(Number);
+    if (z < 7 || !tileTouchesUAE(z, x, y)) { tilesSkipped++; continue; }
     TILES[f.replace(/.png$/, '')] = fs.readFileSync(path.join(TILE_DIR, f)).toString('base64');
   }
+  console.log('tiles embedded ' + Object.keys(TILES).length + ', skipped as outside the UAE or below z7: ' + tilesSkipped);
 }
 
 // The UAE set is 26,224 pins against Dubai's 18,866, and most fields are the
@@ -139,6 +154,7 @@ ${V('MarkerCluster.Default.css')}
   .muted b{color:#444}
 
   .searchbox{width:100%;font:inherit;font-size:12px;padding:6px 9px;border:1px solid #e3e3e1;border-radius:7px}
+  .sel{width:100%;font:inherit;font-size:12px;padding:6px 8px;border:1px solid #e3e3e1;border-radius:7px;background:#fff;color:#222}
   .hits{margin-top:5px;max-height:150px;overflow-y:auto}
   .hit{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11.5px;color:#444}
   .hit:hover{background:#f1f3f4}
@@ -216,26 +232,22 @@ ${V('MarkerCluster.Default.css')}
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
 
-  <h4>Base map</h4>
-  <div class="bmrow" id="basemaps"></div>
-
   <h4>Display</h4>
-  <label class="row"><input type="checkbox" id="labels"> Show business names</label>
   <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
   <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
 
   <h4>Emirate</h4>
-  <div class="cats" id="ems"></div>
+  <select class="sel" id="ems"></select>
 
   <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
   <div id="book" style="display:none"></div>
 
   <h4>How exact is the pin?</h4>
-  <div class="cats" id="prec"></div>
+  <select class="sel" id="prec"></select>
   <div class="muted" style="margin-top:4px">A solid dot with a white ring is a real street address. Faded, ringless pins are scattered inside the area or emirate we know the business is in &mdash; they are not the building.</div>
 
   <h4>Categories</h4>
-  <div class="cats" id="cats"></div>
+  <select class="sel" id="cats"></select>
 
   <div class="muted" id="locnote"></div>
 </div>
@@ -287,11 +299,7 @@ function __main(){
   var BASEMAPS = [
     {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
      attr:'&copy; OpenStreetMap contributors'},
-    {k:'detailed',label:'Detailed',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',max:19,
-     attr:'Esri, HERE, Garmin'},
-    {k:'satellite',label:'Satellite',url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',max:19,
-     attr:'Esri, Maxar, Earthstar Geographics'}
-  ];
+  ];   // Streets only, since 23 Sep 2026: the online base maps needed a network the viewers do not always have.
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
@@ -303,7 +311,14 @@ function __main(){
     return 'AED ' + fmt(n);
   }
 
-  var map = L.map('map',{zoomControl:true,preferCanvas:true}).setView([25.05,55.45],9);
+  var map = L.map('map',{zoomControl:true,preferCanvas:true,maxBoundsViscosity:1.0}).setView([25.05,55.45],9);
+  // Locked to the UAE (23 Sep 2026): the view cannot leave the country, and the
+  // shallowest zoom is the one that fits the whole country on this screen - so
+  // there is only ever "zoom in". Re-computed when the window is resized.
+  var UAE_BOUNDS=L.latLngBounds([22.6,51.4],[26.5,56.6]);
+  map.setMaxBounds(UAE_BOUNDS.pad(0.03));
+  function lockZoom(){ var sz=map.getSize(); if(sz.x>0&&sz.y>0){ var z=map.getBoundsZoom(UAE_BOUNDS); if(isFinite(z)) map.setMinZoom(z); } }
+  map.on('resize',lockZoom);
   L.control.scale({imperial:false}).addTo(map);
 
   // Embedded first; where no tile exists at this zoom, the nearest coarser
@@ -350,10 +365,6 @@ function __main(){
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
   }
-  document.getElementById('basemaps').innerHTML = BASEMAPS.map(function(b){
-    return '<button class="bm" data-k="'+b.k+'">'+b.label+'</button>';}).join('');
-  Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
-    el.onclick=function(){ setBase(el.getAttribute('data-k')); };});
   setBase('streets');
 
   var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
@@ -519,34 +530,41 @@ function __main(){
       el.onclick=function(){ on[el.getAttribute('data-k')]=!on[el.getAttribute('data-k')]; renderLegend(); redraw(); };});
   }
 
-  function renderCats(){
-    var keys=DATA.target.concat(['other','blank']);
-    document.getElementById('cats').innerHTML=keys.map(function(k){
-      var style=catOn[k]?' style="background:'+(CAT_COLOR[k]||'#666')+'"':'';
-      return '<button class="cat'+(catOn[k]?' on':'')+'" data-k="'+k+'"'+style+'>'+
-        esc(DATA.categories[k]||k)+' <span class="cn">'+fmt(DATA.stats.crm.byCategory[k]||0)+'</span></button>';}).join('');
-    Array.prototype.forEach.call(document.querySelectorAll('.cat'),function(el){
-      el.onclick=function(){ catOn[el.getAttribute('data-k')]=!catOn[el.getAttribute('data-k')]; renderCats(); redraw(); };});
+  // One dropdown per filter (23 Sep 2026, replacing rows of toggle chips): "All"
+  // or exactly one value. Simpler to read, and it leaves room on a small screen.
+  function fillSelect(id, allLabel, items, isOn, onPick){
+    var el=document.getElementById(id);
+    var allOn=items.every(function(it){return isOn(it.k);});
+    el.innerHTML='<option value="__all"'+(allOn?' selected':'')+'>'+esc(allLabel)+'</option>'+
+      items.map(function(it){
+        return '<option value="'+esc(it.k)+'"'+(!allOn&&isOn(it.k)?' selected':'')+'>'+esc(it.label)+' ('+fmt(it.n)+')</option>';
+      }).join('');
+    el.onchange=function(){ onPick(el.value); redraw(); };
   }
-
+  function renderCats(){
+    var keys=DATA.target.concat(['other','blank']), bc=DATA.stats.crm.byCategory||{};
+    fillSelect('cats','All categories',
+      keys.map(function(k){return {k:k,label:DATA.categories[k]||k,n:bc[k]||0};}),
+      function(k){return !!catOn[k];},
+      function(v){ keys.forEach(function(k){ catOn[k]=(v==='__all'||k===v); }); });
+  }
   function renderEms(){
     var be=DATA.stats.byEmirate||{};
-    document.getElementById('ems').innerHTML=EMIRATES.map(function(k){
-      var n=be[k]?be[k].total:0;
-      return '<button class="cat'+(emOn[k]?' on':'')+'" data-k="'+esc(k)+'"'+
-        (emOn[k]?' style="background:#37474f"':'')+'>'+esc(k)+
-        ' <span class="cn">'+fmt(n)+'</span></button>';}).join('');
-    Array.prototype.forEach.call(document.getElementById('ems').querySelectorAll('.cat'),function(el){
-      el.onclick=function(){var k=el.getAttribute('data-k');emOn[k]=!emOn[k];renderEms();redraw();};});
+    fillSelect('ems','All emirates',
+      EMIRATES.map(function(k){return {k:k,label:k,n:be[k]?be[k].total:0};}),
+      function(k){return !!emOn[k];},
+      function(v){
+        EMIRATES.forEach(function(k){ emOn[k]=(v==='__all'||k===v); });
+        // pins with no emirate are filed under Unknown; they belong to the "UAE, emirate unknown" row
+        emOn.Unknown=(v==='__all'||v==='UAE, emirate unknown');
+      });
   }
   function renderPrec(){
     var bp=DATA.stats.byPlacement||{};
-    document.getElementById('prec').innerHTML=PREC.map(function(p){
-      return '<button class="cat'+(precOn[p[0]]?' on':'')+'" data-k="'+p[0]+'"'+
-        (precOn[p[0]]?' style="background:#455a64"':'')+'>'+esc(p[1])+
-        ' <span class="cn">'+fmt(bp[p[0]]||0)+'</span></button>';}).join('');
-    Array.prototype.forEach.call(document.getElementById('prec').querySelectorAll('.cat'),function(el){
-      el.onclick=function(){var k=el.getAttribute('data-k');precOn[k]=!precOn[k];renderPrec();redraw();};});
+    fillSelect('prec','All pins',
+      PREC.map(function(p){return {k:p[0],label:p[1],n:bp[p[0]]||0};}),
+      function(k){return !!precOn[k];},
+      function(v){ PREC.forEach(function(p){ precOn[p[0]]=(v==='__all'||p[0]===v); }); });
   }
 
   var INFO={
@@ -667,7 +685,6 @@ function __main(){
       };});
   };
 
-  document.getElementById('labels').onchange=function(e){ showLabels=e.target.checked; redraw(); };
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
 
@@ -708,15 +725,12 @@ function __main(){
     var lats=DATA.companies.map(function(c){return c.y;});
     var lngs=DATA.companies.map(function(c){return c.x;});
     if(!lats.length) return;
-    // A FIXED country view. fitBounds was tried and abandoned: it reads the
-    // container size at call time and got it wrong twice, once landing on the
-    // whole world and once on a single street.
-    //
-    // The median pin is not used either, now the scope is the UAE - 80% of the
-    // pins are in Dubai, so the median opens on Dubai and hides the other six
-    // emirates the map now covers. This centre and zoom show Abu Dhabi through
-    // Ras Al Khaimah in one view, which is the point of the page.
-    map.setView([25.05,55.35], 8);
+    // Open on the whole country and lock the shallowest zoom there. fitBounds
+    // reads the container size, so it only runs when the container has one;
+    // a hidden tab gets the fixed country view instead and locks on resize.
+    var sz=map.getSize();
+    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS); lockZoom(); }
+    else map.setView([25.05,55.35], 8);
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });

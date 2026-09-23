@@ -165,6 +165,106 @@ for (const p of pins) {
   byCategory[cat] = (byCategory[cat] || 0) + 1;
 }
 
+// ---- one pin per company per place ---------------------------------------------
+// Mohamed, 23 Sep 2026: no duplicate pins. The same company can sit in HubSpot
+// twice, or once in HubSpot and once in the admin app, and each copy was a pin.
+// Records with the same name (legal suffixes and punctuation ignored) in the
+// same emirate are one company; the copies collapse into the best-located one,
+// which takes the most advanced stage across the copies (won > lost > in process
+// > on the CRM; the admin app's verdict wins). Copies in DIFFERENT areas of an
+// emirate, or at different street addresses, are branches and stay separate.
+// A record with no area merges into a sibling that has one. Names that are job
+// titles, not companies ("Chief Executive Officer" x12) are left alone and
+// reported - they are a HubSpot data problem, not duplicates of each other.
+const GENERIC_NAMES = new Set(['chief executive officer', 'ceo', 'owner', 'founder', 'manager', 'director',
+  'general manager', 'managing director', 'test', 'n a', 'na', 'none', 'unknown', 'company', 'business']);
+const normName = v => String(v || '').toLowerCase().replace(/&/g, ' and ')
+  .replace(/[^a-z0-9\u0600-\u06FF ]+/g, ' ')
+  .replace(/\b(l ?l ?c|fzco|fze|fz|fzc|llc|ltd|limited|inc|co|company|trading|tr|est|establishment|general|gen|dmcc|jlt|sole proprietorship|s p c|spc|plc|group)\b/g, ' ')
+  .replace(/\s+/g, ' ').trim();
+const STAGE_RANK = { closed_won: 3, closed_lost: 2, in_process: 1, crm: 0 };
+const PREC_RANK = { exact: 3, area: 2, emirate: 1, uae: 0 };
+const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
+{
+  const byKey = new Map();
+  for (const c of companies) {
+    const k = normName(c.n);
+    if (!k) continue;
+    if (GENERIC_NAMES.has(k)) { dedup.genericNames[c.n] = (dedup.genericNames[c.n] || 0) + 1; continue; }
+    const key = k + '|' + (c.e || '');
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(c);
+  }
+  const drop = new Set();
+  for (const group of byKey.values()) {
+    if (group.length < 2) continue;
+    // Split the emirate group into places: an exact address is its own place, a
+    // named area is a place, and records with neither attach to whichever
+    // place exists (or form one place together).
+    const places = new Map();
+    const loose = [];
+    for (const c of group) {
+      if (c.a) { const pk = 'a:' + c.a; if (!places.has(pk)) places.set(pk, []); places.get(pk).push(c); }
+      else if (c.h === 'exact') places.set('x:' + c.y + ',' + c.x, [c]);
+      else loose.push(c);
+    }
+    if (loose.length) {
+      if (places.size === 0) places.set('e', loose);
+      else [...places.values()][0].push(...loose);   // a copy with no area joins the first known place
+    }
+    // Inside one area, exact pins at different street addresses are branches;
+    // the copies without an address join the first of them.
+    const merges = [];
+    for (const list of places.values()) {
+      const exacts = list.filter(c => c.h === 'exact');
+      const byXY = new Map();
+      for (const e of exacts) { const k = e.y + ',' + e.x; if (!byXY.has(k)) byXY.set(k, []); byXY.get(k).push(e); }
+      if (byXY.size > 1) {
+        const branches = [...byXY.values()];
+        branches[0].push(...list.filter(c => c.h !== 'exact'));
+        merges.push(...branches);
+      } else merges.push(list);
+    }
+    for (const copies of merges) {
+      if (copies.length < 2) continue;
+      dedup.groups++;
+      if (copies.some(c => c.ao) && copies.some(c => !c.ao)) dedup.crossSystem++;
+      copies.sort((a, b) => (STAGE_RANK[b.l] - STAGE_RANK[a.l]) || (PREC_RANK[b.h] - PREC_RANK[a.h]));
+      const keep = copies[0];
+      const bestLoc = copies.slice().sort((a, b) => PREC_RANK[b.h] - PREC_RANK[a.h])[0];
+      // location from the best-located copy; stage, money and links merged in
+      keep.y = bestLoc.y; keep.x = bestLoc.x; keep.h = bestLoc.h; keep.a = bestLoc.a || keep.a; keep.rt = bestLoc.rt || keep.rt;
+      for (const c of copies.slice(1)) {
+        if (!keep.aid && c.aid) keep.aid = c.aid;
+        if (keep.ao && !c.ao) { keep.i = c.i; keep.ao = 0; }        // an admin-only winner adopts the HubSpot id, so both links show
+        if (!keep.m && c.m) { keep.m = c.m; keep.s = keep.s || c.s; keep.o = keep.o || c.o; keep.cd = keep.cd || c.cd; keep.d = c.d || keep.d; }
+        if (c.ad) keep.ad = 1; if (c.af) keep.af = 1;
+        if (c.ao || c.src === 'admin') keep.src = 'admin';
+        if (c.hs && !keep.hs) keep.hs = c.hs;
+        drop.add(c);
+        dedup.removed++;
+      }
+    }
+  }
+  if (drop.size) {
+    for (let i = companies.length - 1; i >= 0; i--) if (drop.has(companies[i])) companies.splice(i, 1);
+    // the tallies were built per pin above; rebuild them from what is left
+    for (const k of Object.keys(byEmirate)) delete byEmirate[k];
+    for (const k of Object.keys(byPlacement)) byPlacement[k] = 0;
+    for (const k of Object.keys(byLayer)) delete byLayer[k];
+    for (const k of Object.keys(byCategory)) delete byCategory[k];
+    for (const c of companies) {
+      const em = c.e || 'UAE, emirate unknown';
+      byEmirate[em] = byEmirate[em] || { total: 0, exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
+      byEmirate[em].total++; byEmirate[em][c.h] = (byEmirate[em][c.h] || 0) + 1;
+      byPlacement[c.h] = (byPlacement[c.h] || 0) + 1;
+      byLayer[c.l] = (byLayer[c.l] || 0) + 1;
+      byCategory[c.c] = (byCategory[c.c] || 0) + 1;
+    }
+  }
+  console.log('duplicates: ' + dedup.groups + ' companies had more than one pin in the same place; ' + dedup.removed + ' pins merged away (' + dedup.crossSystem + ' groups spanned HubSpot and the admin app); job-title names left alone: ' + JSON.stringify(dedup.genericNames));
+}
+
 // ---- areas: rank by how many companies sit in each ---------------------------
 const areas = {};
 for (const c of companies) {
@@ -289,6 +389,7 @@ const out = {
     adminOnlyFunded,
     fundedScope,
     book,
+    dedup: { groups: dedup.groups, removed: dedup.removed, crossSystem: dedup.crossSystem, genericNames: dedup.genericNames },
     money,
     universeScope: Object.keys(universeByEmirate).length === 7 ? 'all seven emirates' : Object.keys(universeByEmirate).join(', '),
     universeByEmirate,
