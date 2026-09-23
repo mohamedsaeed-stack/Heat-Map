@@ -46,12 +46,17 @@
     },
     "contracting_fitout": {
       "label": "Contracting, fitouts, FFE",
-      "error": "0 elements from https://overpass.private.coffee/api/interpreter - treated as throttling, not as an answer",
-      "places": 0
+      "credible": false,
+      "elements": 17,
+      "places": 15,
+      "unnamed_dropped": 2,
+      "reclassified_elsewhere": 0,
+      "file": "universe-umm-al-quwain-contracting_fitout.json",
+      "bytes": 1618
     },
     "marketing_advertising": {
       "label": "Marketing & advertising",
-      "error": "HTTP 504 from https://overpass.private.coffee/api/interpreter",
+      "error": "0 elements from https://overpass.private.coffee/api/interpreter - treated as throttling, not as an answer",
       "places": 0
     },
     "manufacturing_trading": {

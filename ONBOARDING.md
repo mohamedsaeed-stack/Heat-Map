@@ -51,7 +51,7 @@ known**.
 | Duplicate pins merged away (same company, same place) | 417 |
 | Location unknown — counted on the page, not drawn | 3,997 |
 | Dropped as foreign | 561 |
-| **Market universe (OpenStreetMap), all seven emirates** | **38,950** |
+| **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
@@ -156,8 +156,8 @@ produced 331M tokens.
    `flapkap_get_credit_balance` and `flapkap_get_financials` (PII). Mohamed must allow the tool or
    switch the session to a mode that asks him; then it is the licence-pull recipe again (8 agents,
    ~6 min). See `lookups/outstanding-book.md`.
-4. **Market universe for all seven emirates — DONE 23 Sep 2026.** 38,950 named OpenStreetMap
-   businesses: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 6,633 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 412. Pulled with
+4. **Market universe for all seven emirates — DONE 23 Sep 2026.** 39,370 named OpenStreetMap
+   businesses: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427. Pulled with
    `pull-osm-universe.js --emirate`, ~1 minute each at the mandatory 9 s spacing; `count-osm-universe.js`
    measures without downloading. **Known gaps:** the contractors category timed out on every Overpass
    mirror for Sharjah and Umm Al Quwain, and marketing for Umm Al Quwain - small categories, retry when

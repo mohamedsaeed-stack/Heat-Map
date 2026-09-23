@@ -46,7 +46,7 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | Duplicate pins merged away (same company, same place) | 417 |
 | Location unknown — counted on the page, not drawn | 3,997 |
 | Dropped as foreign | 561 |
-| **Market universe (OpenStreetMap), all seven emirates** | **38,950** |
+| **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
@@ -127,7 +127,7 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
 
 ## The universe layer: all seven emirates
 
-38,950 real businesses from OpenStreetMap, inside each emirate boundary: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 6,633 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 412.
+39,370 real businesses from OpenStreetMap, inside each emirate boundary: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427.
 Pulled 18-23 Sep 2026 with `pull-osm-universe.js`, seven category queries per emirate. Each place carries
 its emirate, so the emirate dropdown filters the universe too.
 
@@ -137,8 +137,7 @@ trading from an office. It is a floor on the market, never a census. Measured 23
 manufacturing 462 and marketing 1,996, which says OpenStreetMap barely sees those categories. By emirate:
 Ajman 13 · Sharjah 23 · Fujairah 23 · Umm Al Quwain 23 · Abu Dhabi 36 · Ras Al Khaimah 77 · Dubai 129.
 
-**Known gaps:** the contractors category timed out on every Overpass mirror for Sharjah and Umm Al Quwain,
-and marketing for Umm Al Quwain. Re-run `pull-osm-universe.js --emirate "<name>"`; only the missing
+**Known gap:** marketing agencies in Umm Al Quwain returned zero elements on every mirror; most likely there are none tagged. Re-run `pull-osm-universe.js --emirate "<name>"`; only the missing
 category is fetched, the rest is cached.
 
 ## One pin per company

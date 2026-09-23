@@ -46,8 +46,13 @@
     },
     "contracting_fitout": {
       "label": "Contracting, fitouts, FFE",
-      "error": "HTTP 504 from https://overpass.private.coffee/api/interpreter",
-      "places": 0
+      "credible": false,
+      "elements": 415,
+      "places": 405,
+      "unnamed_dropped": 10,
+      "reclassified_elsewhere": 0,
+      "file": "universe-sharjah-contracting_fitout.json",
+      "bytes": 36263
     },
     "marketing_advertising": {
       "label": "Marketing & advertising",
