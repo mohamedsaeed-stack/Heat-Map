@@ -24,7 +24,7 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **33,406** |
+| **Drawn** | **33,408** |
 | — exact geocoded street address | 3,649 |
 | — inside a named area | 8,907 |
 | — inside a named emirate | 16,602 |
@@ -43,7 +43,7 @@ Fujairah 124 · Umm Al Quwain 96.
 | | | |
 |---|---:|---:|
 | HubSpot companies in the portal | 47,516 | |
-| …drawn on the map | 33,406 | 66% (after merging 417 duplicate pins) |
+| …drawn on the map | 33,408 | 66% (after merging 417 duplicate pins) |
 | …established as UAE by any evidence | 31,771 | all drawn, then merged to one pin per company per place |
 | Admin-app clients | 8,534 | |
 | …matched to a CRM company | 718 | **8.4%** |

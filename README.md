@@ -38,7 +38,7 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **33,406** |
+| **Drawn** | **33,408** |
 | — exact geocoded street address | 3,649 |
 | — inside a named area | 8,907 |
 | — inside a named emirate | 16,602 |
@@ -138,7 +138,7 @@ spilled to disk, reconciled against the `COUNT(*)`. `scripts/parse-company-delta
 `raw/hubspot-companies-delta.json`; `allocate-places.js` lays that delta over the pool, replacing the five
 location fields outright (a field the delta lacks was cleared in the CRM) and adding companies the pool never held.
 
-**What it did to the map.** Drawn companies 31,354 → **33,406**. Location unknown 3,997 → **2,772**.
+**What it did to the map.** Drawn companies 31,354 → **33,408**. Location unknown 3,997 → **2,772**.
 9,198 companies the pool had never seen were added, of which 5,797 are in the UAE and drawn and 3,036 name another
 country and are dropped. 145 pins moved to the emirate their record now names (Ajman Medical Centre left Dubai for
 Ajman). The funded-client join now searches the whole pool, not the Dubai set: **74 funded clients sit on their CRM

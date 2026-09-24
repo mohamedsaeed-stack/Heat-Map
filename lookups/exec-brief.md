@@ -19,7 +19,7 @@ Say it in this order. Each line is measured; the number in bold is the one to sa
 - Two-thirds of funded clients sit in one emirate (HHI 6,525 - "highly concentrated" in a lender's vocabulary), and no one was measuring it.
 
 **3. What changes with the map (the solution).** One page, both systems, every company placed by emirate, area or
-street (33,407 pins), every funded client (317 of 317), every deal, and the visible market around them (39,370
+street (33,408 pins), every funded client (317 of 317), every deal, and the visible market around them (39,370
 businesses). Filters by emirate, category, precision, HubSpot owner and the commercial who closed it. One click to the
 HubSpot record or the admin-app client. Rebuilds in seconds when the CRM changes; today's address load flowed through the same day.
 Cost of external data: **AED 0**.
@@ -64,7 +64,7 @@ shares of funded clients by emirate, known emirates only.
 
 ## What the project delivered
 
-- 33,407 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
+- 33,408 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
 - Funded clients on the map: **46 → 317** (all 317 UAE funded clients); 74 of them sit on their own CRM record. Closed won on the map = 317 funded (admin app) + 151 won in HubSpot only.
 - Companies with no location: **8,040 → 2,772**, free sources only; the team's 24 Sep address load in HubSpot (16,989 records changed) flowed through in one rebuild.
 - 29 measured data-quality findings, each with a count and a fix.
