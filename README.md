@@ -51,7 +51,7 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
+Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 764 / AED 459.2M · closed lost 439 / AED 222.0M.
 
 ## How a company gets onto the map
 
@@ -124,6 +124,17 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   closed-won tile covers only the 74 funded clients with a HubSpot deal value, and the explainer says so.
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
+
+## Deals for every emirate
+
+Until 24 Sep 2026 the pipeline and lost layers came from the Dubai build alone. All **4,274 deals** in the
+portal are now pulled (`parse-deal-spills-all.js`, fourteen createdate chunks each under the 500-row cap,
+reconciled to the COUNT), and every pin the Dubai build never saw is classified with the same approved
+stage map. Deals by the emirate of their company: Dubai 2,232 · Abu Dhabi 204 · Sharjah 98 · Ajman 32 ·
+RAK 17 · Fujairah 7 · UAQ 3 · emirate unknown 30. **1,120 deals have no company attached at all** and 531
+attach to companies that are foreign or unplaceable. The pipeline is genuinely Dubai-concentrated: only 41
+pins outside the Dubai build carry a deal. 1,234 deals sit in the legacy "UAE Pipeline (default)" whose
+stages are outside the approved map and stay unclassified, as decided on 19 Sep.
 
 ## The universe layer: all seven emirates
 

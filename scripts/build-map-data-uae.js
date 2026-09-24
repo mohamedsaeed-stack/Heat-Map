@@ -65,6 +65,42 @@ const byPlacement = { exact: 0, area: 0, emirate: 0, uae: 0, notdrawn: 0 };
 const byLayer = {};
 const byCategory = {};
 
+// ---- deals for every emirate --------------------------------------------------
+// The Dubai build classified only the companies in its own pull. Every other pin
+// takes its deal from the all-deals pull of 24 Sep 2026 (4,274 deals, chunked by
+// createdate under the 500-row cap), classified with the same approved stage map
+// and the same precedence: won > in process > lost, biggest amount within a
+// layer, "customer" lifecycle stage counts as won when no deal says so.
+const allDeals = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/hubspot-deals-all.json'), 'utf8')); } catch (e) { return []; } })();
+const stageMapAll = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/stage-map.json'), 'utf8'));
+const stageLayerAll = new Map();
+for (const st of stageMapAll.stages) stageLayerAll.set(st.pipeline + '|' + st.stage_id, st.layer);
+const ownersAll = (() => { try { const o = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/owners.json'), 'utf8')); const m = {}; for (const w of (o.owners || [])) m[String(w.id)] = w.name || null; return m; } catch (e) { return {}; } })();
+const dealsByCompanyAll = new Map();
+for (const d of allDeals) { if (!d.company_id) continue; if (!dealsByCompanyAll.has(d.company_id)) dealsByCompanyAll.set(d.company_id, []); dealsByCompanyAll.get(d.company_id).push(d); }
+const LAYER_RANK_ALL = { closed_won: 4, in_process: 3, closed_lost: 2, crm: 1 };
+const numAmt = v => { const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
+function dealInfoFor(hsId, lifecyclestage) {
+  const ds = dealsByCompanyAll.get(String(hsId)) || [];
+  let best = 'crm', pick = null;
+  for (const d of ds) {
+    const l = stageLayerAll.get(d.pipeline_id + '|' + d.stage_id) || 'unclassified';
+    const mapped = l === 'won' ? 'closed_won' : l === 'open' ? 'in_process' : (l === 'lost_sales' || l === 'lost_risk') ? 'closed_lost' : null;
+    if (!mapped) continue;
+    if (LAYER_RANK_ALL[mapped] > LAYER_RANK_ALL[best]) { best = mapped; pick = { d, l }; }
+    else if (pick && mapped === best && (numAmt(d.amount) || 0) > (numAmt(pick.d.amount) || 0)) pick = { d, l };
+  }
+  if (!ds.length && lifecyclestage !== 'customer') return null;
+  if (best === 'crm' && lifecyclestage === 'customer') return { l: 'closed_won', s: 'Customer (lifecycle stage)', m: null, o: null, t: null, r: null, cd: null, d: ds.length, lc: 1 };
+  if (!pick) return { l: best, s: null, m: null, o: null, t: null, r: null, cd: null, d: ds.length, lc: 0 };
+  const d = pick.d;
+  return { l: best, s: d.stage_label || null, m: numAmt(d.amount), o: ownersAll[String(d.owner_id)] || null,
+           t: best === 'closed_lost' ? (pick.l === 'lost_risk' ? 'risk_rejected' : 'sales_lost') : null,
+           r: d.risk_rejected_reason || d.closed_lost_reason || d.pre_nop_rejection_reason || null,
+           cd: d.closedate || null, d: ds.length, lc: 0 };
+}
+let dealsFromAllPull = 0;
+
 let excludedNotUAE = 0, excludedUnknown = 0, adminOnlyFunded = 0;
 const emirateByAdmin = new Map();
 // HubSpot company -> admin client, from the name join, so the page can link a
@@ -117,7 +153,10 @@ for (const p of pins) {
   const fromIndustry = p.industry ? categoryOf(p.industry) : adminCategoryOf(p.adminIndustry);
   const cat = (fromIndustry && fromIndustry !== 'blank') ? fromIndustry
             : (old && old.c ? old.c : 'blank');
-  const layer = adminOnly ? 'closed_won' : (old && old.l ? old.l : 'crm');
+  // Pins the Dubai build never classified get their deal from the all-deals pull.
+  const fresh = (!old && !adminOnly) ? dealInfoFor(p.id, p.stage) : null;
+  if (fresh) dealsFromAllPull++;
+  const layer = adminOnly ? 'closed_won' : (old && old.l ? old.l : (fresh ? fresh.l : 'crm'));
 
   // Copy the Dubai build's record WHOLESALE rather than re-listing its fields.
   // Its keys are terse and easy to mistake for each other - `m` is the deal
@@ -137,6 +176,7 @@ for (const p of pins) {
   if (p.name) rec.n = p.name;
   rec.c = cat;
   if (!rec.l) rec.l = 'crm';
+  if (fresh) { rec.l = fresh.l; rec.s = fresh.s; rec.m = fresh.m; rec.o = fresh.o; rec.t = fresh.t; rec.r = fresh.r; rec.cd = fresh.cd; rec.d = fresh.d; rec.lc = fresh.lc; }
   if (adminOnly) {
     rec.l = 'closed_won'; rec.src = 'admin'; rec.ao = 1; rec.ad = 1; rec.af = 1;
     rec.ai = p.adminIndustry || null; rec.cd = p.disbursed || null;
@@ -388,6 +428,7 @@ const out = {
     fundedOnMap: companies.filter(c => c.af).length,
     adminOnlyFunded,
     fundedScope,
+    deals: { total: allDeals.length || (prev.stats.deals && prev.stats.deals.total) || 0, scope: allDeals.length ? 'all emirates' : 'Dubai only', fromAllPull: dealsFromAllPull },
     book,
     dedup: { groups: dedup.groups, removed: dedup.removed, crossSystem: dedup.crossSystem, genericNames: dedup.genericNames },
     money,
@@ -426,6 +467,7 @@ console.log('    emirate      ' + num(byPlacement.emirate));
 console.log('    UAE only     ' + num(byPlacement.uae));
 console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely)');
 console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
+console.log('deals: ' + allDeals.length + ' in the portal; ' + dealsFromAllPull + ' pins classified from the all-deals pull (outside the Dubai build)');
 console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + adminOnlyFunded.toLocaleString() + ' are admin-app-only pins');
 console.log('the 8,040 no-location companies: drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
 console.log('universe          ' + num(universe.length) + '   ' + Object.entries(universeByEmirate).map(([k, v]) => k + ' ' + v.toLocaleString()).join(' · '));

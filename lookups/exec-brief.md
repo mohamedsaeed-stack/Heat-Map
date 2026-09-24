@@ -19,7 +19,7 @@ explained on the page.
 | **Funded concentration** | Dubai holds **68%** of funded clients · HHI **6,525** | Portfolio risk. A Dubai-specific shock (rents, regulation, one sector) hits two-thirds of the book. Above 2,500 on HHI is "highly concentrated" in lenders' language — a board-level number. |
 | **CRM → funded conversion, by emirate** | UAE **1.5%** · Dubai 1.35% · **Ajman 3.3%** · **RAK 0%** (354 records, no client) | Shows where effort converts. Ajman converts at over twice the rate with almost no effort → cheapest growth. RAK has 354 prospects and zero clients → untouched or wrong market; decide which. |
 | **White space** — dense CRM areas, no funded client | Trade Centre: 178 companies, **0 funded** · Silicon Oasis: 454, **1 funded** | Records already exist, so a targeted push there costs nothing to source. Either a sales gap or a fit problem — both worth knowing. |
-| **Pipeline by geography** | 742 open deals / **AED 444M** — *Dubai only today* | Where future revenue sits. Not a UAE number yet; needs the deal pull for the other emirates. |
+| **Pipeline by geography** | 764 open deals / **AED 459.2M** UAE-wide; by company emirate all 4,274 deals split Dubai 2,232 · Abu Dhabi 204 · Sharjah 98 · Ajman 32 · rest 27 | Where future revenue sits. The pipeline is 87% Dubai — the emirate-mix decision is not only about prospecting but about where deals get worked. |
 | **Location completeness** | **92%** of CRM placeable (was 83%) · 3,997 unknown | A record we can't place can't be assigned to a territory, mapped or counted. Those 3,997 are invisible to any geographic plan. |
 | **System join rate** | **8.4%** of admin clients match HubSpot · **267 funded clients absent from HubSpot** | Every cross-system number — this map, conversion, revenue attribution — is only as good as this join. 267 funded clients invisible to sales means no upsell, no referrals, wrong win rates. Highest-value fix in the list. |
 | **Won deals carrying a value** | **37%** (74 of 202) | HubSpot revenue reports miss two-thirds of won deals. Any board figure built on HubSpot money is wrong until this is fixed. |
@@ -41,7 +41,7 @@ shares of funded clients by emirate, known emirates only.
 
 ## Caveats to state
 
-Pipeline and lost figures are Dubai-only. The visible market (OpenStreetMap) is a floor. 89% of pins are
+Deals are UAE-wide (all 4,274 pulled 24 Sep 2026); 1,120 of them have no company attached and cannot be placed. The visible market (OpenStreetMap) is a floor. 89% of pins are
 approximate by design — right area, not the building.
 
 ## What each team would use it for — three things each

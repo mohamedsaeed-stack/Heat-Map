@@ -35,6 +35,8 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | B2 | **In-process deals with no amount** | **104** of 742 | same | Amount required before a deal leaves the first stage. |
 | B3 | **Closed-lost deals with no amount** | **132** of 427 | same | Lower priority; affects the "lost AED" figure only. |
 | B4 | **Stale deals: open in HubSpot, already decided in the admin app** — 7 the admin app has funded, 12 it has rejected or closed; **AED 12.75M** of pipeline that is not pipeline | **19** | name join, then stage compared record by record — full list with owners in `lookups/stale-deals.md` | Owners close or re-open each one deliberately. Root cause: nothing writes admin outcomes back to HubSpot. |
+| B6 | **Deals with no company attached** — a deal that is not linked to a company cannot be placed, attributed to an emirate or matched to the admin app | **1,120** of 4,274 (26%) | all-deals pull, 24 Sep 2026, `company_id` empty | Require a company association when a deal is created. |
+| B7 | **Deals in the legacy "UAE Pipeline (default)"** with stages outside the approved stage map (Unworthy 417, Totally Lost 351, Ongoing Conversation 324…) — never counted in any layer | **1,234** | same pull; `lookups/stage-map.json` | Decide what each legacy stage means (won / lost / open) or archive the pipeline. |
 | B5 | **HubSpot and admin app disagree on a merchant's status** (B4 is the urgent subset) | **158** | same join | Same root cause as B4. |
 
 ## C. HubSpot — classification
@@ -71,4 +73,5 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
 
+- **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.
 - **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).

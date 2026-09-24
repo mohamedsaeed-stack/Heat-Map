@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 596 OpenStreetMap tiles are base64 inside it and the pin data is gzipped (11.7 MB against a 16 MB limit).
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 17, 23 Sep 2026). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 20, 24 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -56,7 +56,7 @@ known**.
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
+Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 764 / AED 459.2M · closed lost 439 / AED 222.0M.
 
 ### Coverage, so the totals are never oversold
 

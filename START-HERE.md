@@ -50,7 +50,7 @@ Fujairah 124 · Umm Al Quwain 96.
 | Funded clients | 372 | 55 Egyptian, outside a UAE map → **317 UAE** |
 | …funded pins on the map | 319 | 267 admin-app-only + 52 via the CRM name join |
 
-Closed won 462 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 740 / AED 443.4M · closed lost 426 / AED 215.8M.
+Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 764 / AED 459.2M · closed lost 439 / AED 222.0M.
 
 ## Decisions the user took, 19 Sep 2026
 
