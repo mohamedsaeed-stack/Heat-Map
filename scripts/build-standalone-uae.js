@@ -170,6 +170,27 @@ ${V('MarkerCluster.Default.css')}
   .sel{width:100%;font:inherit;font-size:12px;padding:6px 8px;border:1px solid #3F3F46;border-radius:8px;background:#050505;color:#fff}
   .sel:focus,.searchbox:focus{outline:none;border-color:#2970FF}
   .sel option{background:#18181B;color:#E4E4E7}
+  .msel{position:relative}
+  .msel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font:inherit;font-size:12px;
+    padding:6px 10px;border:1px solid #3F3F46;border-radius:8px;background:#050505;color:#fff;cursor:pointer;text-align:left}
+  .msel-btn:hover,.msel.open .msel-btn{border-color:#2970FF}
+  .msel-btn .sum{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msel-btn .chev{flex-shrink:0;color:#A0A0AB;font-size:10px;transition:transform .15s}
+  .msel.open .msel-btn .chev{transform:rotate(180deg)}
+  .msel-pop{display:none;margin-top:4px;border:1px solid #3F3F46;border-radius:8px;background:#050505;padding:6px}
+  .msel.open .msel-pop{display:block}
+  .msel-tools{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+  .msel-tools button{font:inherit;font-size:10.5px;padding:2px 9px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;cursor:pointer}
+  .msel-tools button:hover{border-color:#2970FF;color:#fff}
+  .msel-find{flex:1;min-width:0;font:inherit;font-size:11px;padding:3px 8px;border:1px solid #3F3F46;border-radius:99px;background:#18181B;color:#fff}
+  .msel-find::placeholder{color:#70707B}
+  .msel-list{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #050505}
+  .msel-row{display:flex;align-items:center;gap:7px;padding:3px 4px;border-radius:5px;font-size:11.5px;color:#D1D1D6;cursor:pointer}
+  .msel-row:hover{background:#18181B}
+  .msel-row input{margin:0;accent-color:#2970FF;flex-shrink:0}
+  .msel-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msel-row .n{font-variant-numeric:tabular-nums;color:#70707B;font-size:10.5px}
+  .msel-row.hide{display:none}
   .hits{margin-top:5px;max-height:150px;overflow-y:auto}
   .hit{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11.5px;color:#D1D1D6}
   .hit:hover{background:#26272B}
@@ -263,23 +284,23 @@ ${V('MarkerCluster.Default.css')}
   <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
 
   <h4>Emirate</h4>
-  <select class="sel" id="ems"></select>
+  <div class="msel" id="ems"></div>
 
   <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
   <div id="book" style="display:none"></div>
 
   <h4>Owner (HubSpot)</h4>
-  <select class="sel" id="hsown"></select>
+  <div class="msel" id="hsown"></div>
 
   <h4 id="ownh" style="display:none">Closed by (admin app)</h4>
-  <select class="sel" id="own" style="display:none"></select>
+  <div class="msel" id="own" style="display:none"></div>
 
   <h4>How exact is the pin?</h4>
-  <select class="sel" id="prec"></select>
+  <div class="msel" id="prec"></div>
   <div class="muted" style="margin-top:4px">A solid dot with a white ring is a real street address. Faded, ringless pins are scattered inside the area or emirate we know the business is in &mdash; they are not the building.</div>
 
   <h4>Categories</h4>
-  <select class="sel" id="cats"></select>
+  <div class="msel" id="cats"></div>
 
   <div class="muted" id="locnote"></div>
 </div>
@@ -413,8 +434,10 @@ function __main(){
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
   var PREC=[['exact','Exact building'],['area','Area or street'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
   var precOn={exact:true,area:true,emirate:true,uae:true};
-  var ownPick='__all';
-  var hsOwnPick='__all';   // HubSpot owner filter: All, one name, or __none for pins with no owner   // commercial owner filter: All, one name, or __none for funded pins with nobody assigned
+  // Owner filters: key -> bool, filled on first render. Every key true = no filter.
+  var ownOn=null;     // commercial owner (admin app); key '__none' = funded, nobody assigned
+  var hsOwnOn=null;   // HubSpot owner; key '__none' = no owner
+  function allOn(m){ for(var k in m){ if(!m[k]) return false; } return true; }
   var showLabels=false, sizeByValue=false;
 
   function clusterIcon(bg){
@@ -489,6 +512,7 @@ function __main(){
   }
 
   function drawCRM(){
+    var ownAll=!ownOn||allOn(ownOn);
     crmPlain.clearLayers(); crmCluster.clearLayers(); markerIndex=[];
     var target=crmGroupNow(), other=clusterOn?crmPlain:crmCluster;
     if(map.hasLayer(other)) map.removeLayer(other);
@@ -507,8 +531,14 @@ function __main(){
       if(!on[c.l]||!catOn[c.c]) return;
       if(!emOn[c.e||'Unknown']) return;
       if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
-      if(hsOwnPick!=='__all'){ if(hsOwnPick==='__none'){ if(c.o) return; } else if(c.o!==hsOwnPick) return; }
-      if(ownPick!=='__all'){ if(ownPick==='__none'){ if(!c.af||c.co) return; } else if(!c.co||c.co.split(', ').indexOf(ownPick)<0) return; }
+      if(hsOwnOn && !hsOwnOn[c.o||'__none']) return;
+      if(ownOn && !ownAll){
+        // any commercial owner deselected: only funded pins whose closer is ticked
+        if(!c.af) return;
+        var cos=c.co?c.co.split(', '):['__none'], hit=false;
+        for(var q=0;q<cos.length;q++){ if(ownOn[cos[q]]){ hit=true; break; } }
+        if(!hit) return;
+      }
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
       var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : L0.color;   // purple: Risk rejection, distinct from in-process amber
@@ -577,32 +607,82 @@ function __main(){
 
   // One dropdown per filter (23 Sep 2026, replacing rows of toggle chips): "All"
   // or exactly one value. Simpler to read, and it leaves room on a small screen.
-  function fillSelect(id, allLabel, items, isOn, onPick){
+  // A multi-select checklist (24 Sep 2026, replacing single-choice dropdowns):
+  // summary button, expands in place; All / None; a find box for long lists.
+  // isOn(k) reads a key; setOne(k,bool) writes one; setAll(bool) writes every key.
+  var mselOpen=null;
+  document.addEventListener('click',function(e){
+    if(mselOpen && !mselOpen.contains(e.target)){ mselOpen.classList.remove('open'); mselOpen=null; }
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && mselOpen){ mselOpen.classList.remove('open'); mselOpen=null; } });
+  function fillSelect(id, allLabel, items, isOn, setOne, setAll){
     var el=document.getElementById(id);
-    var allOn=items.every(function(it){return isOn(it.k);});
-    el.innerHTML='<option value="__all"'+(allOn?' selected':'')+'>'+esc(allLabel)+'</option>'+
-      items.map(function(it){
-        return '<option value="'+esc(it.k)+'"'+(!allOn&&isOn(it.k)?' selected':'')+'>'+esc(it.label)+' ('+fmt(it.n)+')</option>';
-      }).join('');
-    el.onchange=function(){ onPick(el.value); redraw(); };
+    var wasOpen=el.classList.contains('open');
+    function summary(){
+      var onItems=items.filter(function(it){return isOn(it.k);});
+      if(onItems.length===items.length) return allLabel;
+      if(!onItems.length) return 'None selected';
+      if(onItems.length<=2) return onItems.map(function(it){return it.label;}).join(', ');
+      return onItems.length+' of '+items.length+' selected';
+    }
+    el.innerHTML='<button type="button" class="msel-btn" aria-haspopup="listbox" aria-expanded="'+(wasOpen?'true':'false')+'">'+
+        '<span class="sum">'+esc(summary())+'</span><span class="chev">&#9660;</span></button>'+
+      '<div class="msel-pop"><div class="msel-tools"><button type="button" data-a="all">All</button><button type="button" data-a="none">None</button>'+
+        (items.length>10?'<input class="msel-find" type="search" placeholder="Find\u2026" aria-label="Find">':'')+'</div>'+
+      '<div class="msel-list" role="listbox" aria-multiselectable="true">'+items.map(function(it,i){
+        return '<label class="msel-row"><input type="checkbox" data-i="'+i+'"'+(isOn(it.k)?' checked':'')+'>'+
+          '<span class="t">'+esc(it.label)+'</span><span class="n">'+fmt(it.n)+'</span></label>';
+      }).join('')+'</div></div>';
+    var btn=el.querySelector('.msel-btn'), sum=btn.querySelector('.sum'), boxes=el.querySelectorAll('input[type=checkbox]');
+    function refresh(){
+      sum.textContent=summary();
+      for(var i=0;i<boxes.length;i++) boxes[i].checked=isOn(items[i].k);
+      redraw();
+    }
+    btn.onclick=function(e){
+      e.stopPropagation();
+      var open=el.classList.toggle('open');
+      if(mselOpen && mselOpen!==el) mselOpen.classList.remove('open');
+      mselOpen=open?el:null;
+      btn.setAttribute('aria-expanded',open?'true':'false');
+      if(open){ var fnd=el.querySelector('.msel-find'); if(fnd) fnd.focus(); }
+    };
+    el.querySelector('.msel-pop').onclick=function(e){ e.stopPropagation(); };
+    for(var i=0;i<boxes.length;i++){
+      boxes[i].onchange=(function(i){ return function(){ setOne(items[i].k, boxes[i].checked); refresh(); }; })(i);
+    }
+    el.querySelectorAll('.msel-tools button').forEach(function(b){
+      b.onclick=function(e){ e.stopPropagation(); setAll(b.getAttribute('data-a')==='all'); refresh(); };
+    });
+    var find=el.querySelector('.msel-find');
+    if(find){
+      var rows=el.querySelectorAll('.msel-row');
+      find.oninput=function(){
+        var q=find.value.toLowerCase();
+        for(var i=0;i<rows.length;i++) rows[i].classList.toggle('hide', !!q && items[i].label.toLowerCase().indexOf(q)<0);
+      };
+      find.onkeydown=function(e){ if(e.key==='Escape'){ find.value=''; find.oninput(); } };
+    }
   }
   function renderCats(){
     var keys=DATA.target.concat(['other','blank']), bc=DATA.stats.crm.byCategory||{};
     fillSelect('cats','All categories',
       keys.map(function(k){return {k:k,label:DATA.categories[k]||k,n:bc[k]||0};}),
       function(k){return !!catOn[k];},
-      function(v){ keys.forEach(function(k){ catOn[k]=(v==='__all'||k===v); }); });
+      function(k,v){ catOn[k]=v; },
+      function(v){ keys.forEach(function(k){ catOn[k]=v; }); });
   }
   function renderEms(){
     var be=DATA.stats.byEmirate||{};
     fillSelect('ems','All emirates',
       EMIRATES.map(function(k){return {k:k,label:k,n:be[k]?be[k].total:0};}),
       function(k){return !!emOn[k];},
-      function(v){
-        EMIRATES.forEach(function(k){ emOn[k]=(v==='__all'||k===v); });
+      function(k,v){
+        emOn[k]=v;
         // pins with no emirate are filed under Unknown; they belong to the "UAE, emirate unknown" row
-        emOn.Unknown=(v==='__all'||v==='UAE, emirate unknown');
-      });
+        if(k==='UAE, emirate unknown') emOn.Unknown=v;
+      },
+      function(v){ EMIRATES.forEach(function(k){ emOn[k]=v; }); emOn.Unknown=v; });
   }
   function renderHsOwn(){
     var counts={}, none=0;
@@ -610,7 +690,11 @@ function __main(){
     var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
     var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
     if(none) items.push({k:'__none',label:'No owner',n:none});
-    fillSelect('hsown','All owners',items,function(k){return hsOwnPick==='__all'||hsOwnPick===k;},function(v){ hsOwnPick=v; });
+    if(!hsOwnOn){ hsOwnOn={}; items.forEach(function(it){ hsOwnOn[it.k]=true; }); }
+    fillSelect('hsown','All owners',items,
+      function(k){return !!hsOwnOn[k];},
+      function(k,v){ hsOwnOn[k]=v; },
+      function(v){ items.forEach(function(it){ hsOwnOn[it.k]=v; }); });
   }
   function renderOwn(){
     var counts={}, none=0;
@@ -620,14 +704,19 @@ function __main(){
     document.getElementById('ownh').style.display=''; document.getElementById('own').style.display='';
     var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
     if(none) items.push({k:'__none',label:'Funded, nobody assigned',n:none});
-    fillSelect('own','All funded clients, any owner',items,function(k){return ownPick==='__all'||ownPick===k;},function(v){ ownPick=v; });
+    if(!ownOn){ ownOn={}; items.forEach(function(it){ ownOn[it.k]=true; }); }
+    fillSelect('own','All funded clients, any owner',items,
+      function(k){return !!ownOn[k];},
+      function(k,v){ ownOn[k]=v; },
+      function(v){ items.forEach(function(it){ ownOn[it.k]=v; }); });
   }
   function renderPrec(){
     var bp=DATA.stats.byPlacement||{};
     fillSelect('prec','All pins',
       PREC.map(function(p){return {k:p[0],label:p[1],n:bp[p[0]]||0};}),
       function(k){return !!precOn[k];},
-      function(v){ PREC.forEach(function(p){ precOn[p[0]]=(v==='__all'||p[0]===v); }); });
+      function(k,v){ precOn[k]=v; },
+      function(v){ PREC.forEach(function(p){ precOn[p[0]]=v; }); });
   }
 
   var INFO={

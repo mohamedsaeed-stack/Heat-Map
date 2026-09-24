@@ -97,8 +97,9 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
     company: the copies merge into the best-located one, which takes the most advanced stage. Two street
     addresses in one area are branches and stay. Job-title "names" (Chief Executive Officer x12) are not
     merged - they are a CRM finding.
-12. **Simple controls, UAE only** (23 Sep 2026). Emirate, pin precision and category are dropdowns (All or
-    one). The street map is the only base map; no business-name labels. The view is locked to the UAE and
+12. **Simple controls, UAE only** (23 Sep 2026; multi-select 24 Sep). Emirate, pin precision, category and the two
+    owner filters are checklists: tick any combination, All / None shortcuts, a find box on long lists.
+    The street map is the only base map; no business-name labels. The view is locked to the UAE and
     the shallowest zoom fits the country to the screen - there is only "zoom in".
 
 ---

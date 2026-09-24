@@ -222,7 +222,9 @@ CRM finding.
 
 ## The controls
 
-Emirate, pin precision, category, HubSpot owner and admin-app commercial owner ("Closed by", funded clients only; 198 of 372 have one) are dropdowns — "All" or one value. The street map is the only base
+Emirate, pin precision, category, HubSpot owner and admin-app commercial owner ("Closed by", funded clients only; 198 of 372 have one) are **multi-select checklists** (24 Sep 2026, replacing single-choice dropdowns): tick any
+combination, with All / None shortcuts and a find box on the long owner list; the button reads "All emirates", the names you
+ticked, or "3 of 8 selected". Every filter is a key → true/false map in the page; every key true means no filtering. The street map is the only base
 map. The view is locked to the UAE: it cannot pan away, and the shallowest zoom is the one that fits the
 country to the screen. Every popup links to the HubSpot record and, where the company exists in the admin
 app, to its client page there.
