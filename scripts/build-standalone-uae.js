@@ -183,13 +183,13 @@ ${V('MarkerCluster.Default.css')}
   .msel-tools button{font:inherit;font-size:10.5px;padding:2px 9px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;cursor:pointer}
   .msel-tools button:hover{border-color:#2970FF;color:#fff}
   .msel-find{flex:1;min-width:0;font:inherit;font-size:11px;padding:3px 8px;border:1px solid #3F3F46;border-radius:99px;background:#18181B;color:#fff}
-  .msel-find::placeholder{color:#70707B}
+  .msel-find::placeholder{color:#A0A0AB}
   .msel-list{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #050505}
   .msel-row{display:flex;align-items:center;gap:7px;padding:3px 4px;border-radius:5px;font-size:11.5px;color:#D1D1D6;cursor:pointer}
   .msel-row:hover{background:#18181B}
   .msel-row input{margin:0;accent-color:#2970FF;flex-shrink:0}
   .msel-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .msel-row .n{font-variant-numeric:tabular-nums;color:#70707B;font-size:10.5px}
+  .msel-row .n{font-variant-numeric:tabular-nums;color:#A0A0AB;font-size:10.5px}
   .msel-row.hide{display:none}
   .hits{margin-top:5px;max-height:150px;overflow-y:auto}
   .hit{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11.5px;color:#D1D1D6}
@@ -294,6 +294,7 @@ ${V('MarkerCluster.Default.css')}
 
   <h4 id="ownh" style="display:none">Closed by (admin app)</h4>
   <div class="msel" id="own" style="display:none"></div>
+  <div class="muted" id="ownnote" style="display:none;margin-top:4px">Tick fewer than all and the map shows only funded clients, by who closed them.</div>
 
   <h4>How exact is the pin?</h4>
   <div class="msel" id="prec"></div>
@@ -611,25 +612,35 @@ function __main(){
   // summary button, expands in place; All / None; a find box for long lists.
   // isOn(k) reads a key; setOne(k,bool) writes one; setAll(bool) writes every key.
   var mselOpen=null;
-  document.addEventListener('click',function(e){
-    if(mselOpen && !mselOpen.contains(e.target)){ mselOpen.classList.remove('open'); mselOpen=null; }
-  });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && mselOpen){ mselOpen.classList.remove('open'); mselOpen=null; } });
-  function fillSelect(id, allLabel, items, isOn, setOne, setAll){
+  function closeMsel(focusBtn){
+    if(!mselOpen) return;
+    var b=mselOpen.querySelector('.msel-btn');
+    mselOpen.classList.remove('open'); b.setAttribute('aria-expanded','false');
+    if(focusBtn) b.focus();
+    mselOpen=null;
+  }
+  document.addEventListener('click',function(e){ if(mselOpen && !mselOpen.contains(e.target)) closeMsel(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && mselOpen) closeMsel(true); });
+  // Rebuilding 33k markers costs ~0.3 s; rapid ticks coalesce into one rebuild.
+  var redrawT=null;
+  function scheduleRedraw(){ clearTimeout(redrawT); redrawT=setTimeout(function(){ redrawT=null; redraw(); },180); }
+  function fillSelect(id, allLabel, items, isOn, setOne, setAll, tail){
     var el=document.getElementById(id);
     var wasOpen=el.classList.contains('open');
+    var h=el.previousElementSibling; if(h && h.tagName==='H4' && !h.id) h.id=id+'-h';
     function summary(){
       var onItems=items.filter(function(it){return isOn(it.k);});
       if(onItems.length===items.length) return allLabel;
-      if(!onItems.length) return 'None selected';
-      if(onItems.length<=2) return onItems.map(function(it){return it.label;}).join(', ');
-      return onItems.length+' of '+items.length+' selected';
+      var t=tail?tail():'';
+      if(!onItems.length) return 'None selected'+t;
+      if(onItems.length<=2) return onItems.map(function(it){return it.label;}).join(', ')+t;
+      return onItems.length+' of '+items.length+' selected'+t;
     }
-    el.innerHTML='<button type="button" class="msel-btn" aria-haspopup="listbox" aria-expanded="'+(wasOpen?'true':'false')+'">'+
-        '<span class="sum">'+esc(summary())+'</span><span class="chev">&#9660;</span></button>'+
-      '<div class="msel-pop"><div class="msel-tools"><button type="button" data-a="all">All</button><button type="button" data-a="none">None</button>'+
+    el.innerHTML='<button type="button" class="msel-btn" aria-haspopup="true" aria-controls="'+id+'-pop"'+(h&&h.id?' aria-labelledby="'+h.id+' '+id+'-sum"':'')+' aria-expanded="'+(wasOpen?'true':'false')+'">'+
+        '<span class="sum" id="'+id+'-sum">'+esc(summary())+'</span><span class="chev" aria-hidden="true">&#9660;</span></button>'+
+      '<div class="msel-pop" id="'+id+'-pop"><div class="msel-tools"><button type="button" data-a="all">All</button><button type="button" data-a="none">None</button>'+
         (items.length>10?'<input class="msel-find" type="search" placeholder="Find\u2026" aria-label="Find">':'')+'</div>'+
-      '<div class="msel-list" role="listbox" aria-multiselectable="true">'+items.map(function(it,i){
+      '<div class="msel-list" role="group"'+(h&&h.id?' aria-labelledby="'+h.id+'"':'')+'>'+items.map(function(it,i){
         return '<label class="msel-row"><input type="checkbox" data-i="'+i+'"'+(isOn(it.k)?' checked':'')+'>'+
           '<span class="t">'+esc(it.label)+'</span><span class="n">'+fmt(it.n)+'</span></label>';
       }).join('')+'</div></div>';
@@ -637,31 +648,40 @@ function __main(){
     function refresh(){
       sum.textContent=summary();
       for(var i=0;i<boxes.length;i++) boxes[i].checked=isOn(items[i].k);
-      redraw();
+      scheduleRedraw();
     }
     btn.onclick=function(e){
       e.stopPropagation();
-      var open=el.classList.toggle('open');
-      if(mselOpen && mselOpen!==el) mselOpen.classList.remove('open');
-      mselOpen=open?el:null;
-      btn.setAttribute('aria-expanded',open?'true':'false');
-      if(open){ var fnd=el.querySelector('.msel-find'); if(fnd) fnd.focus(); }
+      if(mselOpen===el){ closeMsel(false); return; }
+      closeMsel(false);
+      el.classList.add('open'); mselOpen=el; btn.setAttribute('aria-expanded','true');
+      // the list expands in place inside a scrolling panel: bring it into view, keeping the button visible
+      var pop=el.querySelector('.msel-pop'), panel=document.getElementById('panel');
+      if(panel){ var pr=panel.getBoundingClientRect(), over=pop.getBoundingClientRect().bottom-pr.bottom;
+        if(over>0) panel.scrollTop+=Math.min(over+8, Math.max(0, el.getBoundingClientRect().top-pr.top-8)); }
+      var fnd=el.querySelector('.msel-find'); if(fnd) fnd.focus({preventScroll:true});
     };
     el.querySelector('.msel-pop').onclick=function(e){ e.stopPropagation(); };
     for(var i=0;i<boxes.length;i++){
       boxes[i].onchange=(function(i){ return function(){ setOne(items[i].k, boxes[i].checked); refresh(); }; })(i);
     }
+    var find=el.querySelector('.msel-find'), rows=el.querySelectorAll('.msel-row');
     el.querySelectorAll('.msel-tools button').forEach(function(b){
-      b.onclick=function(e){ e.stopPropagation(); setAll(b.getAttribute('data-a')==='all'); refresh(); };
+      b.onclick=function(e){
+        e.stopPropagation();
+        var v=b.getAttribute('data-a')==='all';
+        if(find && find.value){ for(var i=0;i<rows.length;i++) if(!rows[i].classList.contains('hide')) setOne(items[i].k,v); }
+        else setAll(v);
+        refresh();
+      };
     });
-    var find=el.querySelector('.msel-find');
     if(find){
-      var rows=el.querySelectorAll('.msel-row');
       find.oninput=function(){
         var q=find.value.toLowerCase();
         for(var i=0;i<rows.length;i++) rows[i].classList.toggle('hide', !!q && items[i].label.toLowerCase().indexOf(q)<0);
       };
-      find.onkeydown=function(e){ if(e.key==='Escape'){ find.value=''; find.oninput(); } };
+      // Escape clears a query first; only an empty box lets Escape close the list
+      find.onkeydown=function(e){ if(e.key==='Escape' && find.value){ e.stopPropagation(); find.value=''; find.oninput(); } };
     }
   }
   function renderCats(){
@@ -701,14 +721,15 @@ function __main(){
     DATA.companies.forEach(function(c){ if(!c.af) return; if(!c.co){ none++; return; } c.co.split(', ').forEach(function(o){ counts[o]=(counts[o]||0)+1; }); });
     var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
     if(!names.length) return;
-    document.getElementById('ownh').style.display=''; document.getElementById('own').style.display='';
+    document.getElementById('ownh').style.display=''; document.getElementById('own').style.display=''; document.getElementById('ownnote').style.display='';
     var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
     if(none) items.push({k:'__none',label:'Funded, nobody assigned',n:none});
     if(!ownOn){ ownOn={}; items.forEach(function(it){ ownOn[it.k]=true; }); }
     fillSelect('own','All funded clients, any owner',items,
       function(k){return !!ownOn[k];},
       function(k,v){ ownOn[k]=v; },
-      function(v){ items.forEach(function(it){ ownOn[it.k]=v; }); });
+      function(v){ items.forEach(function(it){ ownOn[it.k]=v; }); },
+      function(){ return ' \u00b7 funded only'; });   // any closer unticked = only funded pins are drawn
   }
   function renderPrec(){
     var bp=DATA.stats.byPlacement||{};
