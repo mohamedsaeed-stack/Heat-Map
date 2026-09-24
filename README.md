@@ -37,7 +37,7 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 
 | | Companies |
 |---|---:|
-| Companies in the pool | **36,329** |
+| Companies in the pool | **40,389** |
 | **Drawn** | **33,408** |
 | — exact geocoded street address | 1,089 |
 | — inside a named area | 12,618 |
@@ -76,7 +76,7 @@ emirate and discarded; it exists nowhere in `raw/`, `data/` or the page. Nothing
 
 **Nothing could place 2,772 companies.** They carry no city, country, region, address or postcode, their
 website (if any) names no place, and no contact helps. They are **unknown, not foreign**: the page counts
-them in the "Location unknown" tile and does not draw them. The 3,572 that name another country are dropped.
+them in the "Location unknown" tile and does not draw them. The 3,525 that name another country are dropped.
 
 **The name route has a guard that earns its keep.** The sweep returned companies called "219 Dubai",
 "UAE Clearing" and "HZ UAE" whose own country field says India, Czechia and the United States. The
@@ -121,7 +121,7 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   joined to a UAE pin). Precision: 5 exact, 120 area, 123 emirate, 69 UAE-only.
 - Admin-only pins carry **no deal value, owner or stage** — HubSpot has no record of them. The popup says
   "per the admin app" and shows the last disbursement date instead of a close date. The AED figure on the
-  closed-won tile covers only the 74 funded clients with a HubSpot deal value, and the explainer says so.
+  closed-won tile covers only the 14 funded clients with a HubSpot deal value, and the explainer says so.
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
 
