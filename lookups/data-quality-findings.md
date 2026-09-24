@@ -25,6 +25,7 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | A6 | **Contacts almost never carry an address** | **53** contacts in the whole CRM | `COUNT(*)` on contacts with address | Not worth fixing; noted so nobody expects contacts to place a company. |
 | A7 | **City spelt many ways** — Dubai alone has dozens of variants (see `lookups/dubai-city-variants.tsv`) | dozens | distinct-value count on `city` | Make city a dropdown of the 7 emirates + major cities. |
 | A8 | **Duplicate company records.** The same company appears more than once in the same place — twice in HubSpot, or once in HubSpot and once in the admin app under a slightly different legal name | **314** companies, **417** extra records; 11 span both systems | name match after stripping legal suffixes, same emirate and area | Merge in HubSpot; the map already shows one pin. A shared key with the admin app (D1) prevents the cross-system kind. |
+| A10 | **Companies with no HubSpot owner** — nobody is responsible for the record | **16,400** of 31,354 on the map (52%) | `owner` field on the pin data, 24 Sep 2026 | Assign owners or an explicit "unowned pool" queue; 53 owners hold the rest, top owner 1,714 records. |
 | A9 | **Company name is a job title** — "Chief Executive Officer" x12, "CEO" x6, "General Manager" x1 | **19** | exact name match | Fix the names; these records cannot be matched, mapped or deduplicated. |
 
 ## B. HubSpot — deals and money
@@ -57,6 +58,8 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | D5 | **Funded clients with no website** | **180** of 372 | same | Optional field; noted because the website was the best free route to an area. |
 | D6 | **Funded clients that are Egyptian merchants** in a UAE-scoped review (country EGY, +20 phones) | **55** of 372; 1 more has no country at all | same | Not an error — but the country field is the only marker, so it must stay filled. Set the one missing country. |
 | D7 | **Industry empty on most funded clients** in the client summary | ~330 of 372 | `raw/admin-clients.json`, `ind` field | Populate at onboarding; would fix C1 for joined clients too. |
+| D9 | **Funded clients with no commercial owner assigned** in the admin app (`assignedAdmins` has no COMMERCIAL entry; 9 more only carry a referral code) | **174** of 372 | per-client pull, 24 Sep 2026 | Make a commercial owner mandatory at funding; it is the basis of any "who closed it" view. |
+| D10 | **Owner names inconsistent** — first names only ("Razan", "Kunal", "Jenane"), UPPERCASE ("KHAN", "SUBASEELAN"), duplicates of the same person ("Suba" / "SUBASEELAN") | 24 distinct strings for what is likely ~15 people | same | Assigned admins should reference the admin user record, not free text. |
 | D8 | **Probable false name joins**: two HubSpot companies flagged funded because their name matches an Egyptian funded client — *Maxim Food* (HubSpot 109968428237) and *Palma Holding* ↔ *Palma* (HubSpot 422598436088) | 2 | join against the per-client country | Check whether these are the same group; if not, the join needs the key in D1. |
 
 ## E. Map-side notes for the reviewer (not CRM fixes)
@@ -73,5 +76,6 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
 
+- **24 Sep 2026** — A10 (16,400 unowned companies), D9 (174 funded clients with no commercial owner), D10 (owner names inconsistent) from the owner pull and the owner filter.
 - **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.
 - **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).

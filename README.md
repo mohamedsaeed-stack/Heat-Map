@@ -164,7 +164,7 @@ CRM finding.
 
 ## The controls
 
-Emirate, pin precision and category are dropdowns — "All" or one value. The street map is the only base
+Emirate, pin precision, category, HubSpot owner and admin-app commercial owner ("Closed by", funded clients only; 198 of 372 have one) are dropdowns — "All" or one value. The street map is the only base
 map. The view is locked to the UAE: it cannot pan away, and the shallowest zoom is the one that fits the
 country to the screen. Every popup links to the HubSpot record and, where the company exists in the admin
 app, to its client page there.
