@@ -392,7 +392,7 @@ function __main(){
   // is actually meaningful, which is the honest view of the map.
   var EMIRATES=Object.keys(DATA.stats.byEmirate||{}).filter(function(k){return k!=='unplaced'&&k!=='not UAE';});
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
-  var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
+  var PREC=[['exact','Exact building'],['area','Area or street'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
   var precOn={exact:true,area:true,emirate:true,uae:true};
   var ownPick='__all';
   var hsOwnPick='__all';   // HubSpot owner filter: All, one name, or __none for pins with no owner   // commercial owner filter: All, one name, or __none for funded pins with nobody assigned
