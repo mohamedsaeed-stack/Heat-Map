@@ -249,6 +249,9 @@ ${V('MarkerCluster.Default.css')}
   <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
   <div id="book" style="display:none"></div>
 
+  <h4>Owner (HubSpot)</h4>
+  <select class="sel" id="hsown"></select>
+
   <h4 id="ownh" style="display:none">Closed by (admin app)</h4>
   <select class="sel" id="own" style="display:none"></select>
 
@@ -386,7 +389,8 @@ function __main(){
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
   var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
   var precOn={exact:true,area:true,emirate:true,uae:true};
-  var ownPick='__all';   // commercial owner filter: All, one name, or __none for funded pins with nobody assigned
+  var ownPick='__all';
+  var hsOwnPick='__all';   // HubSpot owner filter: All, one name, or __none for pins with no owner   // commercial owner filter: All, one name, or __none for funded pins with nobody assigned
   var showLabels=false, sizeByValue=false;
 
   function clusterIcon(bg){
@@ -476,6 +480,7 @@ function __main(){
       if(!on[c.l]||!catOn[c.c]) return;
       if(!emOn[c.e||'Unknown']) return;
       if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
+      if(hsOwnPick!=='__all'){ if(hsOwnPick==='__none'){ if(c.o) return; } else if(c.o!==hsOwnPick) return; }
       if(ownPick!=='__all'){ if(ownPick==='__none'){ if(!c.af||c.co) return; } else if(!c.co||c.co.split(', ').indexOf(ownPick)<0) return; }
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
@@ -571,6 +576,14 @@ function __main(){
         // pins with no emirate are filed under Unknown; they belong to the "UAE, emirate unknown" row
         emOn.Unknown=(v==='__all'||v==='UAE, emirate unknown');
       });
+  }
+  function renderHsOwn(){
+    var counts={}, none=0;
+    DATA.companies.forEach(function(c){ if(c.o) counts[c.o]=(counts[c.o]||0)+1; else none++; });
+    var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
+    if(none) items.push({k:'__none',label:'No owner',n:none});
+    fillSelect('hsown','All owners',items,function(k){return hsOwnPick==='__all'||hsOwnPick===k;},function(v){ hsOwnPick=v; });
   }
   function renderOwn(){
     var counts={}, none=0;
@@ -744,7 +757,7 @@ function __main(){
     t.classList.toggle('closed',closed); t.innerHTML=closed?'&lsaquo;':'&rsaquo;'; t.title=closed?'Show the panel':'Hide the panel';
     setTimeout(function(){ map.invalidateSize(); lockZoom(); },50);
   };
-  renderLegend(); renderCats(); renderEms(); renderPrec(); renderOwn(); renderBook(); redraw();
+  renderLegend(); renderCats(); renderEms(); renderPrec(); renderHsOwn(); renderOwn(); renderBook(); redraw();
 
   // The container has no size until layout settles. Fitting before that lands on
   // the whole world, which is what happened the first time.
