@@ -138,6 +138,12 @@ ${V('MarkerCluster.Default.css')}
     box-shadow:0 2px 8px rgba(0,0,0,.12);padding:10px 12px;width:242px;font-size:12px;
     max-height:calc(100% - 80px);overflow-y:auto}
   .panel h4{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#9a9a9a;margin-bottom:6px;font-weight:600}
+  .panel.hidden{display:none}
+  .ptog{position:absolute;top:64px;right:266px;z-index:1001;width:22px;height:34px;border:1px solid #e3e3e1;border-right:0;
+    border-radius:8px 0 0 8px;background:#fff;color:#555;font:20px/30px sans-serif;cursor:pointer;padding:0;
+    box-shadow:-2px 2px 6px rgba(0,0,0,.08)}
+  .ptog.closed{right:0;border-right:1px solid #e3e3e1;border-radius:8px 0 0 8px}
+  .ptog:hover{color:#1a73e8}
   .panel h4:not(:first-child){margin-top:11px}
   .bmrow{display:flex;gap:4px}
   .bm{flex:1;font:inherit;font-size:11px;padding:5px 4px;border:1px solid #e3e3e1;background:#fff;
@@ -227,7 +233,8 @@ ${V('MarkerCluster.Default.css')}
 <div id="map"></div>
 <div class="stats" id="stats"></div>
 
-<div class="panel">
+<button class="ptog" id="ptog" title="Hide the panel">&rsaquo;</button>
+<div class="panel" id="panel">
   <h4>Find a business</h4>
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
@@ -715,6 +722,12 @@ function __main(){
     document.getElementById('bookh').style.display='';
     var ib=document.getElementById('ibook'); if(ib) ib.onclick=function(){ openInfo('book'); };
   }
+  // The panel hides behind a < / > handle; the map takes the space and re-measures itself.
+  document.getElementById('ptog').onclick=function(){
+    var p=document.getElementById('panel'), t=this, closed=p.classList.toggle('hidden');
+    t.classList.toggle('closed',closed); t.innerHTML=closed?'&lsaquo;':'&rsaquo;'; t.title=closed?'Show the panel':'Hide the panel';
+    setTimeout(function(){ map.invalidateSize(); lockZoom(); },50);
+  };
   renderLegend(); renderCats(); renderEms(); renderPrec(); renderBook(); redraw();
 
   // The container has no size until layout settles. Fitting before that lands on
