@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 596 OpenStreetMap tiles are base64 inside it and the pin data is gzipped (11.7 MB against a 16 MB limit).
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 25, 24 Sep 2026). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 26, 24 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is

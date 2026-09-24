@@ -114,13 +114,16 @@ ${V('MarkerCluster.Default.css')}
 </style>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
+  :root{color-scheme:dark}
   html,body{height:100%}
   body{font-family:Montserrat,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050505;color:#A0A0AB;overflow:hidden}
   /* FlapKap design system, dark mode: canvas #050505, cards #18181B with #3F3F46 hairlines, body #A0A0AB, headings white at weight 400, blue #2970FF accent. */
 
-  .header{background:#050505;border-bottom:1px solid #3F3F46;padding:9px 18px;display:flex;align-items:center;
+  .header{background-color:#050505;background-image:radial-gradient(ellipse 48% 260% at 6% 50%,rgba(41,112,255,.22),rgba(0,187,185,.06) 55%,transparent 80%);border-bottom:1px solid #3F3F46;padding:0 1.5rem;display:flex;align-items:center;
     justify-content:space-between;gap:14px;position:absolute;top:0;left:0;right:0;height:52px;z-index:1200}
-  .h-title{font-size:16px;font-weight:400;color:#fff;white-space:nowrap}
+  .h-brand{display:flex;align-items:center;gap:1rem;min-width:0}
+  .h-logo{height:22px;width:auto;flex-shrink:0;display:block}
+  .h-title{font-size:16px;font-weight:400;color:#fff;white-space:nowrap;letter-spacing:.01em}
   .h-sub{font-size:11px;color:#A0A0AB;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
   .lg{display:flex;align-items:center;gap:6px;font-size:12px;color:#A0A0AB;cursor:pointer;user-select:none;white-space:nowrap}
@@ -131,15 +134,15 @@ ${V('MarkerCluster.Default.css')}
 
   #map{position:absolute;top:52px;left:0;right:0;bottom:0}
 
-  .stats{position:absolute;top:64px;left:12px;z-index:1000;display:flex;flex-direction:column;gap:7px}
+  .stats{position:absolute;top:64px;left:.75rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
   .stat{background:#18181B;border:1px solid #3F3F46;border-radius:1em;padding:9px 13px;min-width:148px}
   .stat .num{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.15}
   .stat .lbl{font-size:10.5px;color:#A0A0AB;margin-top:1px}
   .stat .amt{font-size:10.5px;color:#A0A0AB;margin-top:3px;font-variant-numeric:tabular-nums}
 
   .panel{position:absolute;top:64px;right:12px;z-index:1000;background:#18181B;border:1px solid #3F3F46;border-radius:1em;
-    color:#A0A0AB;padding:10px 12px;width:242px;font-size:12px;
-    max-height:calc(100% - 80px);overflow-y:auto}
+    color:#A0A0AB;padding:.75rem;width:242px;font-size:12px;
+    max-height:calc(100% - 80px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
   .panel h4{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;margin-bottom:6px;font-weight:500}
   .panel.hidden{display:none}
   .ptog{position:absolute;top:64px;right:266px;z-index:1001;width:22px;height:34px;border:1px solid #3F3F46;border-right:0;
@@ -147,7 +150,7 @@ ${V('MarkerCluster.Default.css')}
     box-shadow:-2px 2px 6px rgba(0,0,0,.08)}
   .ptog.closed{right:0;border-right:1px solid #3F3F46;border-radius:8px 0 0 8px}
   .ptog:hover{color:#2970FF}
-  .panel h4:not(:first-child){margin-top:11px}
+  .panel h4:not(:first-child){margin-top:1rem}
   .bmrow{display:flex;gap:4px}
   .bm{flex:1;font:inherit;font-size:11px;padding:5px 4px;border:1px solid #3F3F46;background:transparent;
     border-radius:99px;cursor:pointer;color:#A0A0AB}
@@ -165,6 +168,8 @@ ${V('MarkerCluster.Default.css')}
   .searchbox{width:100%;font:inherit;font-size:12px;padding:6px 11px;border:1px solid #3F3F46;border-radius:99px;background:#050505;color:#fff}
   .searchbox::placeholder{color:#70707B}
   .sel{width:100%;font:inherit;font-size:12px;padding:6px 8px;border:1px solid #3F3F46;border-radius:8px;background:#050505;color:#fff}
+  .sel:focus,.searchbox:focus{outline:none;border-color:#2970FF}
+  .sel option{background:#18181B;color:#E4E4E7}
   .hits{margin-top:5px;max-height:150px;overflow-y:auto}
   .hit{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11.5px;color:#D1D1D6}
   .hit:hover{background:#26272B}
@@ -234,9 +239,12 @@ ${V('MarkerCluster.Default.css')}
 <body>
 
 <div class="header">
-  <div style="min-width:0">
-    <div class="h-title">FlapKap &middot; UAE Coverage Map</div>
-    <div class="h-sub" id="sub">&nbsp;</div>
+  <div class="h-brand">
+    <svg class="h-logo" viewBox="0 0 134 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FlapKap"><path d="M126.102 2.14084C124.312 2.14084 122.595 2.84269 121.329 4.09199C120.063 5.3413 119.352 7.03572 119.352 8.8025V15.5204H126.958C127.844 15.5329 128.724 15.3728 129.548 15.0494C130.372 14.7261 131.123 14.2457 131.759 13.6358C132.394 13.0259 132.902 12.2984 133.253 11.4949C133.603 10.6913 133.79 9.82747 133.803 8.95262V2.14084H126.102Z" fill="#00C8C8"/><path d="M129.284 5.88733H121.754C119.981 5.88733 118.281 6.5902 117.028 7.84132C115.774 9.09244 115.07 10.7893 115.07 12.5587V19.2676H127.119C128.892 19.2676 130.592 18.5647 131.845 17.3136C133.099 16.0625 133.803 14.3656 133.803 12.5963V5.88733H129.284Z" fill="#280CFF"/><path d="M14.4567 11.4346V9.79107C14.4567 9.18237 13.9697 8.6954 13.361 8.6954H3.07395C2.46525 8.6954 1.97828 9.18237 1.97828 9.79107V28.9043C1.97828 29.513 2.46525 30 3.07395 30H5.0218C5.6305 30 6.11746 29.513 6.11746 28.9043V21.6303H12.4784C13.0871 21.6303 13.5741 21.1434 13.5741 20.5347V18.8912C13.5741 18.2825 13.0871 17.7955 12.4784 17.7955H6.11746V12.5302H13.361C13.9697 12.5302 14.4567 12.0433 14.4567 11.4346ZM17.6381 9.79107V28.9043C17.6381 29.513 18.1251 30 18.7338 30H20.4381C21.0164 30 21.5034 29.513 21.5034 28.9043V9.79107C21.5034 9.18237 21.0164 8.6954 20.4381 8.6954H18.7338C18.1251 8.6954 17.6381 9.18237 17.6381 9.79107ZM36.6926 15.6651V16.3955C35.7187 15.1172 34.1665 14.2042 31.7622 14.2042C26.9838 14.2042 24.2447 18.252 24.2447 22.2999C24.2447 26.3173 26.9838 30.3652 31.7622 30.3652C34.1665 30.3652 35.7187 29.4522 36.6926 28.1739V28.9043C36.6926 29.513 37.1796 30 37.7883 30H39.4622C40.0709 30 40.5579 29.513 40.5579 28.9043V15.6651C40.5579 15.0563 40.0709 14.5694 39.4622 14.5694H37.7883C37.1796 14.5694 36.6926 15.0563 36.6926 15.6651ZM32.3709 26.6826C29.723 26.6826 28.2012 24.6434 28.2012 22.2999C28.2012 19.926 29.723 17.9173 32.3709 17.9173C35.0187 17.9173 36.5405 19.8955 36.5405 22.2999C36.5405 24.6739 35.0187 26.6826 32.3709 26.6826ZM52.9747 14.2042C50.6008 14.2042 49.0486 15.1172 48.0747 16.3955V15.6651C48.0747 15.0563 47.5877 14.5694 46.979 14.5694H45.2746C44.6964 14.5694 44.2094 15.0563 44.2094 15.6651V34.8088C44.2094 35.387 44.6964 35.874 45.2746 35.874H46.979C47.5877 35.874 48.0747 35.387 48.0747 34.8088V28.1739C49.0486 29.4522 50.6008 30.3652 52.9747 30.3652C57.7835 30.3652 60.5226 26.3173 60.5226 22.2999C60.5226 18.252 57.7835 14.2042 52.9747 14.2042ZM52.3965 26.6826C49.7182 26.6826 48.2269 24.6739 48.2269 22.2999C48.2269 19.8955 49.7182 17.9173 52.3965 17.9173C55.0443 17.9173 56.5661 19.926 56.5661 22.2999C56.5661 24.6434 55.0443 26.6826 52.3965 26.6826ZM79.483 28.9043L71.6612 19.1955L78.7526 9.79107C79.0874 9.33454 78.783 8.6954 78.2352 8.6954H75.5569C75.1308 8.6954 74.7047 8.90845 74.4612 9.24324L67.522 18.8303V9.79107C67.522 9.18237 67.0351 8.6954 66.4568 8.6954H64.4785C63.9002 8.6954 63.4133 9.18237 63.4133 9.79107V28.9043C63.4133 29.513 63.9002 30 64.4785 30H66.4568C67.0351 30 67.522 29.513 67.522 28.9043V20.0781L74.9482 29.4826C75.2221 29.8174 75.6178 30 76.0134 30H78.9352C79.5135 30 79.8178 29.3304 79.483 28.9043ZM93.2533 15.6651V16.3955C92.2793 15.1172 90.7271 14.2042 88.3228 14.2042C83.5445 14.2042 80.8053 18.252 80.8053 22.2999C80.8053 26.3173 83.5445 30.3652 88.3228 30.3652C90.7271 30.3652 92.2793 29.4522 93.2533 28.1739V28.9043C93.2533 29.513 93.7402 30 94.3489 30H96.0229C96.6316 30 97.1185 29.513 97.1185 28.9043V15.6651C97.1185 15.0563 96.6316 14.5694 96.0229 14.5694H94.3489C93.7402 14.5694 93.2533 15.0563 93.2533 15.6651ZM88.9315 26.6826C86.2836 26.6826 84.7619 24.6434 84.7619 22.2999C84.7619 19.926 86.2836 17.9173 88.9315 17.9173C91.5793 17.9173 93.1011 19.8955 93.1011 22.2999C93.1011 24.6739 91.5793 26.6826 88.9315 26.6826ZM109.535 14.2042C107.161 14.2042 105.609 15.1172 104.635 16.3955V15.6651C104.635 15.0563 104.148 14.5694 103.54 14.5694H101.835C101.257 14.5694 100.77 15.0563 100.77 15.6651V34.8088C100.77 35.387 101.257 35.874 101.835 35.874H103.54C104.148 35.874 104.635 35.387 104.635 34.8088V28.1739C105.609 29.4522 107.161 30.3652 109.535 30.3652C114.344 30.3652 117.083 26.3173 117.083 22.2999C117.083 18.252 114.344 14.2042 109.535 14.2042ZM108.957 26.6826C106.279 26.6826 104.787 24.6739 104.787 22.2999C104.787 19.8955 106.279 17.9173 108.957 17.9173C111.605 17.9173 113.127 19.926 113.127 22.2999C113.127 24.6434 111.605 26.6826 108.957 26.6826Z" fill="white"/></svg>
+    <div style="min-width:0">
+      <div class="h-title">UAE Coverage Map</div>
+      <div class="h-sub" id="sub">&nbsp;</div>
+    </div>
   </div>
   <div class="legend" id="legend"></div>
 </div>
