@@ -51,7 +51,7 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 470 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 776 / AED 462.7M · closed lost 439 / AED 222.0M.
+Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
 
 ## How a company gets onto the map
 
@@ -141,7 +141,7 @@ location fields outright (a field the delta lacks was cleared in the CRM) and ad
 **What it did to the map.** Drawn companies 31,354 → **33,406**. Location unknown 3,997 → **2,772**.
 9,198 companies the pool had never seen were added, of which 5,797 are in the UAE and drawn and 3,036 name another
 country and are dropped. 145 pins moved to the emirate their record now names (Ajman Medical Centre left Dubai for
-Ajman). The funded-client join now searches the whole pool, not the Dubai set: **77 funded clients sit on their CRM
+Ajman). The funded-client join now searches the whole pool, not the Dubai set: **74 funded clients sit on their CRM
 company** (was 52) and 243 remain admin-app-only pins.
 
 **Two rules the load forced.**
@@ -167,6 +167,21 @@ node scripts/scatter-pins.js && node scripts/build-map-data-uae.js && node scrip
 
 A second delta merges over the first: keep the newer file as `raw/hubspot-companies-delta.json` and re-run, or
 concatenate them (later record per id wins) before the allocator.
+
+## Won and lost: both systems, every pin (24 Sep 2026 audit)
+
+An audit on 24 Sep found three gaps, all fixed the same day:
+
+- **The Dubai build's deal verdicts were stale.** Its own pull held 1,501 of the 4,274 deals, and the UAE build copied
+  its layers without re-checking. Every HubSpot pin is now judged against the all-deals pull first: **761 pins changed
+  layer** - mostly plain CRM records that in fact carry an open deal (the pipeline tile went from AED 459M to AED 727.3M) or a lost one.
+- **The admin app ruled on won but not on lost outside Dubai.** A client the admin app rejected, lost in acquisition or
+  closed, and never funded, is closed lost whatever HubSpot says; HubSpot's layer stays as the side note. Applied to **236 pins**.
+- **The money tiles showed Dubai-only amounts** next to UAE-wide counts. They now read the UAE-wide sums.
+
+Also: a foreign (Egyptian) funded client whose name matches a UAE CRM company is no longer stamped onto that pin (8 kept apart).
+Closed won = **317 funded per the admin app + 151 won in HubSpot only** (Money Disbursed or lifecycle "customer" with no admin record
+saying funded). Whether those 151 are real wins is a decision for the CRM owner (findings B8, B9).
 
 ## Deals for every emirate
 

@@ -38,6 +38,9 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | B4 | **Stale deals: open in HubSpot, already decided in the admin app** — 7 the admin app has funded, 12 it has rejected or closed; **AED 12.75M** of pipeline that is not pipeline | **19** | name join, then stage compared record by record — full list with owners in `lookups/stale-deals.md` | Owners close or re-open each one deliberately. Root cause: nothing writes admin outcomes back to HubSpot. |
 | B6 | **Deals with no company attached** — a deal that is not linked to a company cannot be placed, attributed to an emirate or matched to the admin app | **1,120** of 4,274 (26%) | all-deals pull, 24 Sep 2026, `company_id` empty | Require a company association when a deal is created. |
 | B7 | **Deals in the legacy "UAE Pipeline (default)"** with stages outside the approved stage map (Unworthy 417, Totally Lost 351, Ongoing Conversation 324…) — never counted in any layer | **1,234** | same pull; `lookups/stage-map.json` | Decide what each legacy stage means (won / lost / open) or archive the pipeline. |
+| B8 | **Won in HubSpot, never funded per the admin app** — 150 closed-won pins carry no funded admin record; 46 of them ARE joined to an admin client whose financing status is NEW (28 at "Money Disbursed", AED 19.85M: SQUATWOLF, hiCar, Park Lane, Ninjoo…) | **150** (46 joined, 104 unmatched) | audit 24 Sep 2026, `af=0 && l=closed_won` | Decide: is "Money Disbursed" in HubSpot without a funded admin record a stale stage or an admin lag? Until then the map counts them as won and the brief says so. |
+| B9 | **HubSpot won, admin app rejected** — Protectol Health (Money Disbursed AED 1.5M vs AUTO_REJECTION), VDR Marine (customer vs POST_ANALYSIS_REJECTION) | **2** | audit 24 Sep | Admin wins on the map (drawn lost). Fix the HubSpot stage. |
+| B10 | **The Dubai deal pull was incomplete** — 1,501 of 4,274 deals, so 761 pins carried a stale verdict until every pin was re-checked on 24 Sep (481 open deals worth AED 268M were shown as plain CRM) | **761** pins | `stats.dealRecheck` | Fixed in the build; noted so nobody trusts a partial pull again. |
 | B5 | **HubSpot and admin app disagree on a merchant's status** (B4 is the urgent subset) | **158** | same join | Same root cause as B4. |
 
 ## C. HubSpot — classification
@@ -61,6 +64,9 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 | D9 | **Funded clients with no commercial owner assigned** in the admin app (`assignedAdmins` has no COMMERCIAL entry; 9 more only carry a referral code) | **174** of 372 | per-client pull, 24 Sep 2026 | Make a commercial owner mandatory at funding; it is the basis of any "who closed it" view. |
 | D10 | **Owner names inconsistent** — first names only ("Razan", "Kunal", "Jenane"), UPPERCASE ("KHAN", "SUBASEELAN"), duplicates of the same person ("Suba" / "SUBASEELAN") | 24 distinct strings for what is likely ~15 people | same | Assigned admins should reference the admin user record, not free text. |
 | D8 | **Probable false name joins**: two HubSpot companies flagged funded because their name matches an Egyptian funded client — *Maxim Food* (HubSpot 109968428237) and *Palma Holding* ↔ *Palma* (HubSpot 422598436088) | 2 | join against the per-client country | Check whether these are the same group; if not, the join needs the key in D1. |
+
+| D11 | **Same client name, one id funded and another rejected** in the admin app — SKYGEN TRADING, Express Farsi, Lemon Chilli, Safyan IT, Pratham, Petal Box, Sports Hype, ORB | **8** groups | audit 24 Sep, name match within admin clients | Merge or link the duplicate client records; the map keeps the funded one. |
+| D12 | **Foreign funded client name-matched to a UAE CRM company** — Palma, Maxim Food, Denver (Egypt) matched UAE records by name | **8** (3 were drawn funded in Dubai/Sharjah until 24 Sep) | licence `foreign` flag vs name join | Kept apart on the map now; a shared key (D1) ends this class of error. |
 
 ## E. Map-side notes for the reviewer (not CRM fixes)
 
@@ -89,6 +95,7 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
 
+- **24 Sep 2026** — Funded/lost audit: B8–B10 and D11–D12; every pin re-checked against all 4,274 deals (761 verdicts corrected), admin-app lost applied UAE-wide (236 pins), money tiles UAE-wide, foreign funded clients kept off UAE pins.
 - **24 Sep 2026** — F1–F6 from the team's address load (16,989 records changed, 591 new companies); A1 and A3 counts superseded (8,040 → 3,699 with no location field; 3,997 → 2,772 still unplaceable). Road-level geocodes now drawn as area only; conflicting records placed by city only.
 - **24 Sep 2026** — A10 (16,400 unowned companies), D9 (174 funded clients with no commercial owner), D10 (owner names inconsistent) from the owner pull and the owner filter.
 - **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.

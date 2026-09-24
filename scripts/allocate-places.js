@@ -326,7 +326,7 @@ function main() {
   // goes through the same address matcher as everyone else's (route 3), and
   // its country through the same UAE-only rule - the 47 Egyptian merchants in
   // the funded book fall out as "not UAE" like any other foreign record.
-  let adminJoined = 0, adminOnly = 0;
+  let adminJoined = 0, adminOnly = 0, adminForeignKept = 0;
   const hsByAdmin = new Map();
   try {
     const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-match.json'), 'utf8'));
@@ -335,7 +335,16 @@ function main() {
   for (const r of load('admin-licence-emirate.json')) {
     const ev = { emirate: r.emirate || null, area: r.area || null, route: r.route || null, uae: !!r.uae };
     const hsId = hsByAdmin.get(r.id);
-    const prev = hsId ? byId.get(hsId) : null;
+    let prev = hsId ? byId.get(hsId) : null;
+    // A foreign (Egyptian) funded client whose NAME matches a UAE CRM company is
+    // not that company. Three of them (Palma, Maxim Food, Denver) had been
+    // stamped funded-and-won onto Dubai and Sharjah pins. It becomes its own
+    // admin record instead and falls out as "not UAE" like the other 52.
+    if (prev && r.foreign) { prev = null; adminForeignKept++; }
+    // The licence authority is the last word on where a funded client is
+    // registered. A foreign one (Egypt) is never drawn on a UAE map, whatever
+    // else its record says - it is counted in fundedScope.foreign instead.
+    if (r.foreign) { adminOnly++; continue; }
     if (prev) {
       prev._admin = ev; prev._adminId = r.id;
       if (!prev.website && !prev.domain && r.website) prev.domain = r.website;
@@ -431,7 +440,7 @@ function main() {
 
   console.log('DISTINCT COMPANIES  ' + byId.size.toLocaleString());
   console.log('  found only in the no-location file: ' + noLocationOnly.toLocaleString());
-  console.log('  funded admin clients: ' + adminJoined.toLocaleString() + ' joined to a CRM company, ' + adminOnly.toLocaleString() + ' drawn as their own pin');
+  console.log('  funded admin clients: ' + adminJoined.toLocaleString() + ' joined to a CRM company, ' + adminOnly.toLocaleString() + ' drawn as their own pin (' + adminForeignKept + ' foreign clients kept off a name-matched UAE pin)');
   console.log('  found only via a contact\'s city: ' + contactOnly.toLocaleString());
   console.log('  CRM refresh: ' + deltaUpdated.toLocaleString() + ' existing records updated, ' + deltaNew.toLocaleString() + ' companies added');
   console.log('  conflicting own fields (UAE city, foreign ZIP or state): ' + conflicts.toLocaleString() + ' - kept in their emirate, address not trusted');

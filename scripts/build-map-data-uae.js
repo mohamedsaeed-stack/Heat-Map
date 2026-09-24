@@ -108,10 +108,16 @@ const emirateByAdmin = new Map();
 // HubSpot company -> admin client, from the name join, so the page can link a
 // joined record to its admin-app client page as well as to HubSpot.
 const adminIdByHs = new Map();
+const adminMatchByHs = new Map();   // the whole match record: fin, status - for the won/lost rules
 try {
   for (const [hsId, v] of Object.entries(JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-match.json'), 'utf8'))))
-    if (v && v.adminId) adminIdByHs.set(String(hsId), v.adminId);
+    if (v && v.adminId) { adminIdByHs.set(String(hsId), v.adminId); adminMatchByHs.set(String(hsId), v); }
 } catch (e) { /* no join file */ }
+// The admin app is authoritative for LOST as well as won (rule of 19 Sep 2026,
+// ported from the Dubai build on 24 Sep so it applies to every pin, not only the
+// Dubai build's copies - 91 admin-rejected companies were drawn as plain CRM).
+const ADMIN_LOST = { LOST_IN_ACQUISITION: 'lost_in_acquisition', POST_ANALYSIS_REJECTION: 'risk_rejected', AUTO_REJECTION: 'auto_rejected', CLOSED: 'account_closed' };
+let adminLostApplied = 0, dealRelabelled = 0, fundedUnstamped = 0;
 // The funded book as the admin app holds it: how many clients, how many of them
 // are Egyptian merchants (outside a UAE map), how many are UAE. Measured from the
 // per-client pull, 20 Sep 2026.
@@ -155,10 +161,15 @@ for (const p of pins) {
   const fromIndustry = p.industry ? categoryOf(p.industry) : adminCategoryOf(p.adminIndustry);
   const cat = (fromIndustry && fromIndustry !== 'blank') ? fromIndustry
             : (old && old.c ? old.c : 'blank');
-  // Pins the Dubai build never classified get their deal from the all-deals pull.
-  const fresh = (!old && !adminOnly) ? dealInfoFor(p.id, p.stage) : null;
-  if (fresh) dealsFromAllPull++;
-  const layer = adminOnly ? 'closed_won' : (old && old.l ? old.l : (fresh ? fresh.l : 'crm'));
+  // EVERY HubSpot pin takes its deal verdict from the all-deals pull (4,274
+  // deals, reconciled). Until 24 Sep 2026 only pins the Dubai build had never
+  // seen were checked, and the Dubai build's own pull held 1,501 deals - so 681
+  // of its copied verdicts were stale (481 open deals worth AED 268M shown as
+  // plain CRM, 177 lost shown as CRM). A pin with no deal keeps the copied layer.
+  const fresh = adminOnly ? null : dealInfoFor(p.id, p.stage || (old && old.lc ? 'customer' : null));
+  if (fresh && !old) dealsFromAllPull++;
+  if (fresh && old && old.l && fresh.l !== old.l) dealRelabelled++;
+  const layer = adminOnly ? 'closed_won' : (fresh ? fresh.l : (old && old.l ? old.l : 'crm'));
 
   // Copy the Dubai build's record WHOLESALE rather than re-listing its fields.
   // Its keys are terse and easy to mistake for each other - `m` is the deal
@@ -178,7 +189,7 @@ for (const p of pins) {
   if (p.name) rec.n = p.name;
   rec.c = cat;
   if (!rec.l) rec.l = 'crm';
-  if (fresh) { rec.l = fresh.l; rec.s = fresh.s; rec.m = fresh.m; rec.o = fresh.o; rec.t = fresh.t; rec.r = fresh.r; rec.cd = fresh.cd; rec.d = fresh.d; rec.lc = fresh.lc; }
+  if (fresh) { rec.l = fresh.l; rec.s = fresh.s; rec.m = fresh.m; rec.o = fresh.o || rec.o; rec.t = fresh.t; rec.r = fresh.r; rec.cd = fresh.cd; rec.d = fresh.d; rec.lc = fresh.lc; rec.hs = null; rec.src = 'hubspot'; }
   {
     const aidForOwner = p.adminId || adminIdByHs.get(String(p.id));
     const co = aidForOwner && commercialByAdmin[aidForOwner];
@@ -198,10 +209,32 @@ for (const p of pins) {
     // 24 Sep 2026 this flag was inherited from the Dubai build's records only,
     // so the clients the wider admin join found were drawn as plain CRM pins.
     if (p.adminId) {
-      if (rec.l !== 'closed_won') { if (!rec.hs && rec.s) rec.hs = rec.s; rec.l = 'closed_won'; }
+      if (rec.l !== 'closed_won') { rec.hs = rec.l; rec.l = 'closed_won'; rec.src = 'admin'; }
       rec.af = 1; rec.ad = 1;
       if (!rec.ai) rec.ai = p.adminIndustry || null;
       if (!rec.cd) rec.cd = p.disbursed || null;
+    }
+  }
+  // "Funded" has exactly one source: the licence join (p.adminId, allocate-places.js).
+  // A Dubai-build copy may still carry af=1 from an older name join that the
+  // licence join no longer makes - a foreign client (Palma, Maxim Food) or a
+  // match that moved. Strip it; the HubSpot verdict (kept in hs) comes back.
+  if (!adminOnly && !p.adminId && rec.af) {
+    rec.af = 0; rec.ad = 0; rec.aid = adminIdByHs.get(String(p.id)) || null;
+    if (rec.l === 'closed_won' && rec.src === 'admin') { rec.l = rec.hs || 'crm'; rec.hs = null; rec.src = 'hubspot'; }
+    fundedUnstamped++;
+  }
+  // Admin app says rejected / lost / closed, and the client was never funded:
+  // the pin is closed lost whatever HubSpot says; HubSpot's layer stays as the
+  // side note. Funded (p.adminId) always wins over this.
+  {
+    const am = adminMatchByHs.get(String(p.id));
+    if (!adminOnly && !p.adminId && am && am.fin !== 'REFINANCING' && ADMIN_LOST[am.status]) {
+      if (rec.l !== 'closed_lost') { rec.hs = rec.l; rec.l = 'closed_lost'; }
+      rec.t = ADMIN_LOST[am.status];
+      rec.r = rec.r || am.status.replace(/_/g, ' ').toLowerCase();
+      rec.src = 'admin'; rec.ad = 1;
+      adminLostApplied++;
     }
   }
   // Geography is always taken from the new allocation, which supersedes the
@@ -437,6 +470,9 @@ const out = {
       byLayer,
       byCategory,
       byLocation: byPlacement,
+      // The tiles read these three. Until 24 Sep 2026 they still held the Dubai
+      // build's amounts next to UAE-wide counts.
+      wonAmount: money.won, pipelineAmount: money.open, lostAmount: money.lost,
     }),
     total: companies.length,
     drawn: byPlacement.exact + byPlacement.area + byPlacement.emirate + byPlacement.uae,
@@ -449,10 +485,11 @@ const out = {
     // Funded clients: how many the map now carries, and how many of those exist
     // only in the admin app (no HubSpot record, so no deal value).
     fundedOnMap: companies.filter(c => c.af).length,
-    adminOnlyFunded,
+    adminOnlyFunded: companies.filter(c => c.ao).length,   // after the one-pin merge, so it matches the pins
     fundedScope,
     deals: { total: allDeals.length || (prev.stats.deals && prev.stats.deals.total) || 0, scope: allDeals.length ? 'all emirates' : 'Dubai only', fromAllPull: dealsFromAllPull },
     book,
+    dealRecheck: { relabelled: dealRelabelled, adminLostApplied },
     dedup: { groups: dedup.groups, removed: dedup.removed, crossSystem: dedup.crossSystem, genericNames: dedup.genericNames },
     money,
     universeScope: Object.keys(universeByEmirate).length === 7 ? 'all seven emirates' : Object.keys(universeByEmirate).join(', '),
@@ -499,6 +536,7 @@ const out = {
 fs.writeFileSync(path.join(ROOT, 'data/map-uae.json'), JSON.stringify(out));
 
 const num = n => Number(n).toLocaleString().padStart(9);
+console.log('deal re-check: ' + dealRelabelled + ' Dubai-build verdicts corrected by the all-deals pull; admin-app lost applied to ' + adminLostApplied + ' pins; stale funded flags removed ' + fundedUnstamped);
 console.log('companies on the map ' + num(companies.length));
 console.log('  drawn          ' + num(out.stats.drawn));
 console.log('    exact        ' + num(byPlacement.exact));

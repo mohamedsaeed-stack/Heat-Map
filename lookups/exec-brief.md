@@ -19,7 +19,7 @@ explained on the page.
 | **Funded concentration** | Dubai holds **68%** of funded clients · HHI **6,525** | Portfolio risk. A Dubai-specific shock (rents, regulation, one sector) hits two-thirds of the book. Above 2,500 on HHI is "highly concentrated" in lenders' language — a board-level number. |
 | **CRM → funded conversion, by emirate** | UAE **1.5%** · Dubai 1.35% · **Ajman 3.3%** · **RAK 0%** (354 records, no client) | Shows where effort converts. Ajman converts at over twice the rate with almost no effort → cheapest growth. RAK has 354 prospects and zero clients → untouched or wrong market; decide which. |
 | **White space** — dense CRM areas, no funded client | Trade Centre: 178 companies, **0 funded** · Silicon Oasis: 454, **1 funded** | Records already exist, so a targeted push there costs nothing to source. Either a sales gap or a fit problem — both worth knowing. |
-| **Pipeline by geography** | 776 open deals / **AED 462.7M** UAE-wide; by company emirate all 4,274 deals split Dubai 2,232 · Abu Dhabi 204 · Sharjah 98 · Ajman 32 · rest 27 | Where future revenue sits. The pipeline is 87% Dubai — the emirate-mix decision is not only about prospecting but about where deals get worked. |
+| **Pipeline by geography** | 1,253 open deals / **AED 727.3M** UAE-wide (was 764 / AED 459M before every pin was re-checked against all 4,274 deals on 24 Sep); by company emirate all 4,274 deals split Dubai 2,232 · Abu Dhabi 204 · Sharjah 98 · Ajman 32 · rest 27 | Where future revenue sits. The pipeline is 87% Dubai — the emirate-mix decision is not only about prospecting but about where deals get worked. |
 | **Location completeness** | **94%** of CRM placeable (83% → 92% → 94% after the 24 Sep address load) · 2,772 unknown | A record we can't place can't be assigned to a territory, mapped or counted. Those 2,772 are invisible to any geographic plan. |
 | **System join rate** | **13.7%** of admin clients match HubSpot (was 8.4%) · **243 funded clients absent from HubSpot** | Every cross-system number — this map, conversion, revenue attribution — is only as good as this join. 243 funded clients invisible to sales means no upsell, no referrals, wrong win rates. Highest-value fix in the list. |
 | **Won deals carrying a value** | **37%** (74 of 202) | HubSpot revenue reports miss two-thirds of won deals. Any board figure built on HubSpot money is wrong until this is fixed. |
@@ -34,7 +34,7 @@ shares of funded clients by emirate, known emirates only.
 ## What the project delivered
 
 - 33,406 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
-- Funded clients on the map: **46 → 320** (all UAE funded clients); 77 of them now sit on their own CRM record.
+- Funded clients on the map: **46 → 317** (all 317 UAE funded clients); 74 of them sit on their own CRM record. Closed won on the map = 317 funded (admin app) + 151 won in HubSpot only.
 - Companies with no location: **8,040 → 2,772**, free sources only; the team's 24 Sep address load in HubSpot (16,989 records changed) flowed through in one rebuild.
 - 29 measured data-quality findings, each with a count and a fix.
 - External data spend: **AED 0**.
