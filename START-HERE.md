@@ -25,30 +25,30 @@ than re-deriving.
 |---|---:|
 | Companies in the pool | **36,329** |
 | **Drawn** | **33,408** |
-| — exact geocoded street address | 3,649 |
-| — inside a named area | 8,907 |
-| — inside a named emirate | 16,602 |
-| — UAE, emirate unknown | 2,196 |
-| Duplicate pins merged away (same company, same place) | 417 |
+| — exact geocoded street address | 1,089 |
+| — inside a named area | 12,618 |
+| — inside a named emirate | 17,432 |
+| — UAE, emirate unknown | 2,269 |
+| Duplicate pins merged away (same company, same place) | 684 |
 | Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 561 |
+| Dropped as foreign | 3,525 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 | OpenStreetMap universe, by emirate | Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427 |
 
-Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
-Fujairah 124 · Umm Al Quwain 96.
+Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
+Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
 
 **Coverage against each source**, so the gap is not mistaken for completeness:
 
 | | | |
 |---|---:|---:|
-| HubSpot companies in the portal | 47,516 | |
-| …drawn on the map | 33,408 | 66% (after merging 417 duplicate pins) |
-| …established as UAE by any evidence | 31,771 | all drawn, then merged to one pin per company per place |
+| HubSpot companies in the portal | 48,106 | |
+| …drawn on the map | 33,408 | 69% (after merging 684 duplicate pins) |
+| …established as UAE by any evidence | 34,092 | all drawn, then merged to one pin per company per place |
 | Admin-app clients | 8,534 | |
-| …matched to a CRM company | 718 | **8.4%** |
+| …matched to a CRM company | 1,165 | **13.7%** |
 | Funded clients | 372 | 55 Egyptian, outside a UAE map → **317 UAE** |
-| …funded pins on the map | 319 | 267 admin-app-only + 52 via the CRM name join |
+| …funded pins on the map | 317 | 243 admin-app-only + 74 via the CRM name join |
 
 Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
 
@@ -109,7 +109,7 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
   Node fetch also dies on very long-running count queries - `count-osm-universe.js` notes the curl route.
 - **A hidden browser tab has a 0x0 map.** Leaflet flyTo/fitBounds on a zero-size container throws
   `Invalid LatLng (NaN, NaN)`. The page guards both; the test pane in the desktop app is often hidden.
-- **Duplicates are merged at build time, not in the source.** 417 pins across 314 companies (23 Sep).
+- **Duplicates are merged at build time, not in the source.** 684 pins across 609 companies (24 Sep).
   If a merge looks wrong, the rule is in build-map-data-uae.js under "one pin per company per place".
 - **The website sweep crashes Node on some hosts** (an undici assertion; uncatchable). Before 20 Sep it
   retried the same host forever — 60 restarts, 20 records. It now logs each host before fetching and
@@ -124,7 +124,7 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
 1. **The licence pull is DONE (20 Sep 2026).** 372 `flapkap_get_client` calls in 8 fresh agents,
    ~1.5M tokens, 6 minutes. `legalAddresses` turned out to be filled on 113 of 372 (the "empty"
    finding was a three-client sample); the licence authority names the emirate on 193 more; 55
-   funded clients are Egyptian and are dropped as foreign. **319 funded pins on the map, from 46.**
+   funded clients are Egyptian and are dropped as foreign. **317 funded pins on the map, from 46.**
    `scripts/admin-licence-emirate.js` merges the pull; `lookups/admin-license-emirate.md` has the detail.
 2. **The outstanding book — parked 20 Sep 2026 ("a nice idea, unnecessary right now, keep it"). When it comes back: emirate level, all seven emirates.** Built and hidden
    until `raw/admin-balances.json` exists. Blocked on **permission**: the balance endpoints were refused

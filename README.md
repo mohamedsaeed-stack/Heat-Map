@@ -39,17 +39,17 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 |---|---:|
 | Companies in the pool | **36,329** |
 | **Drawn** | **33,408** |
-| — exact geocoded street address | 3,649 |
-| — inside a named area | 8,907 |
-| — inside a named emirate | 16,602 |
-| — UAE, emirate unknown | 2,196 |
-| Duplicate pins merged away (same company, same place) | 417 |
+| — exact geocoded street address | 1,089 |
+| — inside a named area | 12,618 |
+| — inside a named emirate | 17,432 |
+| — UAE, emirate unknown | 2,269 |
+| Duplicate pins merged away (same company, same place) | 684 |
 | Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 561 |
+| Dropped as foreign | 3,525 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
-Fujairah 124 · Umm Al Quwain 96.
+Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
+Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
 
 Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
 
@@ -116,9 +116,9 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   `DMCC-34280 DMCC-Dubai`. The table is in `scripts/admin-licence-emirate.js`.
 - **55 funded clients are Egyptian** (country EGY, +20 phones). This is a UAE map; they are counted and
   left off, like any other foreign record. The UAE funded book is **317**.
-- **319 funded pins** are on the map: 267 exist only in the admin app and are drawn from their own
-  address or licence, 52 reach it through the CRM join (2 of those joins point at Egyptian clients — a
-  name-match data-quality item). Precision: 14 exact, 111 area, 123 emirate, 71 UAE-only.
+- **317 funded pins** are on the map: 243 exist only in the admin app and are drawn from their own
+  address or licence, 74 reach it through the CRM join (since 24 Sep a client the licence marks foreign is never
+  joined to a UAE pin). Precision: 5 exact, 120 area, 123 emirate, 69 UAE-only.
 - Admin-only pins carry **no deal value, owner or stage** — HubSpot has no record of them. The popup says
   "per the admin app" and shows the last disbursement date instead of a close date. The AED figure on the
   closed-won tile covers only the 74 funded clients with a HubSpot deal value, and the explainer says so.
@@ -149,7 +149,7 @@ company** (was 52) and 243 remain admin-app-only pins.
 1. *A road is not a building.* 873 of the 1,288 geocoded addresses had resolved to a road ("Sheikh Zayed Road",
    "Marasi Drive", "شارع الشيخ زايد"), and 462 companies sat stacked on one Sheikh Zayed Road point looking like a
    real cluster. A geocode whose class is `highway` is now drawn as **area only**: inside the record's named area if
-   it has one, otherwise spread ~1.3 km around the road point. That is why "exact" fell from 3,649 to **989** -
+   it has one, otherwise spread ~1.3 km around the road point. That is why "exact" fell from 3,649 to **1,089** -
    the count is now honest. "Street 2" / "شارع 4" with no area is refused as generic, like an emirate name alone.
 2. *A record that disagrees with itself is placed by its city only.* **1,171 records** say a UAE city but carry
    a US ZIP code (94043 is Google's) or a foreign state (California). The UAE has no postal codes; these are an
@@ -216,7 +216,7 @@ once in the admin app. Records with the same name (legal suffixes and punctuatio
 emirate are one company; copies in the same area, or with no area, merge into the best-located copy, which
 takes the most advanced stage (won > lost > in process > on the CRM; the admin app wins), the deal fields
 and both source links. Two street addresses in one area are **branches** and stay separate. Measured:
-417 pins merged across 314 companies, 11 of them HubSpot + admin-app copies of one merchant.
+684 pins merged across 609 companies, 5 of them HubSpot + admin-app copies of one merchant.
 Company names that are job titles (Chief Executive Officer x12, CEO x6) are left alone and logged as a
 CRM finding.
 

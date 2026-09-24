@@ -44,17 +44,17 @@ known**.
 | | Companies |
 |---|---:|
 | **Drawn** | **33,408** |
-| — exact geocoded street address | 3,649 |
-| — inside a named area | 8,907 |
-| — inside a named emirate | 16,602 |
-| — UAE, emirate unknown | 2,196 |
-| Duplicate pins merged away (same company, same place) | 417 |
+| — exact geocoded street address | 1,089 |
+| — inside a named area | 12,618 |
+| — inside a named emirate | 17,432 |
+| — UAE, emirate unknown | 2,269 |
+| Duplicate pins merged away (same company, same place) | 684 |
 | Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 561 |
+| Dropped as foreign | 3,525 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
-Fujairah 124 · Umm Al Quwain 96.
+Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
+Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
 
 Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
 
@@ -62,12 +62,12 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
 
 | | | |
 |---|---:|---|
-| HubSpot portal | 47,516 | |
-| …says United Arab Emirates | 29,355 | most of the map |
-| …says somewhere else | 9,974 | out of scope |
-| …says nothing at all | 8,187 | 8,040 had no location field at all: **4,043 now placed, 2,772 still unknown** — see §5 |
-| Admin-app clients | 8,534 | only **718 (8.4%)** join to the CRM |
-| Funded clients | 372 | 55 are Egyptian merchants, outside a UAE map → **317 UAE**. **319 funded pins on the map** (267 admin-app-only + 52 via the CRM name join) |
+| HubSpot portal | 48,106 | re-measured 24 Sep 2026 |
+| …says United Arab Emirates | 33,326 | most of the map |
+| …says somewhere else | 11,059 | out of scope |
+| …says nothing at all | 3,721 | 3,699 have no location field at all (8,040 on 19 Sep). Of those 8,040: **2,624 now placed, 2,772 still unknown, 219 proved foreign** — see §5 |
+| Admin-app clients | 8,534 | only **1,165 (13.7%)** join to the CRM |
+| Funded clients | 372 | 55 are Egyptian merchants, outside a UAE map → **317 UAE**. **317 funded pins on the map** (243 admin-app-only + 74 via the CRM name join) |
 | **On the map** | **33,408** | every record with any UAE evidence, one pin per company per place |
 
 ---
@@ -135,7 +135,7 @@ produced 331M tokens.
 1. **8,040 companies say nothing about where they are — DONE as far as it goes.** The website sweep
    finished on 20 Sep 2026: all 7,446 domains visited, **2,330 located (31.3%)**, against ~56% for
    companies with CRM data. With website, phone area code, `.ae` domain and contacts combined,
-   **4,043 of the 8,040 are on the map and 2,772 remain unknown** — the page's "Location unknown"
+   **2,624 of the 8,040 are on the map, 219 proved foreign and 2,772 remain unknown** — the page's "Location unknown"
    tile. Nothing else on these records can place them; the fix is in HubSpot, not on the map.
    Privacy: the phone is read, an emirate is derived, the number is discarded — no phone number
    reaches `raw/`, `data/` or the page.
@@ -145,7 +145,7 @@ produced 331M tokens.
    `legalAddresses` is **filled on 113 of 372** — real street addresses naming an area — so the old
    "always empty" claim came from a three-client sample; the licence authority names the emirate on
    193 more; **55 funded clients are Egyptian** (country EGY, +20 phones) and are counted, not drawn.
-   Result: **319 funded pins** on the map (from 46) — 14 exact, 111 area, 123 emirate, 71 UAE-only.
+   Result: **317 funded pins** on the map (from 46) — 5 exact, 120 area, 123 emirate, 69 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
 3. **The outstanding book — PARKED 20 Sep 2026. Mohamed likes it, wants it later, not now.** When it comes back: emirate level, all seven emirates. Mohamed's words:
