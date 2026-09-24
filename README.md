@@ -38,45 +38,45 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **31,354** |
+| **Drawn** | **33,406** |
 | — exact geocoded street address | 3,649 |
 | — inside a named area | 8,907 |
 | — inside a named emirate | 16,602 |
 | — UAE, emirate unknown | 2,196 |
 | Duplicate pins merged away (same company, same place) | 417 |
-| Location unknown — counted on the page, not drawn | 3,997 |
+| Location unknown — counted on the page, not drawn | 2,772 |
 | Dropped as foreign | 561 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
 Dubai 23,267 · Abu Dhabi 3,316 · Sharjah 1,525 · Ajman 477 · Ras Al Khaimah 353 ·
 Fujairah 124 · Umm Al Quwain 96.
 
-Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 764 / AED 459.2M · closed lost 439 / AED 222.0M.
+Closed won 470 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 776 / AED 462.7M · closed lost 439 / AED 222.0M.
 
 ## How a company gets onto the map
 
 Evidence is taken in strict precedence, and the **first** field that names a place wins:
 
 ```
-1 the company's own city          22,549
-2 its own state / region             254
-3 its own address text               294   includes the admin app's legal address, for funded clients
-4 its own name                       238   refused if its country says elsewhere
-5 the admin app's trade licence      109   funded clients: DET-Dubai, EDD-Sharjah, ADDED, DMCC...
-6 the address on its own website   4,270   the only route that regularly yields an AREA
-7 its own phone area code            213   +9714 Dubai · +9712 Abu Dhabi · +9717 RAK · +9719 Fujairah
-8 a +9715 mobile or a .ae domain     766   proves the UAE only, never which emirate
-9 a contact's city                 1,645   counts the emirate, never a street pin
-   its country alone               1,433   proves UAE only, never which emirate
+1 the company's own city          26,082
+2 its own state / region             302
+3 its own address text               307   includes the admin app's legal address, for funded clients
+4 its own name                       212   refused if its country says elsewhere
+5 the admin app's trade licence      107   funded clients: DET-Dubai, EDD-Sharjah, ADDED, DMCC...
+6 the address on its own website   3,160   the only route that regularly yields an AREA
+7 its own phone area code            200   +9714 Dubai · +9712 Abu Dhabi · +9717 RAK · +9719 Fujairah
+8 a +9715 mobile or a .ae domain      18   proves the UAE only, never which emirate
+9 a contact's city                 1,448   counts the emirate, never a street pin
+   its country alone               2,256   proves UAE only, never which emirate
 ```
 
 Emirate names, city names and UAE names count as location — and, since 20 Sep 2026 ("+971 are all UAE"),
 the company's own phone area code and a `.ae` domain. The phone number is read once, turned into an
 emirate and discarded; it exists nowhere in `raw/`, `data/` or the page. Nothing else is evidence.
 
-**Nothing could place 3,997 companies.** They carry no city, country, region, address or postcode, their
+**Nothing could place 2,772 companies.** They carry no city, country, region, address or postcode, their
 website (if any) names no place, and no contact helps. They are **unknown, not foreign**: the page counts
-them in the "Location unknown" tile and does not draw them. The 561 that name another country are dropped.
+them in the "Location unknown" tile and does not draw them. The 3,572 that name another country are dropped.
 
 **The name route has a guard that earns its keep.** The sweep returned companies called "219 Dubai",
 "UAE Clearing" and "HZ UAE" whose own country field says India, Czechia and the United States. The
@@ -124,6 +124,49 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   closed-won tile covers only the 74 funded clients with a HubSpot deal value, and the explainer says so.
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
+
+## The CRM refresh of 24 Sep 2026
+
+On 24 Sep the team loaded street addresses, cities and countries into HubSpot. **16,989 company records
+changed** since the 20 Sep snapshot (the portal grew from 47,516 to 48,106; 591 companies are new). The records with
+no location field at all fell from **8,040 to 3,699**, and the ones with no country from 8,187 to 3,721.
+
+**How it was pulled, and why this way.** A *single-object* query honours `ORDER BY` and `OFFSET` (the cross-object
+traps in START-HERE do not apply), so the changed set was paged 500 at a time, ascending by id for the first
+10,000 (HubSpot's hard window) and descending from the other end for the rest - 34 wide queries, every one
+spilled to disk, reconciled against the `COUNT(*)`. `scripts/parse-company-delta.js` folds the pages into
+`raw/hubspot-companies-delta.json`; `allocate-places.js` lays that delta over the pool, replacing the five
+location fields outright (a field the delta lacks was cleared in the CRM) and adding companies the pool never held.
+
+**What it did to the map.** Drawn companies 31,354 → **33,406**. Location unknown 3,997 → **2,772**.
+9,198 companies the pool had never seen were added, of which 5,797 are in the UAE and drawn and 3,036 name another
+country and are dropped. 145 pins moved to the emirate their record now names (Ajman Medical Centre left Dubai for
+Ajman). The funded-client join now searches the whole pool, not the Dubai set: **77 funded clients sit on their CRM
+company** (was 52) and 243 remain admin-app-only pins.
+
+**Two rules the load forced.**
+
+1. *A road is not a building.* 873 of the 1,288 geocoded addresses had resolved to a road ("Sheikh Zayed Road",
+   "Marasi Drive", "شارع الشيخ زايد"), and 462 companies sat stacked on one Sheikh Zayed Road point looking like a
+   real cluster. A geocode whose class is `highway` is now drawn as **area only**: inside the record's named area if
+   it has one, otherwise spread ~1.3 km around the road point. That is why "exact" fell from 3,649 to **989** -
+   the count is now honest. "Street 2" / "شارع 4" with no area is refused as generic, like an emirate name alone.
+2. *A record that disagrees with itself is placed by its city only.* **1,171 records** say a UAE city but carry
+   a US ZIP code (94043 is Google's) or a foreign state (California). The UAE has no postal codes; these are an
+   enrichment tool's HQ address. The city stands, the address is ignored, the popup says so (findings F1).
+
+**To refresh again** (after the next CRM edit wave): `COUNT(*)` companies with `hs_lastmodifieddate >= <last pull>`, page
+them as above into spilled files, then
+
+```
+node scripts/parse-company-delta.js <spillDir> <firstSpillEpochMs> <count>
+node scripts/match-admin-clients.js && node scripts/allocate-places.js
+node scripts/geocode-uae-addresses.js        # resumable, ~1.1 s per new address
+node scripts/scatter-pins.js && node scripts/build-map-data-uae.js && node scripts/build-standalone-uae.js
+```
+
+A second delta merges over the first: keep the newer file as `raw/hubspot-companies-delta.json` and re-run, or
+concatenate them (later record per id wins) before the allocator.
 
 ## Deals for every emirate
 

@@ -190,6 +190,19 @@ for (const p of pins) {
     rec.aid = p.adminId || null;
   } else if (p.adminId || adminIdByHs.has(String(p.id))) {
     rec.aid = p.adminId || adminIdByHs.get(String(p.id));      // joined: both links
+    // p.adminId is set only from the licence pull, i.e. only for FUNDED clients
+    // (adminIdByHs also holds the 1,000+ non-funded matches, so it cannot be
+    // used for this). A CRM company joined to a funded client IS funded and IS
+    // won - the admin app is authoritative - whatever HubSpot's stage says; the
+    // HubSpot stage is kept as the side note the popup already shows. Until
+    // 24 Sep 2026 this flag was inherited from the Dubai build's records only,
+    // so the clients the wider admin join found were drawn as plain CRM pins.
+    if (p.adminId) {
+      if (rec.l !== 'closed_won') { if (!rec.hs && rec.s) rec.hs = rec.s; rec.l = 'closed_won'; }
+      rec.af = 1; rec.ad = 1;
+      if (!rec.ai) rec.ai = p.adminIndustry || null;
+      if (!rec.cd) rec.cd = p.disbursed || null;
+    }
   }
   // Geography is always taken from the new allocation, which supersedes the
   // Dubai-only placement.
@@ -198,6 +211,9 @@ for (const p of pins) {
   rec.e = p.emirate || null;
   rec.a = p.area || null;
   rec.rt = p.route || null;             // which evidence placed it
+  // Own fields disagree (UAE city, foreign ZIP or state): placed by city only,
+  // address not trusted. Flagged on the pin so the CRM owner can see which.
+  if (p.conflict) rec.cf = 1;
 
   for (const k of Object.keys(rec)) if (rec[k] === null || rec[k] === undefined) delete rec[k];
   companies.push(rec);
@@ -442,14 +458,16 @@ const out = {
     universeScope: Object.keys(universeByEmirate).length === 7 ? 'all seven emirates' : Object.keys(universeByEmirate).join(', '),
     universeByEmirate,
     // The whole CRM, split three ways, so the map's total is never mistaken
-    // for the portal's. Measured against HubSpot on 19 Sep 2026; the three
-    // rows below add to 47,516 exactly.
+    // for the portal's. Re-measured against HubSpot on 24 Sep 2026 after the
+    // team's address load; the three rows below add to 48,106 exactly.
+    // (19 Sep: 47,516 = 29,355 UAE + 9,974 elsewhere + 8,187 no country, of
+    // which 8,040 had no location field at all.)
     crmScope: {
-      total: 47516,
-      uaeCountry: 29355,      // country field says United Arab Emirates
-      elsewhere: 9974,        // country field names another country
-      noCountry: 8187,        // no country at all
-      noLocationAtAll: 8040,  // …and no city, state, address or zip either (measured 19 Sep)
+      total: 48106,
+      uaeCountry: 33326,      // country field says United Arab Emirates
+      elsewhere: 11059,       // country field names another country
+      noCountry: 3721,        // no country at all
+      noLocationAtAll: 3699,  // …and no city, state, address or zip either (measured 24 Sep)
       // What became of those 8,040. The page's "Location unknown" tile shows the
       // still-unknown figure, because the drawn ones ARE on the map now.
       noLocationDrawn: noLoc.drawn,
@@ -458,6 +476,21 @@ const out = {
       noLocationNoContacts: 795, // …and no contacts to ask, so nothing to go on
       onMap: byPlacement.exact + byPlacement.area + byPlacement.emirate + byPlacement.uae,
     },
+    // The CRM refresh of 24 Sep 2026 (parse-company-delta.js): what the team's
+    // address load did to the map. `delta` marks a record the refresh touched,
+    // `src === 'crm-delta'` one the pool had never seen before it.
+    pulled: '2026-09-24',   // the CRM refresh date; the Dubai build's 2026-09-19 came through prev.stats
+    refresh: (() => {
+      const d = pins.filter(p => p.delta);
+      const fresh = d.filter(p => p.src === 'crm-delta');
+      const tier = arr => arr.reduce((o, p) => { const k = p.placement || (p.unknown ? 'unknown' : 'notUAE'); o[k] = (o[k] || 0) + 1; return o; }, {});
+      return {
+        pulledOn: '2026-09-24', changedSince: '2026-09-20',
+        touched: d.length, touchedByTier: tier(d),
+        newCompanies: fresh.length, newByTier: tier(fresh),
+        conflicts: pins.filter(p => p.conflict).length,
+      };
+    })(),
     emirateCentroids: Object.fromEntries(
       Object.entries(places.emirates).map(([k, v]) => [k, v.centroid])),
   }),
@@ -476,7 +509,7 @@ console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely
 console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
 console.log('deals: ' + allDeals.length + ' in the portal; ' + dealsFromAllPull + ' pins classified from the all-deals pull (outside the Dubai build)');
 console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + adminOnlyFunded.toLocaleString() + ' are admin-app-only pins');
-console.log('the 8,040 no-location companies: drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
+console.log('no-location companies (8,040 on 19 Sep; fewer since the 24 Sep CRM refresh gave many a city): drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
 console.log('universe          ' + num(universe.length) + '   ' + Object.entries(universeByEmirate).map(([k, v]) => k + ' ' + v.toLocaleString()).join(' · '));
 console.log('areas ranked     ' + num(Object.keys(areas).length));
 console.log('');

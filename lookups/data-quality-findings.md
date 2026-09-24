@@ -17,9 +17,9 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 
 | # | Finding | Count | How measured | Suggested fix |
 |---|---|---:|---|---|
-| A1 | **Companies with no location at all** — no city, country, state, address or postcode | **8,040** (17% of the portal) | `COUNT(*)` with every location field empty, reconciled against the portal total | Make city and country required on company create. Backfill from the phone (see A2). |
+| A1 | **Companies with no location at all** — no city, country, state, address or postcode | **8,040** (17%) on 19 Sep → **3,699** (8%) after the 24 Sep address load | `COUNT(*)` with every location field empty, reconciled against the portal total | Make city and country required on company create. Backfill from the phone (see A2). |
 | A2 | …of those, the **phone area code names the emirate** (+9714 Dubai, +9712 Abu Dhabi, +9717 RAK, +9719 Fujairah) | **1,091**; a further 955 have a `.ae` domain proving UAE | `scripts/recover-unlocated.js` — number read, emirate derived, number discarded | A one-off HubSpot workflow: set country = UAE and city from the area code where both are empty. |
-| A3 | …and after every free route (website, phone, `.ae`, contacts) **still unplaceable** | **3,997** | `scripts/allocate-places.js`, "location unknown" | These need a human or the owner rep. Most have dead domains — likely dead leads; consider archiving. |
+| A3 | …and after every free route (website, phone, `.ae`, contacts) **still unplaceable** | **3,997** → **2,772** after the 24 Sep load | `scripts/allocate-places.js`, "location unknown" | These need a human or the owner rep. Most have dead domains — likely dead leads; consider archiving. |
 | A4 | **Country says elsewhere while city or name looks UAE** — e.g. "219 Dubai" with country India, "UAE Clearing" with country Czechia | **510** | allocator: name/city evidence refused when country contradicts | Review; most are foreign companies that got a UAE city by mistake. |
 | A5 | **Phone number typed into the website / domain field** — e.g. `971549984434.com`, `506868717.com` | **179** | regex over the domain field of the 8,040 | Validation on the website field; move the digits to the phone field. |
 | A6 | **Contacts almost never carry an address** | **53** contacts in the whole CRM | `COUNT(*)` on contacts with address | Not worth fixing; noted so nobody expects contacts to place a company. |
@@ -71,11 +71,25 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 
 ---
 
+## F. HubSpot — the 24 Sep 2026 address load (what it fixed, what it exposed)
+
+The team loaded street addresses, cities and countries into HubSpot on 24 Sep 2026: **16,989 company records changed** since the 20 Sep snapshot, 591 companies are new, and the portal now holds 48,106. Records with no location field at all fell from 8,040 to 3,699 (−54%); records with no country from 8,187 to 3,721. The map absorbed it in one rebuild. What the load exposed:
+
+| # | Finding | Count | How measured | Suggested fix |
+|---|---|---:|---|---|
+| F1 | **UAE city, foreign ZIP or state** — "1600 Amphitheatre Parkway, Dubai, 94043" is Google's HQ; "5350 Alpha Road, Dubai, Texas 75240"; state = California under city Dubai | **1,171** (967 Dubai, 108 Abu Dhabi, 53 Sharjah) | allocator conflict rule: UAE city + (US/UK postcode on a numbered street, or a foreign state). The UAE has no postal codes. | An enrichment tool wrote the global HQ address over UAE records. Clear address/ZIP/state where the ZIP is foreign, or correct the city. The map keeps these in their emirate and ignores the address; the popup flags each one. |
+| F2 | **Country = UAE, city is a foreign capital** — London, New York City, San Francisco, Cairo | **73** | delta pull, 24 Sep | Fix country or city; these are most likely foreign companies. |
+| F3 | **Address names one emirate, city another** — "Sharjah Ring Road" under Dubai, "Dubai - Fujairah Road" under Al Fujairah City | **5** | text match | Review by hand. |
+| F4 | **Address is only a road name** — "Sheikh Zayed Road" ×160, "شارع الشيخ زايد" ×143, "Marasi Drive" ×39. 873 of the 1,288 geocoded addresses resolve to a road, and 462 companies sat stacked on one Sheikh Zayed Road point | **873** road-level addresses, ~2,800 companies | Nominatim result class = `highway` | Add the building, unit or area (Business Bay, JLT) to the address. Until then the map draws these as "street only", spread along the road, never as an exact pin. |
+| F5 | **Numbered street with no area** — "Street 2", "شارع 4", "Road 12"; every district has one | **647** refused as generic (includes bare emirate names) | geocoder generic rule | Add the area; a street number alone cannot be placed. |
+| F6 | **Arabic-only addresses** — same streets as F4 in Arabic script | **1,771** of the 6,294 addresses in the delta | script test | Nothing to fix for the map (OpenStreetMap geocodes Arabic); agree one language per field so duplicates can be matched. |
+
 ## Log
 
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
 
+- **24 Sep 2026** — F1–F6 from the team's address load (16,989 records changed, 591 new companies); A1 and A3 counts superseded (8,040 → 3,699 with no location field; 3,997 → 2,772 still unplaceable). Road-level geocodes now drawn as area only; conflicting records placed by city only.
 - **24 Sep 2026** — A10 (16,400 unowned companies), D9 (174 funded clients with no commercial owner), D10 (owner names inconsistent) from the owner pull and the owner filter.
 - **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.
 - **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).

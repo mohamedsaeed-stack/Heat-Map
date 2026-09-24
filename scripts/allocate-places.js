@@ -232,7 +232,7 @@ function main() {
   const dubai = load('hubspot-companies.json').map(c => {
     if (c.city) return c;                                   // it says where it is
     if (c.country && !isUAE(c.country)) return c;           // says it is elsewhere
-    return { ...c, city: 'Dubai' };
+    return { ...c, city: 'Dubai', _seeded: true };
   });
   const sets = [
     ['dubai-city', dubai],
@@ -249,6 +249,36 @@ function main() {
       const prev = byId.get(id);
       if (prev) { Object.assign(prev, c); continue; }   // richer copy wins
       byId.set(id, { ...c, _src: src });
+    }
+  }
+
+  // CRM REFRESH (parse-company-delta.js): every company changed in HubSpot since
+  // the 20 Sep snapshot, pulled 24 Sep 2026 after the team loaded street
+  // addresses and cities into the CRM. The delta is the newer truth for the
+  // location fields it carries - address, city, state, zip, country - so those
+  // are REPLACED, not merged: a field the delta lacks was cleared in the CRM.
+  // The one exception is the Dubai-seeded city on a record that never had one
+  // (above); the seed stands unless the delta names a city.
+  // Companies the pool never held (new, or never in any location-filtered pull)
+  // are added and go through exactly the same rules as everyone else - a London
+  // company added to the CRM this week falls out as "not UAE" like any other.
+  let deltaUpdated = 0, deltaNew = 0;
+  const LOC = ['address', 'city', 'state', 'zip', 'country'];
+  const COPY = ['name', 'domain', 'industry', 'lifecyclestage', 'hubspot_owner_id', 'createdate'];
+  for (const d of load('hubspot-companies-delta.json')) {
+    const id = String(d.hs_object_id);
+    if (!id) continue;
+    const prev = byId.get(id);
+    if (prev) {
+      for (const k of LOC) {
+        if (d[k]) prev[k] = d[k];
+        else if (!(k === 'city' && prev._seeded)) delete prev[k];
+      }
+      for (const k of COPY) if (d[k]) prev[k] = d[k];
+      prev._delta = true; deltaUpdated++;
+    } else {
+      byId.set(id, { ...d, hs_object_id: id, _src: 'crm-delta', _delta: true });
+      deltaNew++;
     }
   }
 
@@ -327,7 +357,12 @@ function main() {
     const id = String(r.id);
     const rec = { uae: !!r.uae, emirate: r.emirate || null, why: r.why || null };
     const prev = byId.get(id);
-    if (prev) { prev._noLocation = true; prev._recovered = rec; if (!prev.domain && r.domain) prev.domain = r.domain; continue; }
+    if (prev) {
+      // It was in the no-location set at snapshot time; if the CRM refresh gave it
+      // an address or city since, it is placed by that and the flag comes off.
+      if (!(prev.address || prev.city || prev.state)) prev._noLocation = true;
+      prev._recovered = rec; if (!prev.domain && r.domain) prev.domain = r.domain; continue;
+    }
     byId.set(id, { hs_object_id: id, name: r.name, domain: r.domain, industry: r.industry,
                    lifecyclestage: r.lifecyclestage, _src: 'no-location', _noLocation: true, _recovered: rec });
     noLocationOnly++;
@@ -348,7 +383,27 @@ function main() {
     try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return null; }
   };
 
-  for (const c of byId.values()) {
+  // CONFLICTING OWN FIELDS (found in the 24 Sep 2026 CRM refresh): a record whose
+  // city says Dubai but whose ZIP is a US one (94043 - Google's) or whose state is
+  // California. The UAE has no postal codes, and an address like "1600 Amphitheatre
+  // Parkway" under Dubai is an enrichment tool's HQ address, not a UAE street. The
+  // city is the CRM owner's explicit statement, so the record stays in that emirate;
+  // the address, zip and state are NOT trusted to place it more precisely, and the
+  // record is flagged so the CRM owner can fix it (findings log, F1).
+  const FOREIGN_STATE = /\b(california|new york|texas|florida|illinois|washington|new jersey|nevada|georgia|massachusetts|colorado|arizona|virginia|pennsylvania|michigan|ohio|oregon|utah|england|scotland|wales|london|ontario|quebec|british columbia|victoria|new south wales|queensland|maharashtra|karnataka|delhi|tamil nadu|telangana|gujarat|punjab|sindh|cairo|giza|alexandria|riyadh|jeddah|makkah|bavaria|berlin|hesse|ile-de-france|dublin|singapore|lagos|nairobi)\b/i;
+  const FOREIGN_ZIP = /^\d{5}(-\d{4})?$|^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i;
+  let conflicts = 0;
+  const conflictOf = c => {
+    if (!c.city || !emirateFrom(c.city, false)) return false;
+    const st = c.state && !emirateFrom(c.state, false) && FOREIGN_STATE.test(c.state);
+    const zp = c.zip && FOREIGN_ZIP.test(String(c.zip).trim()) && /^\d+\s+[A-Za-z]/.test(String(c.address || '').trim());
+    return !!(st || zp);
+  };
+
+  for (const c0 of byId.values()) {
+    const conflict = conflictOf(c0);
+    if (conflict) conflicts++;
+    const c = conflict ? { ...c0, address: null, zip: null, state: null, _conflict: true } : c0;
     const e = evidence.get(String(c.hs_object_id));
     const h = hostOf(c.website || c.domain);
     const wh = h && webLoc[h] && !webLoc[h].none ? webLoc[h] : null;
@@ -365,7 +420,7 @@ function main() {
       industry: c.industry || null, lifecyclestage: c.lifecyclestage || null,
       address: c.address || null,
       emirate: a.emirate, area: a.area, precision: a.precision, route: a.route, src: c._src,
-      unknown: a.unknown, nolocation: !!c._noLocation,
+      unknown: a.unknown, nolocation: !!c._noLocation, delta: !!c._delta, conflict: !!c._conflict,
       adminFunded: !!c._adminFunded, adminId: c._adminId || null,
       adminIndustry: c._adminIndustry || null, disbursed: c._disbursed || null,
     });
@@ -378,6 +433,8 @@ function main() {
   console.log('  found only in the no-location file: ' + noLocationOnly.toLocaleString());
   console.log('  funded admin clients: ' + adminJoined.toLocaleString() + ' joined to a CRM company, ' + adminOnly.toLocaleString() + ' drawn as their own pin');
   console.log('  found only via a contact\'s city: ' + contactOnly.toLocaleString());
+  console.log('  CRM refresh: ' + deltaUpdated.toLocaleString() + ' existing records updated, ' + deltaNew.toLocaleString() + ' companies added');
+  console.log('  conflicting own fields (UAE city, foreign ZIP or state): ' + conflicts.toLocaleString() + ' - kept in their emirate, address not trusted');
   console.log('');
   console.log('BY EMIRATE');
   for (const [k, v] of Object.entries(tally).sort((a, b) => b[1] - a[1])) console.log('  ' + pad(k, 26) + num(v));

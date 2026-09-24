@@ -324,7 +324,12 @@ function __main(){
     return 'AED ' + fmt(n);
   }
 
-  var map = L.map('map',{zoomControl:true,preferCanvas:true,maxBoundsViscosity:1.0}).setView([25.05,55.45],9);
+  // One shared canvas renderer for every pin. padding 0.5 pre-draws half a
+  // viewport beyond each edge, so a pan of up to half a screen needs no redraw
+  // at all (Leaflet's default 0.1 redraws almost every pan with 33k pins).
+  var pinRenderer = L.canvas({padding:0.5, tolerance:3});
+  var map = L.map('map',{zoomControl:true,preferCanvas:true,renderer:pinRenderer,maxBoundsViscosity:1.0}).setView([25.05,55.45],9);
+  window.__map = map;   // for in-browser checks only (redraw timing, layer counts)
   // Locked to the UAE (23 Sep 2026): the view cannot leave the country, and the
   // shallowest zoom is the one that fits the whole country on this screen - so
   // there is only ever "zoom in". Re-computed when the window is resized.
@@ -441,13 +446,16 @@ function __main(){
       : c.h==='named'
       ? 'Located by matching the business name to an OpenStreetMap record.'
       : c.h==='area'
-      ? '<b>Approximate &mdash; area only.</b> No street address on record. This pin is placed at a random point inside <b>'+esc(c.a||'')+'</b>, which is where we know the business is. It is <i>not</i> the building.'
+      ? (c.a
+          ? '<b>Approximate &mdash; area only.</b> No exact street address on record. This pin is placed at a random point inside <b>'+esc(c.a)+'</b>, which is where we know the business is. It is <i>not</i> the building.'
+          : '<b>Approximate &mdash; street only.</b> The address on record is a road name, not a building. This pin is spread around a point on that road in <b>'+esc(c.e||'')+'</b>. It is <i>not</i> the building.')
       : c.h==='uae'
       ? '<b>UAE, emirate unknown.</b> This company&rsquo;s own record says its country is the United Arab Emirates, but nothing names an emirate — not its record, not its contacts, not its website. The pin sits at a random populated point in the country. It confirms the UAE and tells you <i>nothing</i> below that.'
       : c.h==='emirate'
       ? '<b>Approximate &mdash; emirate only.</b> No street address and no area on record. This pin is placed at a random point inside <b>'+esc(c.e||'')+'</b>. All it tells you is the emirate.'
       : 'No usable location on record.';
     if(c.rt) loc += '<br><span class="muted">Placed via: '+esc(c.rt)+'</span>';
+    if(c.cf) loc += '<div class="pnote" style="border-top-color:#f9ab00;color:#8a6d00"><b>Record disagrees with itself.</b> The CRM city says <b>'+esc(c.e||'the UAE')+'</b> but the ZIP code or state on the same record points abroad, so the street address was not used. Fix the record in HubSpot and the pin sharpens on the next refresh.</div>';
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+

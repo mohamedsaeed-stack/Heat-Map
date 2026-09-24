@@ -42,11 +42,19 @@ for (const [em, def] of Object.entries(PLACES.emirates)) {
   for (const a of def.aliases) GENERIC.add(norm(a));
 }
 for (const t of PLACES.uae_tokens) GENERIC.add(norm(t));
+// The 24 Sep 2026 CRM refresh brought Arabic addresses. An emirate or country
+// name in Arabic is as generic as in English.
+for (const t of ['دبي', 'أبوظبي', 'أبو ظبي', 'ابوظبي', 'الشارقة', 'عجمان', 'الفجيرة', 'رأس الخيمة', 'راس الخيمة', 'أم القيوين', 'ام القيوين', 'العين', 'الإمارات', 'الامارات', 'الإمارات العربية المتحدة', 'الامارات العربية المتحدة']) GENERIC.add(norm(t));
+// "Street 2", "شارع 4", "Road 12": a numbered street with no area is not an address.
+// Every Dubai district has a Street 2; Nominatim picks one at random.
+const BARE_STREET = /^(?:street|st|road|rd|avenue|ave|شارع|طريق)\s*\d+\s*[a-z]?$|^\d+\s*[a-z]?\s*(?:street|st|road|rd|شارع|طريق)$/i;
 
 function isGeneric(addr) {
   const a = norm(addr).replace(/[.,]/g, '').trim();
   if (a.length < 6) return true;
   if (GENERIC.has(a)) return true;
+  if (BARE_STREET.test(a)) return true;
+  if (/^[\d\s\-\/]+$/.test(a)) return true;             // "12", "4-5": numbers alone
   // "dubai uae", "uae dubai" and friends carry no street information either.
   const words = a.split(' ').filter(Boolean);
   return words.every(w => [...GENERIC].some(g => g.split(' ').includes(w)));

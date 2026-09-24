@@ -24,13 +24,13 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **31,354** |
+| **Drawn** | **33,406** |
 | — exact geocoded street address | 3,649 |
 | — inside a named area | 8,907 |
 | — inside a named emirate | 16,602 |
 | — UAE, emirate unknown | 2,196 |
 | Duplicate pins merged away (same company, same place) | 417 |
-| Location unknown — counted on the page, not drawn | 3,997 |
+| Location unknown — counted on the page, not drawn | 2,772 |
 | Dropped as foreign | 561 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 | OpenStreetMap universe, by emirate | Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427 |
@@ -43,14 +43,14 @@ Fujairah 124 · Umm Al Quwain 96.
 | | | |
 |---|---:|---:|
 | HubSpot companies in the portal | 47,516 | |
-| …drawn on the map | 31,354 | 66% (after merging 417 duplicate pins) |
+| …drawn on the map | 33,406 | 66% (after merging 417 duplicate pins) |
 | …established as UAE by any evidence | 31,771 | all drawn, then merged to one pin per company per place |
 | Admin-app clients | 8,534 | |
 | …matched to a CRM company | 718 | **8.4%** |
 | Funded clients | 372 | 55 Egyptian, outside a UAE map → **317 UAE** |
 | …funded pins on the map | 319 | 267 admin-app-only + 52 via the CRM name join |
 
-Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 764 / AED 459.2M · closed lost 439 / AED 222.0M.
+Closed won 470 (AED 50.6M, held by the 75 with a HubSpot deal value) · in process 776 / AED 462.7M · closed lost 439 / AED 222.0M.
 
 ## Decisions the user took, 19 Sep 2026
 
@@ -133,7 +133,7 @@ Closed won 465 (AED 50.6M, held by the 75 with a HubSpot deal value) · in proce
    write `{id, outstanding, asOf}` only, rebuild. Rows under 5 clients merge. `lookups/outstanding-book.md`.
 3. **2,200 companies are UAE with no emirate** — drawn at a populated point in the country and flagged
    "UAE, emirate unknown"; 71 of them are funded clients whose licence, address, phone and website
-   all failed to name an emirate. **3,997 more say nothing at all** — the "Location unknown" tile,
+   all failed to name an emirate. **2,772 more say nothing at all** — the "Location unknown" tile,
    not drawn, never called foreign. The website sweep is finished (7,446 domains, 31.3% hit rate);
    nothing else on these records can place them.
 4. **The universe layer covers all seven emirates (23 Sep 2026):** 39,370 OpenStreetMap

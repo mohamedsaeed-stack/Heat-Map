@@ -20,7 +20,22 @@ const ROOT = path.join(__dirname, '..');
 const read = p => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'));
 
 const admin = read('raw/admin-clients.json');
-const companies = read('raw/hubspot-companies.json');
+// Every CRM company we hold, from every pull, with the CRM refresh (24 Sep 2026,
+// raw/hubspot-companies-delta.json) layered last so a corrected name wins. Until
+// 24 Sep only the Dubai set was searched, which left funded clients registered in
+// other emirates - or added to the CRM this week - drawn as admin-only pins.
+const companies = (() => {
+  const byId = new Map();
+  const add = (arr, idKey) => { for (const c of arr) { const id = String(c[idKey] || ''); if (!id) continue; byId.set(id, { ...(byId.get(id) || {}), ...c, hs_object_id: id }); } };
+  const opt = p => { try { return read(p); } catch (e) { return []; } };
+  add(opt('raw/hubspot-companies.json'), 'hs_object_id');
+  add(opt('raw/uae-noncity-dubai.json'), 'hs_object_id');
+  add(opt('raw/uae-nocity-groupA.json'), 'hs_object_id');
+  add(opt('raw/uae-nocity-groupBC.json'), 'hs_object_id');
+  add(opt('raw/unlocated-recovered.json'), 'id');
+  add(opt('raw/hubspot-companies-delta.json'), 'hs_object_id');
+  return [...byId.values()];
+})();
 
 // Legal-form and geography noise that differs between the two systems for the
 // same business. Stripped from both sides before comparison.

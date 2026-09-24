@@ -171,10 +171,21 @@ function main() {
     let lat = null, lon = null, placement = null;
 
     if (c.emirate) {
-      // 1. exact, from a geocoded street address
+      // 1. exact, from a geocoded street address - but only when the geocoder
+      //    found a PLACE (a building, shop, office, landmark). An address that is
+      //    just a road name ("Sheikh Zayed Road", "Marasi Drive") resolves to one
+      //    point on that road, and on 24 Sep 2026 462 companies sat stacked on the
+      //    Sheikh Zayed Road point looking like a real cluster. A road hit is
+      //    honest only as "somewhere along this road": if the record also names
+      //    an area, the area tier below is used; otherwise the pin is spread
+      //    around the road point (~1.3 km) and drawn as "area only".
+      let roadHit = null;
       if (c.address) {
         const hit = geo[c.emirate + '|' + norm(c.address)];
-        if (hit && hit.lat) { lat = hit.lat; lon = hit.lon; placement = 'exact'; }
+        if (hit && hit.lat) {
+          if (/^(highway|railway)\//.test(hit.cat || '')) roadHit = hit;
+          else { lat = hit.lat; lon = hit.lon; placement = 'exact'; }
+        }
       }
       // 2. inside the named area
       if (!placement && c.area) {
@@ -184,6 +195,13 @@ function main() {
           if (p) { lat = p[0]; lon = p[1]; placement = 'area'; }
           else stats.area_anchor_outside++;          // falls through to the emirate tier
         }
+      }
+      // 2b. a road-only geocode with no named area: around the road point.
+      if (!placement && roadHit) {
+        const G = (polys[c.emirate] || {}).geojson;
+        const R = 0.012;
+        const p = scatterInArea(rnd, { lat: roadHit.lat, lon: roadHit.lon, bbox: [roadHit.lat - R, roadHit.lat + R, roadHit.lon - R, roadHit.lon + R] }, R, G);
+        if (p) { lat = p[0]; lon = p[1]; placement = 'area'; stats.road_as_area = (stats.road_as_area || 0) + 1; }
       }
       // 3. inside the emirate itself, but across the parts of it where
       //    businesses actually are.
@@ -241,11 +259,11 @@ function main() {
 
     out.push({
       id: c.id, name: c.name, industry: c.industry, stage: c.lifecyclestage,
-      emirate: c.emirate, area: c.area, route: c.route,
+      emirate: c.emirate, area: c.area, route: c.route, src: c.src || null,
       lat: lat === null ? null : Number(lat.toFixed(6)),
       lon: lon === null ? null : Number(lon.toFixed(6)),
       placement,
-      unknown: !!c.unknown, nolocation: !!c.nolocation,
+      unknown: !!c.unknown, nolocation: !!c.nolocation, delta: !!c.delta, conflict: !!c.conflict,
       adminFunded: !!c.adminFunded, adminId: c.adminId || null,
       adminIndustry: c.adminIndustry || null, disbursed: c.disbursed || null,
     });

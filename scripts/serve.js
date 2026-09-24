@@ -69,8 +69,10 @@ const server = http.createServer((req, res) => {
   }
 
   if (p === '/') p = '/page/index.html';
-  // data/ is fetched by the page at its own path; everything else lives in page/.
-  if (!p.startsWith('/data/') && !p.startsWith('/page/')) p = '/page' + p;
+  // data/ is fetched by the page at its own path; dist/ holds the single-file
+  // build (open /dist/flapkap-uae-map.html to check it before publishing);
+  // everything else lives in page/.
+  if (!p.startsWith('/data/') && !p.startsWith('/page/') && !p.startsWith('/dist/')) p = '/page' + p;
 
   const file = path.join(ROOT, p);
   // path.join normalises '..', so this catches any attempt to escape ROOT.
