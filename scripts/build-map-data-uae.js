@@ -100,6 +100,8 @@ function dealInfoFor(hsId, lifecyclestage) {
            cd: d.closedate || null, d: ds.length, lc: 0 };
 }
 let dealsFromAllPull = 0;
+// Who closed it, per the admin app (raw/admin-commercial.json, see admin-commercial-owner.js).
+const commercialByAdmin = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-commercial.json'), 'utf8')); } catch (e) { return {}; } })();
 
 let excludedNotUAE = 0, excludedUnknown = 0, adminOnlyFunded = 0;
 const emirateByAdmin = new Map();
@@ -177,6 +179,11 @@ for (const p of pins) {
   rec.c = cat;
   if (!rec.l) rec.l = 'crm';
   if (fresh) { rec.l = fresh.l; rec.s = fresh.s; rec.m = fresh.m; rec.o = fresh.o; rec.t = fresh.t; rec.r = fresh.r; rec.cd = fresh.cd; rec.d = fresh.d; rec.lc = fresh.lc; }
+  {
+    const aidForOwner = p.adminId || adminIdByHs.get(String(p.id));
+    const co = aidForOwner && commercialByAdmin[aidForOwner];
+    if (co && co.owners && co.owners.length) rec.co = co.owners.join(', ');
+  }
   if (adminOnly) {
     rec.l = 'closed_won'; rec.src = 'admin'; rec.ao = 1; rec.ad = 1; rec.af = 1;
     rec.ai = p.adminIndustry || null; rec.cd = p.disbursed || null;

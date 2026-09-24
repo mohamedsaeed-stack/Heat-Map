@@ -249,6 +249,9 @@ ${V('MarkerCluster.Default.css')}
   <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
   <div id="book" style="display:none"></div>
 
+  <h4 id="ownh" style="display:none">Closed by (admin app)</h4>
+  <select class="sel" id="own" style="display:none"></select>
+
   <h4>How exact is the pin?</h4>
   <select class="sel" id="prec"></select>
   <div class="muted" style="margin-top:4px">A solid dot with a white ring is a real street address. Faded, ringless pins are scattered inside the area or emirate we know the business is in &mdash; they are not the building.</div>
@@ -383,6 +386,7 @@ function __main(){
   var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
   var PREC=[['exact','Exact address'],['area','Area only'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
   var precOn={exact:true,area:true,emirate:true,uae:true};
+  var ownPick='__all';   // commercial owner filter: All, one name, or __none for funded pins with nobody assigned
   var showLabels=false, sizeByValue=false;
 
   function clusterIcon(bg){
@@ -426,6 +430,7 @@ function __main(){
     if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
     if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
     if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
+    if(c.co) kv+='<dt>Closed by</dt><dd>'+esc(c.co)+' <span style="color:#9a9a9a">(admin app)</span></dd>';
     var dis = c.hs ? '<div class="pnote" style="border-top-color:#f9ab00;color:#8a6d00">HubSpot still has this as <b>'+esc(STAGE[c.hs])+'</b>. The admin app is authoritative for won and lost, so the map follows it.</div>' : '';
     var loc = (c.h==='exact'||c.h==='geocoded')
       ? '<b>Exact.</b> Street address geocoded against OpenStreetMap.'
@@ -471,6 +476,7 @@ function __main(){
       if(!on[c.l]||!catOn[c.c]) return;
       if(!emOn[c.e||'Unknown']) return;
       if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
+      if(ownPick!=='__all'){ if(ownPick==='__none'){ if(!c.af||c.co) return; } else if(!c.co||c.co.split(', ').indexOf(ownPick)<0) return; }
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
       var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : L0.color;   // purple: Risk rejection, distinct from in-process amber
@@ -565,6 +571,16 @@ function __main(){
         // pins with no emirate are filed under Unknown; they belong to the "UAE, emirate unknown" row
         emOn.Unknown=(v==='__all'||v==='UAE, emirate unknown');
       });
+  }
+  function renderOwn(){
+    var counts={}, none=0;
+    DATA.companies.forEach(function(c){ if(!c.af) return; if(!c.co){ none++; return; } c.co.split(', ').forEach(function(o){ counts[o]=(counts[o]||0)+1; }); });
+    var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    if(!names.length) return;
+    document.getElementById('ownh').style.display=''; document.getElementById('own').style.display='';
+    var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
+    if(none) items.push({k:'__none',label:'Funded, nobody assigned',n:none});
+    fillSelect('own','All funded clients, any owner',items,function(k){return ownPick==='__all'||ownPick===k;},function(v){ ownPick=v; });
   }
   function renderPrec(){
     var bp=DATA.stats.byPlacement||{};
@@ -728,7 +744,7 @@ function __main(){
     t.classList.toggle('closed',closed); t.innerHTML=closed?'&lsaquo;':'&rsaquo;'; t.title=closed?'Show the panel':'Hide the panel';
     setTimeout(function(){ map.invalidateSize(); lockZoom(); },50);
   };
-  renderLegend(); renderCats(); renderEms(); renderPrec(); renderBook(); redraw();
+  renderLegend(); renderCats(); renderEms(); renderPrec(); renderOwn(); renderBook(); redraw();
 
   // The container has no size until layout settles. Fitting before that lands on
   // the whole world, which is what happened the first time.
