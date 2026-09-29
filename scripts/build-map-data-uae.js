@@ -499,12 +499,14 @@ const out = {
     // team's address load; the three rows below add to 48,106 exactly.
     // (19 Sep: 47,516 = 29,355 UAE + 9,974 elsewhere + 8,187 no country, of
     // which 8,040 had no location field at all.)
+    // (24 Sep: 48,106 = 33,326 UAE + 11,059 elsewhere + 3,721 no country; 3,699 no location field.)
+    // Re-measured 29 Sep 2026 after the second address load: the three rows add to 48,327.
     crmScope: {
-      total: 48106,
-      uaeCountry: 33326,      // country field says United Arab Emirates
-      elsewhere: 11059,       // country field names another country
-      noCountry: 3721,        // no country at all
-      noLocationAtAll: 3699,  // …and no city, state, address or zip either (measured 24 Sep)
+      total: 48327,
+      uaeCountry: 37045,      // country field says United Arab Emirates
+      elsewhere: 10869,       // country field names another country
+      noCountry: 413,         // no country at all
+      noLocationAtAll: 412,   // …and no city, state, address or zip either (measured 29 Sep)
       // What became of those 8,040. The page's "Location unknown" tile shows the
       // still-unknown figure, because the drawn ones ARE on the map now.
       noLocationDrawn: noLoc.drawn,
@@ -516,13 +518,13 @@ const out = {
     // The CRM refresh of 24 Sep 2026 (parse-company-delta.js): what the team's
     // address load did to the map. `delta` marks a record the refresh touched,
     // `src === 'crm-delta'` one the pool had never seen before it.
-    pulled: '2026-09-24',   // the CRM refresh date; the Dubai build's 2026-09-19 came through prev.stats
+    pulled: '2026-09-29',   // the CRM refresh date (full re-pull of all 48,327 companies); the Dubai build's 2026-09-19 came through prev.stats
     refresh: (() => {
       const d = pins.filter(p => p.delta);
       const fresh = d.filter(p => p.src === 'crm-delta');
       const tier = arr => arr.reduce((o, p) => { const k = p.placement || (p.unknown ? 'unknown' : 'notUAE'); o[k] = (o[k] || 0) + 1; return o; }, {});
       return {
-        pulledOn: '2026-09-24', changedSince: '2026-09-20',
+        pulledOn: '2026-09-29', changedSince: 'full re-pull (every record had changed since 24 Sep)',
         touched: d.length, touchedByTier: tier(d),
         newCompanies: fresh.length, newByTier: tier(fresh),
         conflicts: pins.filter(p => p.conflict).length,
