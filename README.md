@@ -37,21 +37,21 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 
 | | Companies |
 |---|---:|
-| Companies in the pool | **40,389** |
-| **Drawn** | **33,408** |
-| — exact geocoded street address | 1,089 |
-| — inside a named area | 12,618 |
-| — inside a named emirate | 17,432 |
-| — UAE, emirate unknown | 2,269 |
-| Duplicate pins merged away (same company, same place) | 684 |
-| Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 3,525 |
+| Companies in the pool | **48,699** |
+| **Drawn** | **38,393** |
+| — exact geocoded street address | 2,342 |
+| — inside a named area | 15,087 |
+| — inside a named emirate | 17,880 |
+| — UAE, emirate unknown | 3,084 |
+| Duplicate pins merged away (same company, same place) | 1,180 |
+| Location unknown — counted on the page, not drawn | 411 |
+| Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
-Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
+Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
-Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
 
 ## How a company gets onto the map
 
@@ -74,9 +74,9 @@ Emirate names, city names and UAE names count as location — and, since 20 Sep 
 the company's own phone area code and a `.ae` domain. The phone number is read once, turned into an
 emirate and discarded; it exists nowhere in `raw/`, `data/` or the page. Nothing else is evidence.
 
-**Nothing could place 2,772 companies.** They carry no city, country, region, address or postcode, their
+**Nothing could place 411 companies.** They carry no city, country, region, address or postcode, their
 website (if any) names no place, and no contact helps. They are **unknown, not foreign**: the page counts
-them in the "Location unknown" tile and does not draw them. The 3,525 that name another country are dropped.
+them in the "Location unknown" tile and does not draw them. The 8,715 that name another country are dropped.
 
 **The name route has a guard that earns its keep.** The sweep returned companies called "219 Dubai",
 "UAE Clearing" and "HZ UAE" whose own country field says India, Czechia and the United States. The
@@ -115,15 +115,36 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
 - **The licence authority names the emirate** on 193 more: `636960 DET-Dubai`, `741566 EDD-Sharjah`,
   `DMCC-34280 DMCC-Dubai`. The table is in `scripts/admin-licence-emirate.js`.
 - **55 funded clients are Egyptian** (country EGY, +20 phones). This is a UAE map; they are counted and
-  left off, like any other foreign record. The UAE funded book is **317**.
-- **317 funded pins** are on the map: 243 exist only in the admin app and are drawn from their own
-  address or licence, 74 reach it through the CRM join (since 24 Sep a client the licence marks foreign is never
-  joined to a UAE pin). Precision: 5 exact, 120 area, 123 emirate, 69 UAE-only.
+  left off, like any other foreign record. The UAE funded book is **323**.
+- **323 funded pins** are on the map: 224 exist only in the admin app and are drawn from their own
+  address or licence, 99 reach it through the CRM join (since 24 Sep a client the licence marks foreign is never
+  joined to a UAE pin). Precision: 8 exact, 122 area, 127 emirate, 66 UAE-only.
 - Admin-only pins carry **no deal value, owner or stage** — HubSpot has no record of them. The popup says
   "per the admin app" and shows the last disbursement date instead of a close date. The AED figure on the
-  closed-won tile covers only the 14 funded clients with a HubSpot deal value, and the explainer says so.
+  closed-won tile covers only the 16 funded clients with a HubSpot deal value, and the explainer says so.
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
+
+## The full re-pull of 29 Sep 2026
+
+Five days after the first address load the team had added street addresses and cities to thousands more
+records and moved deals along. Since 24 Sep **every one of the 48,327 companies had been touched** (a bulk
+update), so the delta became a full pull: five creation-date partitions, each under HubSpot's 10,000-row
+window, 100 pages of 500 paged from both ends (a tail page is re-pulled as a full overlapping page so it
+spills to disk), **48,327 unique = COUNT exactly**. Deals came from a single-object pull (`parse-deals-refresh.js`,
+**4,311 = COUNT**); company links carried over by deal id and fetched for the 37 new deals with a cross-object
+`WHERE hs_object_id IN (...)` query (a date filter fails cross-object; an id list works). The admin app was
+re-listed (8,645 clients, 378 funded); the six newly funded clients were pulled per client into part-9 files
+and `raw/funded-ids.json` regenerated from the list - `admin-licence-emirate.js` iterates that file, so a new
+funded client is invisible until it is regenerated.
+
+**What it did to the map** (`scripts/diff-builds.js`, pin by pin against version 27): drawn 33,408 → **38,393**
+(5,318 added, 319 gone: 282 merged by the one-pin rule once addresses lined up, 23 admin-only pins joined to their CRM
+record, 11 whose record now names another country, 3 deleted in HubSpot). **1,381 pins moved to the emirate their
+record now names**, **4,118 sharpened a precision tier**. Location unknown 2,772 → **411**; only
+412 companies in the whole CRM now lack every location field. Funded 317 → **323** (= 323 UAE funded clients),
+99 of them on their CRM record. Won 468 → 481, open 1,253 → 1,312 (AED 755.7M), lost 711 → 821.
+Conflicting records (UAE city, foreign ZIP or state) 1,171 → **1,933**. Exact building pins 1,089 → **2,342**.
 
 ## The CRM refresh of 24 Sep 2026
 
@@ -216,7 +237,7 @@ once in the admin app. Records with the same name (legal suffixes and punctuatio
 emirate are one company; copies in the same area, or with no area, merge into the best-located copy, which
 takes the most advanced stage (won > lost > in process > on the CRM; the admin app wins), the deal fields
 and both source links. Two street addresses in one area are **branches** and stay separate. Measured:
-684 pins merged across 609 companies, 5 of them HubSpot + admin-app copies of one merchant.
+1,180 pins merged across 981 companies, 5 of them HubSpot + admin-app copies of one merchant.
 Company names that are job titles (Chief Executive Officer x12, CEO x6) are left alone and logged as a
 CRM finding.
 

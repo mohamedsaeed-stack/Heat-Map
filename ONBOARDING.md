@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 596 OpenStreetMap tiles are base64 inside it and the pin data is gzipped (11.7 MB against a 16 MB limit).
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 27, 24 Sep 2026). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 29, 29 Sep 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -43,32 +43,32 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **33,408** |
-| — exact geocoded street address | 1,089 |
-| — inside a named area | 12,618 |
-| — inside a named emirate | 17,432 |
-| — UAE, emirate unknown | 2,269 |
-| Duplicate pins merged away (same company, same place) | 684 |
-| Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 3,525 |
+| **Drawn** | **38,393** |
+| — exact geocoded street address | 2,342 |
+| — inside a named area | 15,087 |
+| — inside a named emirate | 17,880 |
+| — UAE, emirate unknown | 3,084 |
+| Duplicate pins merged away (same company, same place) | 1,180 |
+| Location unknown — counted on the page, not drawn | 411 |
+| Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
-Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
+Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
-Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
 
 ### Coverage, so the totals are never oversold
 
 | | | |
 |---|---:|---|
-| HubSpot portal | 48,106 | re-measured 24 Sep 2026 |
-| …says United Arab Emirates | 33,326 | most of the map |
-| …says somewhere else | 11,059 | out of scope |
-| …says nothing at all | 3,721 | 3,699 have no location field at all (8,040 on 19 Sep). Of those 8,040: **2,624 now placed, 2,772 still unknown, 219 proved foreign** — see §5 |
-| Admin-app clients | 8,534 | only **1,165 (13.7%)** join to the CRM |
-| Funded clients | 372 | 55 are Egyptian merchants, outside a UAE map → **317 UAE**. **317 funded pins on the map** (243 admin-app-only + 74 via the CRM name join) |
-| **On the map** | **33,408** | every record with any UAE evidence, one pin per company per place |
+| HubSpot portal | 48,327 | re-measured 29 Sep 2026 |
+| …says United Arab Emirates | 37,045 | most of the map |
+| …says somewhere else | 10,869 | out of scope |
+| …says nothing at all | 413 | 412 have no location field at all (8,040 on 19 Sep, 3,699 on 24 Sep). Of the original 8,040: **2,379 now placed, 411 still unknown, 169 proved foreign** |
+| Admin-app clients | 8,645 | **1,730 (20.0%)** join to the CRM by name |
+| Funded clients | 378 | 55 are Egyptian merchants, outside a UAE map → **323 UAE**. **323 funded pins on the map** (224 admin-app-only + 99 via the CRM name join) |
+| **On the map** | **38,393** | every record with any UAE evidence, one pin per company per place |
 
 ---
 
@@ -135,7 +135,7 @@ produced 331M tokens.
 1. **8,040 companies say nothing about where they are — DONE as far as it goes.** The website sweep
    finished on 20 Sep 2026: all 7,446 domains visited, **2,330 located (31.3%)**, against ~56% for
    companies with CRM data. With website, phone area code, `.ae` domain and contacts combined,
-   **2,624 of the 8,040 are on the map, 219 proved foreign and 2,772 remain unknown** — the page's "Location unknown"
+   **2,379 of the 8,040 are on the map, 169 proved foreign and 411 remain unknown** — the page's "Location unknown"
    tile. Nothing else on these records can place them; the fix is in HubSpot, not on the map.
    Privacy: the phone is read, an emirate is derived, the number is discarded — no phone number
    reaches `raw/`, `data/` or the page.
@@ -145,7 +145,7 @@ produced 331M tokens.
    `legalAddresses` is **filled on 113 of 372** — real street addresses naming an area — so the old
    "always empty" claim came from a three-client sample; the licence authority names the emirate on
    193 more; **55 funded clients are Egyptian** (country EGY, +20 phones) and are counted, not drawn.
-   Result: **317 funded pins** on the map (from 46) — 5 exact, 120 area, 123 emirate, 69 UAE-only.
+   Result: **323 funded pins** on the map (from 46) — 8 exact, 122 area, 127 emirate, 66 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
 3. **The outstanding book — PARKED 20 Sep 2026. Mohamed likes it, wants it later, not now.** When it comes back: emirate level, all seven emirates. Mohamed's words:

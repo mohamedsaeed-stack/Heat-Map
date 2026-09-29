@@ -24,33 +24,33 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **33,408** |
-| — exact geocoded street address | 1,089 |
-| — inside a named area | 12,618 |
-| — inside a named emirate | 17,432 |
-| — UAE, emirate unknown | 2,269 |
-| Duplicate pins merged away (same company, same place) | 684 |
-| Location unknown — counted on the page, not drawn | 2,772 |
-| Dropped as foreign | 3,525 |
+| **Drawn** | **38,393** |
+| — exact geocoded street address | 2,342 |
+| — inside a named area | 15,087 |
+| — inside a named emirate | 17,880 |
+| — UAE, emirate unknown | 3,084 |
+| Duplicate pins merged away (same company, same place) | 1,180 |
+| Location unknown — counted on the page, not drawn | 411 |
+| Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 | OpenStreetMap universe, by emirate | Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427 |
 
-Dubai 24,944 · Abu Dhabi 3,480 · Sharjah 1,604 · Ajman 508 · Ras Al Khaimah 372 ·
-Fujairah 130 · Umm Al Quwain 101 · UAE, emirate unknown 2,269.
+Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
 **Coverage against each source**, so the gap is not mistaken for completeness:
 
 | | | |
 |---|---:|---:|
-| HubSpot companies in the portal | 48,106 | |
-| …drawn on the map | 33,408 | 69% (after merging 684 duplicate pins) |
-| …established as UAE by any evidence | 34,092 | all drawn, then merged to one pin per company per place |
-| Admin-app clients | 8,534 | |
-| …matched to a CRM company | 1,165 | **13.7%** |
-| Funded clients | 372 | 55 Egyptian, outside a UAE map → **317 UAE** |
-| …funded pins on the map | 317 | 243 admin-app-only + 74 via the CRM name join |
+| HubSpot companies in the portal | 48,327 | |
+| …drawn on the map | 38,393 | 79% (after merging 1,180 duplicate pins) |
+| …established as UAE by any evidence | 39,573 | all drawn, then merged to one pin per company per place |
+| Admin-app clients | 8,645 | |
+| …matched to a CRM company | 1,730 | **20.0%** |
+| Funded clients | 378 | 55 Egyptian, outside a UAE map → **323 UAE** |
+| …funded pins on the map | 323 | 224 admin-app-only + 99 via the CRM name join |
 
-Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in process 1,253 / AED 727.3M · closed lost 711 / AED 350.5M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
 
 ## Decisions the user took, 19 Sep 2026
 
@@ -109,7 +109,7 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
   Node fetch also dies on very long-running count queries - `count-osm-universe.js` notes the curl route.
 - **A hidden browser tab has a 0x0 map.** Leaflet flyTo/fitBounds on a zero-size container throws
   `Invalid LatLng (NaN, NaN)`. The page guards both; the test pane in the desktop app is often hidden.
-- **Duplicates are merged at build time, not in the source.** 684 pins across 609 companies (24 Sep).
+- **Duplicates are merged at build time, not in the source.** 1,180 pins across 981 companies (29 Sep).
   If a merge looks wrong, the rule is in build-map-data-uae.js under "one pin per company per place".
 - **The website sweep crashes Node on some hosts** (an undici assertion; uncatchable). Before 20 Sep it
   retried the same host forever — 60 restarts, 20 records. It now logs each host before fetching and
@@ -124,7 +124,7 @@ Closed won 468 (AED 88.7M, held by the 129 with a HubSpot deal value) · in proc
 1. **The licence pull is DONE (20 Sep 2026).** 372 `flapkap_get_client` calls in 8 fresh agents,
    ~1.5M tokens, 6 minutes. `legalAddresses` turned out to be filled on 113 of 372 (the "empty"
    finding was a three-client sample); the licence authority names the emirate on 193 more; 55
-   funded clients are Egyptian and are dropped as foreign. **317 funded pins on the map, from 46.**
+   funded clients are Egyptian and are dropped as foreign. **323 funded pins on the map, from 46.**
    `scripts/admin-licence-emirate.js` merges the pull; `lookups/admin-license-emirate.md` has the detail.
 2. **The outstanding book — parked 20 Sep 2026 ("a nice idea, unnecessary right now, keep it"). When it comes back: emirate level, all seven emirates.** Built and hidden
    until `raw/admin-balances.json` exists. Blocked on **permission**: the balance endpoints were refused
