@@ -35,30 +35,9 @@ const PLACES = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/uae-places.js
 
 const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
 
-// An address that says nothing more than a city or country is not an address.
-const GENERIC = new Set();
-for (const [em, def] of Object.entries(PLACES.emirates)) {
-  GENERIC.add(norm(em));
-  for (const a of def.aliases) GENERIC.add(norm(a));
-}
-for (const t of PLACES.uae_tokens) GENERIC.add(norm(t));
-// The 24 Sep 2026 CRM refresh brought Arabic addresses. An emirate or country
-// name in Arabic is as generic as in English.
-for (const t of ['دبي', 'أبوظبي', 'أبو ظبي', 'ابوظبي', 'الشارقة', 'عجمان', 'الفجيرة', 'رأس الخيمة', 'راس الخيمة', 'أم القيوين', 'ام القيوين', 'العين', 'الإمارات', 'الامارات', 'الإمارات العربية المتحدة', 'الامارات العربية المتحدة']) GENERIC.add(norm(t));
-// "Street 2", "شارع 4", "Road 12": a numbered street with no area is not an address.
-// Every Dubai district has a Street 2; Nominatim picks one at random.
-const BARE_STREET = /^(?:street|st|road|rd|avenue|ave|شارع|طريق)\s*\d+\s*[a-z]?$|^\d+\s*[a-z]?\s*(?:street|st|road|rd|شارع|طريق)$/i;
-
-function isGeneric(addr) {
-  const a = norm(addr).replace(/[.,]/g, '').trim();
-  if (a.length < 6) return true;
-  if (GENERIC.has(a)) return true;
-  if (BARE_STREET.test(a)) return true;
-  if (/^[\d\s\-\/]+$/.test(a)) return true;             // "12", "4-5": numbers alone
-  // "dubai uae", "uae dubai" and friends carry no street information either.
-  const words = a.split(' ').filter(Boolean);
-  return words.every(w => [...GENERIC].some(g => g.split(' ').includes(w)));
-}
+// The generic-address rules are shared with scatter-pins.js so that both
+// refuse the same strings (see scripts/lib/generic-address.js).
+const { isGeneric } = require('./lib/generic-address');
 
 function inBox(lat, lon, bbox) {
   // Nominatim bbox order: [south, north, west, east]

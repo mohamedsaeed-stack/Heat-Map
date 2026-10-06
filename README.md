@@ -38,12 +38,12 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Companies in the pool | **48,699** |
-| **Drawn** | **38,393** |
-| — exact geocoded street address | 2,342 |
-| — inside a named area | 15,087 |
-| — inside a named emirate | 17,880 |
+| **Drawn** | **38,372** |
+| — exact geocoded street address | 580 |
+| — inside a named area | 15,694 |
+| — inside a named emirate | 19,014 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,180 |
+| Duplicate pins merged away (same company, same place) | 1,201 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
@@ -91,7 +91,7 @@ What stays banned is **inventing a place**. Scattering inside a real, measured b
 the company genuinely is somewhere in that polygon — as long as the page never implies the point is
 the building. So:
 
-- a **solid dot with a white ring** is a real geocoded street address;
+- a **solid dot with a white ring** is a real geocoded street address — since 6 Oct 2026 only when the string names a building and the geocoder found one; a bare street number, a road name or an area name is drawn as area or street (see below);
 - a **softer, ringless pin** is scattered inside a known area or emirate;
 - the popup says which, and names the place;
 - a **"how exact is the pin?"** filter switches the approximate ones off entirely;
@@ -118,12 +118,38 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   left off, like any other foreign record. The UAE funded book is **323**.
 - **323 funded pins** are on the map: 224 exist only in the admin app and are drawn from their own
   address or licence, 99 reach it through the CRM join (since 24 Sep a client the licence marks foreign is never
-  joined to a UAE pin). Precision: 8 exact, 122 area, 127 emirate, 66 UAE-only.
+  joined to a UAE pin). Precision: 2 exact, 122 area, 133 emirate, 66 UAE-only.
 - Admin-only pins carry **no deal value, owner or stage** — HubSpot has no record of them. The popup says
   "per the admin app" and shows the last disbursement date instead of a close date. The AED figure on the
   closed-won tile covers only the 16 funded clients with a HubSpot deal value, and the explainer says so.
 - Privacy: the pull saw bank details and owner emails; **none were written anywhere**. The raw part files
   hold ten location fields per client and nothing else, and the legal address text never leaves `raw/`.
+
+## 6 Oct 2026: a Google Maps link on every pin, and the exact tier re-checked
+
+Mohamed asked for a Google Maps hyperlink to each company's location and set the method: **test, learn, scale**.
+A 20-pin sample across every tier (exact, road, area, emirate, funded admin-only) was opened in Google Maps in
+two forms before anything was built. A text search for **the company name plus its area and emirate**
+(`https://www.google.com/maps/search/?api=1&hl=en&query=Name, Area, Emirate, UAE`) opened the right listing
+every time, including for a funded client with no HubSpot record. A search pinned to **our own coordinates**
+did not: for Buy Any Flowers it snapped to a different florist, because our "exact" point was wrong. So every
+popup now carries **"Find on Google Maps"** built from name, area and emirate, never from coordinates, and no
+API key, account or cost is involved (Google's public Maps URLs). Exact pins also show the street address.
+
+The same sample exposed what "exact" had been hiding. "VX Studio, 17 A Street" sat 15 km from the real office;
+"JLT, DUBAI" had 187 companies stacked on one point drawn as a building; "4th Street" had resolved to the city of
+Dubai itself. The geocoder had refused such strings since 24 Sep, but a geocode cached *before* a rule existed
+was still trusted by the scatter step. The rules now live in one shared file (`scripts/lib/generic-address.js`)
+and `scatter-pins.js` re-applies them to every cached hit:
+
+- a **generic string** (bare numbered street "32 C Street" / "4 شارع 26", "PO Box 123851", "Cluster F", a city name) is no address at all: the record falls to its named area or its emirate;
+- a geocode in a **city, boundary or water class** is ignored the same way;
+- a **road name alone** ("Al Rigga Road"), or a geocode in a **suburb, neighbourhood or land-use class**, is a line or an area: spread ~1.3 km and drawn as "area or street";
+- a **small number in front of a main road** shared by five or more companies on one point ("1 Sheikh Zayed Road", 96 records) is a bulk tool's placeholder, not a building: spread the same way.
+
+**Result** (`scripts/diff-builds.js` against version 29): exact pins 2,342 → **580**. Of the 1,762 that left the tier, 1,160 are now area-or-street pins, 567 emirate-level, 35 merged into a namesake. Nothing moved emirate; funded 323, won 481, lost 821 unchanged. Drawn 38,393 → 38,372 because pins that lost a street address merged
+with their namesakes under the one-pin rule; one of those, a second Roamworks record carrying the same AED 0.5M deal, took open
+deals from 1,312 to 1,311 (AED 755.7M → AED 755.2M): the deal had been counted twice. Findings F7 and E9.
 
 ## The full re-pull of 29 Sep 2026
 
@@ -144,7 +170,7 @@ record, 11 whose record now names another country, 3 deleted in HubSpot). **1,38
 record now names**, **4,118 sharpened a precision tier**. Location unknown 2,772 → **411**; only
 412 companies in the whole CRM now lack every location field. Funded 317 → **323** (= 323 UAE funded clients),
 99 of them on their CRM record. Won 468 → 481, open 1,253 → 1,312 (AED 755.7M), lost 711 → 821.
-Conflicting records (UAE city, foreign ZIP or state) 1,171 → **1,933**. Exact building pins 1,089 → **2,342**.
+Conflicting records (UAE city, foreign ZIP or state) 1,171 → **1,933**. Exact building pins 1,089 → **2,342** (re-checked 6 Oct 2026: 580, see above).
 
 ## The CRM refresh of 24 Sep 2026
 
@@ -248,7 +274,9 @@ combination, with All / None shortcuts and a find box on the long owner list; th
 ticked, or "3 of 8 selected". Every filter is a key → true/false map in the page; every key true means no filtering. The street map is the only base
 map. The view is locked to the UAE: it cannot pan away, and the shallowest zoom is the one that fits the
 country to the screen. Every popup links to the HubSpot record and, where the company exists in the admin
-app, to its client page there.
+app, to its client page there. Since 6 Oct 2026 every popup also carries **"Find on Google Maps"**, a Google
+Maps search for the company by name, area and emirate (never by our coordinates: tested on a 20-pin sample, the
+name search opened the right listing every time, the coordinate search did not). Exact pins show the street address.
 
 ## Categories
 

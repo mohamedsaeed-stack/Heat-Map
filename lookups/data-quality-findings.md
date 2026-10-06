@@ -82,6 +82,8 @@ clients, 372 funded, pulled 19–20 Sep 2026). Owner: Mohamed Saeed, RevOps.
 
 ---
 
+| E9 | **Google Maps link, by name not by point** — every popup links to a Google Maps search for the company name + area + emirate. On the 20-pin sample it opened the right listing 7 of 7 times, including a funded client absent from HubSpot; a search pinned to our coordinates snapped to a different florist. Google's listing often carries a better address than the record (Brandsmedia: CRM "Salah Al Din Street", Google "Sukkon Business Center, Al Garhoud") | all 38,372 pins + the universe layer | browser test, 6 Oct 2026 | A rep can verify a location in one click; nothing to fix in the CRM. |
+
 ## F. HubSpot — the 24 Sep 2026 address load (what it fixed, what it exposed)
 
 The team loaded street addresses, cities and countries into HubSpot on 24 Sep 2026: **16,989 company records changed** since the 20 Sep snapshot, 591 companies are new, and the portal now holds 48,106. Records with no location field at all fell from 8,040 to 3,699 (−54%); records with no country from 8,187 to 3,721. The map absorbed it in one rebuild. What the load exposed:
@@ -94,12 +96,14 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 | F4 | **Address is only a road name** — "Sheikh Zayed Road" ×160, "شارع الشيخ زايد" ×143, "Marasi Drive" ×39. 873 of the 1,288 geocoded addresses resolve to a road, and 462 companies sat stacked on one Sheikh Zayed Road point | **873** road-level addresses, ~2,800 companies | Nominatim result class = `highway` | Add the building, unit or area (Business Bay, JLT) to the address. Until then the map draws these as "street only", spread along the road, never as an exact pin. |
 | F5 | **Numbered street with no area** — "Street 2", "شارع 4", "Road 12"; every district has one | **647** refused as generic (includes bare emirate names) | geocoder generic rule | Add the area; a street number alone cannot be placed. |
 | F6 | **Arabic-only addresses** — same streets as F4 in Arabic script | **1,771** of the 6,294 addresses in the delta | script test | Nothing to fix for the map (OpenStreetMap geocodes Arabic); agree one language per field so duplicates can be matched. |
+| F7 | **Address field holding something that is not an address** — "32 C Street", "18 40 St", "4th Street", "4 شارع 26" (a numbered street with no area: every district has one); "PO BOX 123851"; "Cluster F"; "JLT, DUBAI", "Barsha Heights" (an area name); "Al Rigga Road" (a road name alone); "1 Sheikh Zayed Road" (96 records: a placeholder number before a main road) | **1,762** pins had been drawn as exact buildings from such strings; since 6 Oct 2026 they are area-or-street (1,160) or emirate-level (567) pins | `scripts/lib/generic-address.js` rules re-applied to the geocode cache by `scatter-pins.js`; found by opening a 20-pin sample in Google Maps | The address field should hold a building (name or number) and a street. An area name belongs in the city/area field; a numbered street without an area places nothing; a PO box is not a location. |
 
 ## Log
 
 - **19 Sep 2026** — A1, A4, A6, A7, B4, B5, C2 (IT & software), D1 first measured during the Dubai and UAE builds.
 - **20 Sep 2026** — A2, A3, A5 measured after the website sweep finished (7,446 domains, 31.3% located). B1–B3, C1 re-measured on the final build. D2–D8 measured from the per-client licence pull (372 calls). E written.
 
+- **6 Oct 2026** — Google Maps link on every pin (tested on 20 pins across every tier first); the exact tier re-checked against the shared generic-address rules: 2,342 → 580 (F7, E9). A second Roamworks record carrying the same AED 0.5M open deal merged under the one-pin rule: open deals 1,312 → 1,311.
 - **29 Sep 2026** — Full re-pull (48,327 companies, 4,311 deals, 378 funded): A1/A3/A7/A8/A10/B6/F1 counts updated; A12 (test records), B11 (deal on two companies), D13–D15 (funded clients with no licence, no authority, no emirate) added. Location unknown 2,772 → 411.
 - **24 Sep 2026** — Funded/lost audit: B8–B10 and D11–D12; every pin re-checked against all 4,274 deals (761 verdicts corrected), admin-app lost applied UAE-wide (236 pins), money tiles UAE-wide, foreign funded clients kept off UAE pins.
 - **24 Sep 2026** — F1–F6 from the team's address load (16,989 records changed, 591 new companies); A1 and A3 counts superseded (8,040 → 3,699 with no location field; 3,997 → 2,772 still unplaceable). Road-level geocodes now drawn as area only; conflicting records placed by city only.

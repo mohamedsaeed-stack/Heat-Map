@@ -244,6 +244,8 @@ for (const p of pins) {
   rec.e = p.emirate || null;
   rec.a = p.area || null;
   rec.rt = p.route || null;             // which evidence placed it
+  // The street address behind an exact pin (6 Oct 2026), shown in the popup.
+  if (p.placement === 'exact' && p.address) rec.ga = String(p.address).replace(/\s+/g, ' ').trim().slice(0, 120);
   // Own fields disagree (UAE city, foreign ZIP or state): placed by city only,
   // address not trusted. Flagged on the pin so the CRM owner can see which.
   if (p.conflict) rec.cf = 1;
@@ -330,6 +332,7 @@ const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
       const bestLoc = copies.slice().sort((a, b) => PREC_RANK[b.h] - PREC_RANK[a.h])[0];
       // location from the best-located copy; stage, money and links merged in
       keep.y = bestLoc.y; keep.x = bestLoc.x; keep.h = bestLoc.h; keep.a = bestLoc.a || keep.a; keep.rt = bestLoc.rt || keep.rt;
+      keep.ga = bestLoc.ga; if (!keep.ga) delete keep.ga;   // the address belongs to the copy whose point is used
       for (const c of copies.slice(1)) {
         if (!keep.aid && c.aid) keep.aid = c.aid;
         if (keep.ao && !c.ao) { keep.i = c.i; keep.ao = 0; }        // an admin-only winner adopts the HubSpot id, so both links show

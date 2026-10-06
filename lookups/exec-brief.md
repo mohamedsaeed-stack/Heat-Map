@@ -50,7 +50,7 @@ explained on the page.
 | **Funded concentration** | Dubai holds **68%** of funded clients · HHI **6,525** | Portfolio risk. A Dubai-specific shock (rents, regulation, one sector) hits two-thirds of the book. Above 2,500 on HHI is "highly concentrated" in lenders' language — a board-level number. |
 | **CRM → funded conversion, by emirate** | UAE **1.5%** · Dubai 1.35% · **Ajman 3.3%** · **RAK 0%** (354 records, no client) | Shows where effort converts. Ajman converts at over twice the rate with almost no effort → cheapest growth. RAK has 354 prospects and zero clients → untouched or wrong market; decide which. |
 | **White space** — dense CRM areas, no funded client | Trade Centre: 178 companies, **0 funded** · Silicon Oasis: 454, **1 funded** | Records already exist, so a targeted push there costs nothing to source. Either a sales gap or a fit problem — both worth knowing. |
-| **Pipeline by geography** | 1,312 open deals / **AED 755.7M** UAE-wide (29 Sep; was 764 / AED 459M before every pin was checked against all deals) | Where future revenue sits. The pipeline is 87% Dubai — the emirate-mix decision is not only about prospecting but about where deals get worked. |
+| **Pipeline by geography** | 1,311 open deals / **AED 755.2M** UAE-wide (6 Oct; was 764 / AED 459M before every pin was checked against all deals) | Where future revenue sits. The pipeline is 87% Dubai — the emirate-mix decision is not only about prospecting but about where deals get worked. |
 | **Location completeness** | **99%** of CRM placeable (83% → 92% → 94% → 99% after two address loads) · 411 unknown | A record we can't place can't be assigned to a territory, mapped or counted. Those 2,772 are invisible to any geographic plan. |
 | **System join rate** | **20.0%** of admin clients match HubSpot (was 8.4%) · **224 funded clients absent from HubSpot** | Every cross-system number — this map, conversion, revenue attribution — is only as good as this join. 224 funded clients invisible to sales means no upsell, no referrals, wrong win rates. Highest-value fix in the list. |
 | **Won deals carrying a value** | **28%** (134 of 481 closed won, 29 Sep) | HubSpot revenue reports miss two-thirds of won deals. Any board figure built on HubSpot money is wrong until this is fixed. |
@@ -64,16 +64,17 @@ shares of funded clients by emirate, known emirates only.
 
 ## What the project delivered
 
-- 38,393 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
+- 38,372 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
+- Every pin links to the company's Google Maps listing (6 Oct 2026): one click from a pin to the business, its phone and photos. Tested on a sample before it was scaled; AED 0.
 - Funded clients on the map: **46 → 323** (all 323 UAE funded clients); 99 of them sit on their own CRM record. Closed won on the map = 323 funded (admin app) + 158 won in HubSpot only.
 - Companies with no location: **8,040 → 411**, free sources only; two CRM address loads (24 and 29 Sep) each flowed through in one rebuild.
-- 45 measured data-quality findings, each with a count and a fix.
+- 47 measured data-quality findings, each with a count and a fix.
 - External data spend: **AED 0**.
 - Already in use: on 24 Sep an SDR noticed Tech Power Group UAE (a CRM record with no address, emirate-level pin) while prospecting on the map and booked a meeting.
 
 ## Caveats to state
 
-Deals are UAE-wide (all 4,274 pulled 24 Sep 2026); 1,120 of them have no company attached and cannot be placed. The visible market (OpenStreetMap) is a floor. 94% of pins are
+Deals are UAE-wide (all 4,274 pulled 24 Sep 2026); 1,120 of them have no company attached and cannot be placed. The visible market (OpenStreetMap) is a floor. 98% of pins are
 approximate by design — right area, not the building.
 
 ## What each team would use it for — three things each
@@ -94,7 +95,7 @@ approximate by design — right area, not the building.
 3. Later: outstanding book by emirate (built, parked) — exposure where the money actually sits.
 
 **RevOps / CRM owner**
-1. Fix the 45 measured data problems, biggest first: 20.0% system join, 224 funded clients missing from HubSpot, 347 won deals with no value.
+1. Fix the 47 measured data problems, biggest first: 20.0% system join, 224 funded clients missing from HubSpot, 347 won deals with no value.
 2. Close the 19 stale deals (AED 12.75M of fake pipeline).
 3. Track data health as a number: 99% location completeness today (target 98% reached on placement; the remaining gap is the 412 records with no location field).
 

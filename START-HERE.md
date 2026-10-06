@@ -24,12 +24,12 @@ than re-deriving.
 | | |
 |---|---:|
 | Companies in the pool | **36,329** |
-| **Drawn** | **38,393** |
-| — exact geocoded street address | 2,342 |
-| — inside a named area | 15,087 |
-| — inside a named emirate | 17,880 |
+| **Drawn** | **38,372** |
+| — exact geocoded street address | 580 |
+| — inside a named area | 15,694 |
+| — inside a named emirate | 19,014 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,180 |
+| Duplicate pins merged away (same company, same place) | 1,201 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |

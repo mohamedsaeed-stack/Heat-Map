@@ -33,7 +33,7 @@ hours and the files are on disk.
 
 One file — **`dist/flapkap-uae-map.html`** — that opens by double-click and needs **no network**,
 because 596 OpenStreetMap tiles are base64 inside it and the pin data is gzipped (11.7 MB against a 16 MB limit).
-**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 29, 29 Sep 2026). Never make it public.
+**https://claude.ai/artifact/PYQb7axx5DtTWS8kYV47sv** (Version 30, 6 Oct 2026). Never make it public.
 
 It shows where FlapKap's merchants are across all seven emirates: who is on the CRM, who has a live
 deal, who was lost, who is funded — filtered by emirate, category, and **how precisely each pin is
@@ -43,12 +43,12 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **38,393** |
-| — exact geocoded street address | 2,342 |
-| — inside a named area | 15,087 |
-| — inside a named emirate | 17,880 |
+| **Drawn** | **38,372** |
+| — exact geocoded street address | 580 |
+| — inside a named area | 15,694 |
+| — inside a named emirate | 19,014 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,180 |
+| Duplicate pins merged away (same company, same place) | 1,201 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
@@ -101,6 +101,17 @@ Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in proc
     owner filters are checklists: tick any combination, All / None shortcuts, a find box on long lists.
     The street map is the only base map; no business-name labels. The view is locked to the UAE and
     the shallowest zoom fits the country to the screen - there is only "zoom in".
+13. **Test, learn, scale** (6 Oct 2026, Mohamed's words). Before a new feature goes across 38,000 pins, try it on
+    a sample from every tier and read what comes back. The Google Maps link was opened for 20 sample pins first:
+    a search by name, area and emirate found the right listing every time; a search pinned to our coordinates
+    snapped to the wrong business; and the sample exposed 1,762 "exact" pins that were area names, bare
+    street numbers or road names. Both results shaped the build (README, "6 Oct 2026").
+14. **Google Maps links are by name, never by coordinates.** `gmapsUrl(name, area, emirate)` in the page; no API
+    key, no account, no cost. A link to our own point would send a rep to a wrong building with confidence.
+15. **"Exact" means a building.** A cached geocode is drawn as an exact building only when the address string names
+    one and the geocoder found one. Bare numbered streets, PO boxes, cluster letters, road names, area names, a
+    city/boundary/water geocode, and a placeholder number before a main road shared by 5+ companies are not
+    (`scripts/lib/generic-address.js`, `scatter-pins.js`). Exact pins: 580 of 38,372.
 
 ---
 
@@ -145,7 +156,7 @@ produced 331M tokens.
    `legalAddresses` is **filled on 113 of 372** — real street addresses naming an area — so the old
    "always empty" claim came from a three-client sample; the licence authority names the emirate on
    193 more; **55 funded clients are Egyptian** (country EGY, +20 phones) and are counted, not drawn.
-   Result: **323 funded pins** on the map (from 46) — 8 exact, 122 area, 127 emirate, 66 UAE-only.
+   Result: **323 funded pins** on the map (from 46) — 2 exact, 122 area, 133 emirate, 66 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
 3. **The outstanding book — PARKED 20 Sep 2026. Mohamed likes it, wants it later, not now.** When it comes back: emirate level, all seven emirates. Mohamed's words:
@@ -191,6 +202,11 @@ Full list in `START-HERE.md`. The three that bite hardest:
   two crashes (`raw/website-suspects.json`). Do not delete those files mid-sweep.
 
 ---
+
+- **A cached geocode is older than the rule that would refuse it.** The geocoder skips addresses already in
+  `raw/uae-address-geocodes.json`, so a rule added to the geocoder alone changes nothing for them. The rules live
+  in `scripts/lib/generic-address.js` and `scatter-pins.js` re-applies them to every cached hit; keep both on
+  that one module. (Cost on 6 Oct 2026: 1,745 pins drawn as buildings for twelve days.)
 
 ## 7. Where things live
 

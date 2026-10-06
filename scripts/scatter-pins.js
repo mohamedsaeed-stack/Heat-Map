@@ -37,7 +37,26 @@ const areas = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/uae-area-centroids
 let geo = {};
 try { geo = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/uae-address-geocodes.json'), 'utf8')); } catch (e) {}
 
-const norm = s => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const { isGeneric, isRoadNameOnly, norm } = require('./lib/generic-address');
+// A geocode in one of these classes is a line or an area, never a building:
+// a road, a railway, a suburb or neighbourhood, a land-use polygon, an
+// administrative boundary, a park or a creek. On 6 Oct 2026 "JLT, DUBAI"
+// (place/suburb) had 187 companies stacked on one "exact" point and
+// "Barsha Heights" (place/neighbourhood) 101. Such a hit is drawn as
+// "area or street" instead, exactly like a road hit.
+// place/house, place/houses, place/plot and place/farm are address points, i.e.
+// one building; every other place/* value is a settlement or a district.
+const AREA_CLASS = /^(?:highway|railway|landuse)\/|^leisure\/park$|^place\/(?!house$|houses$|plot$|farm$)/;
+// A whole city, an administrative boundary, a creek or a dune is not even an
+// area to spread around: its centroid says nothing about a business. Such a
+// hit is ignored and the record falls to its named area or its emirate.
+const REFUSE_CLASS = /^boundary\/|^natural\/|^waterway\/|^place\/(?:city|town|village|hamlet|island|country|state|region|county|municipality|sea|ocean)$/;
+// "1 Sheikh Zayed Road" was the address of 96 companies and "106 Sheikh Zayed
+// Road" of 27 on 6 Oct 2026: a small number in front of a main road is a bulk
+// tool's placeholder, not a building number, and ten companies on one such
+// point are not one tower. Spread like a road hit.
+const NUMBERED_ROAD = /^\d{1,4}\s+[^\d]*?(?:road|street|st|rd|boulevard|blvd|avenue|ave)$|^\d{1,4}\s*(?:شارع|طريق)\s[\u0600-\u06FF ]+$|^(?:شارع|طريق)\s[\u0600-\u06FF ]+\s\d{1,4}$/i;
+const STACK_LIMIT = 5;
 
 // ---- deterministic RNG ------------------------------------------------------
 function seedOf(str) {
@@ -165,6 +184,14 @@ function main() {
   const perEmirate = {};
   const out = [];
 
+  // Pre-pass: how many companies would land on each geocoded point.
+  const pointCount = new Map();
+  for (const c of allocated) {
+    if (!c.emirate || !c.address) continue;
+    const hit = geo[c.emirate + '|' + norm(c.address)];
+    if (hit && hit.lat) { const k = hit.lat + ',' + hit.lon; pointCount.set(k, (pointCount.get(k) || 0) + 1); }
+  }
+
   for (const c of allocated) {
     const id = String(c.id);
     const rnd = mulberry32(seedOf(id));
@@ -183,7 +210,16 @@ function main() {
       if (c.address) {
         const hit = geo[c.emirate + '|' + norm(c.address)];
         if (hit && hit.lat) {
-          if (/^(highway|railway)\//.test(hit.cat || '')) roadHit = hit;
+          // The cache may hold a geocode made before a generic-address rule
+          // existed (6 Oct 2026: 563 bare numbered streets drawn as exact).
+          // A generic string is not an address: no hit at all. A bare road
+          // name, or a hit in an area class, is a line or an area: spread.
+          const bare = norm(c.address).replace(/[.,]/g, '').trim();
+          if (isGeneric(c.address)) stats.generic_hit_refused = (stats.generic_hit_refused || 0) + 1;
+          else if (REFUSE_CLASS.test(hit.cat || '')) stats.refused_class_hit = (stats.refused_class_hit || 0) + 1;
+          else if (isRoadNameOnly(c.address)) { roadHit = hit; stats.road_name_hit = (stats.road_name_hit || 0) + 1; }
+          else if (AREA_CLASS.test(hit.cat || '')) { roadHit = hit; stats.area_class_hit = (stats.area_class_hit || 0) + 1; }
+          else if (NUMBERED_ROAD.test(bare) && pointCount.get(hit.lat + ',' + hit.lon) >= STACK_LIMIT) { roadHit = hit; stats.numbered_road_stack = (stats.numbered_road_stack || 0) + 1; }
           else { lat = hit.lat; lon = hit.lon; placement = 'exact'; }
         }
       }
@@ -263,6 +299,9 @@ function main() {
       lat: lat === null ? null : Number(lat.toFixed(6)),
       lon: lon === null ? null : Number(lon.toFixed(6)),
       placement,
+      // The street address behind an exact pin, for the popup. Only exact
+      // pins carry it: elsewhere the address was not trusted to place the pin.
+      address: placement === 'exact' ? (c.address || null) : null,
       unknown: !!c.unknown, nolocation: !!c.nolocation, delta: !!c.delta, conflict: !!c.conflict,
       adminFunded: !!c.adminFunded, adminId: c.adminId || null,
       adminIndustry: c.adminIndustry || null, disbursed: c.disbursed || null,
@@ -280,6 +319,12 @@ function main() {
   console.log('  ' + pad('DRAWN TOTAL', 30) + num(stats.exact + stats.area + stats.emirate + stats.uae));
   console.log('  ' + pad('not drawn - names another country', 36) + num(stats.notdrawn_none));
   console.log('  ' + pad('not drawn - location unknown', 36) + num(stats.notdrawn_unknown));
+  if (stats.generic_hit_refused) console.log('  ' + pad('generic address, cached geocode refused', 48) + num(stats.generic_hit_refused));
+  if (stats.refused_class_hit) console.log('  ' + pad('city/boundary/water geocode ignored', 48) + num(stats.refused_class_hit));
+  if (stats.road_name_hit) console.log('  ' + pad('road name only -> area or street', 48) + num(stats.road_name_hit));
+  if (stats.numbered_road_stack) console.log('  ' + pad('number + main road, ' + STACK_LIMIT + '+ stacked -> spread', 48) + num(stats.numbered_road_stack));
+  if (stats.area_class_hit) console.log('  ' + pad('area-class geocode -> area or street', 48) + num(stats.area_class_hit));
+  if (stats.road_as_area) console.log('  ' + pad('road/area hit, no named area -> spread', 48) + num(stats.road_as_area));
   if (stats.area_anchor_outside) console.log('  ' + pad('area anchor outside its emirate -> emirate tier', 48) + num(stats.area_anchor_outside));
   if (stats.scatter_failed) console.log('  ' + pad('scatter failed', 36) + num(stats.scatter_failed));
   if (stats.scatter_failed) console.log('  ' + pad('scatter FAILED', 30) + num(stats.scatter_failed));
