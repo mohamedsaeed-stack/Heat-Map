@@ -23,19 +23,19 @@ than re-deriving.
 
 | | |
 |---|---:|
-| Companies in the pool | **36,329** |
-| **Drawn** | **38,372** |
-| — exact geocoded street address | 580 |
-| — inside a named area | 15,694 |
-| — inside a named emirate | 19,014 |
+| Companies in the pool | **48,699** |
+| **Drawn** | **38,366** |
+| — exact geocoded street address | 574 |
+| — inside a named area | 15,067 |
+| — inside a named emirate | 19,641 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,201 |
+| Duplicate pins merged away (same company, same place) | 1,207 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
-| OpenStreetMap universe, by emirate | Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427 |
+| OpenStreetMap universe, by emirate | Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 · Fujairah 137 · Umm Al Quwain 119 |
 
-Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
 Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
 **Coverage against each source**, so the gap is not mistaken for completeness:
@@ -43,14 +43,14 @@ Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 | | | |
 |---|---:|---:|
 | HubSpot companies in the portal | 48,327 | |
-| …drawn on the map | 38,393 | 79% (after merging 1,180 duplicate pins) |
+| …drawn on the map | 38,366 | 79% (after merging 1,207 duplicate pins) |
 | …established as UAE by any evidence | 39,573 | all drawn, then merged to one pin per company per place |
 | Admin-app clients | 8,645 | |
 | …matched to a CRM company | 1,730 | **20.0%** |
 | Funded clients | 378 | 55 Egyptian, outside a UAE map → **323 UAE** |
 | …funded pins on the map | 323 | 224 admin-app-only + 99 via the CRM name join |
 
-Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,311 / AED 755.2M · closed lost 821 / AED 368.1M.
 
 ## Decisions the user took, 19 Sep 2026
 
@@ -109,7 +109,7 @@ Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in proc
   Node fetch also dies on very long-running count queries - `count-osm-universe.js` notes the curl route.
 - **A hidden browser tab has a 0x0 map.** Leaflet flyTo/fitBounds on a zero-size container throws
   `Invalid LatLng (NaN, NaN)`. The page guards both; the test pane in the desktop app is often hidden.
-- **Duplicates are merged at build time, not in the source.** 1,180 pins across 981 companies (29 Sep).
+- **Duplicates are merged at build time, not in the source.** 1,207 pins across 1,005 companies (6 Oct).
   If a merge looks wrong, the rule is in build-map-data-uae.js under "one pin per company per place".
 - **The website sweep crashes Node on some hosts** (an undici assertion; uncatchable). Before 20 Sep it
   retried the same host forever — 60 restarts, 20 records. It now logs each host before fetching and

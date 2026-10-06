@@ -38,20 +38,20 @@ node scripts/build-standalone-uae.js  # -> dist/flapkap-uae-map.html
 | | Companies |
 |---|---:|
 | Companies in the pool | **48,699** |
-| **Drawn** | **38,372** |
-| — exact geocoded street address | 580 |
-| — inside a named area | 15,694 |
-| — inside a named emirate | 19,014 |
+| **Drawn** | **38,366** |
+| — exact geocoded street address | 574 |
+| — inside a named area | 15,067 |
+| — inside a named emirate | 19,641 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,201 |
+| Duplicate pins merged away (same company, same place) | 1,207 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
 Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
-Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,311 / AED 755.2M · closed lost 821 / AED 368.1M.
 
 ## How a company gets onto the map
 
@@ -118,7 +118,7 @@ reached the map, through a name join to HubSpot that finds 8.4%. One `flapkap_ge
   left off, like any other foreign record. The UAE funded book is **323**.
 - **323 funded pins** are on the map: 224 exist only in the admin app and are drawn from their own
   address or licence, 99 reach it through the CRM join (since 24 Sep a client the licence marks foreign is never
-  joined to a UAE pin). Precision: 2 exact, 122 area, 133 emirate, 66 UAE-only.
+  joined to a UAE pin). Precision: 2 exact, 119 area, 136 emirate, 66 UAE-only.
 - Admin-only pins carry **no deal value, owner or stage** — HubSpot has no record of them. The popup says
   "per the admin app" and shows the last disbursement date instead of a close date. The AED figure on the
   closed-won tile covers only the 16 funded clients with a HubSpot deal value, and the explainer says so.
@@ -142,12 +142,15 @@ Dubai itself. The geocoder had refused such strings since 24 Sep, but a geocode 
 was still trusted by the scatter step. The rules now live in one shared file (`scripts/lib/generic-address.js`)
 and `scatter-pins.js` re-applies them to every cached hit:
 
-- a **generic string** (bare numbered street "32 C Street" / "4 شارع 26", "PO Box 123851", "Cluster F", a city name) is no address at all: the record falls to its named area or its emirate;
-- a geocode in a **city, boundary or water class** is ignored the same way;
-- a **road name alone** ("Al Rigga Road"), or a geocode in a **suburb, neighbourhood or land-use class**, is a line or an area: spread ~1.3 km and drawn as "area or street";
-- a **small number in front of a main road** shared by five or more companies on one point ("1 Sheikh Zayed Road", 96 records) is a bulk tool's placeholder, not a building: spread the same way.
+- a **generic string** is no address at all and the record falls to its named area or its emirate: a bare numbered street ("32 C Street", "44 7th Street", "Street No. 54", "4 شارع 26", "11 شارع 11أ"), a unit alone ("Office 101", "27th floor"), a PO box anywhere in the string, "Cluster F", a city or country in any spelling or separator ("Dubai – UAE", "United Arab Emirates,Ajman");
+- a geocode is an **exact building only if its class is one** (building, shop, office, amenity, hotel, house number, tower); a bridge, a pitch, a park, a marina, a car park, a suburb, a land-use polygon or a district boundary is a line or an area: spread ~1.3 km and drawn as "area or street";
+- a **city, islet or water** geocode is ignored outright (13 pins had been scattered into the Gulf around a World Islands point);
+- a **road name alone** ("Al Rigga Road", "Airport Road, Abu Dhabi") is a line: spread the same way;
+- a **small number in front of a main road** shared by five or more companies on one point ("1 Sheikh Zayed Road", 96 records) is a bulk tool's placeholder, not a building: spread, unless the geocoder answered with a named tower ("106 Sheikh Zayed Road" is Al Meraikhi Tower, 27 companies; "81" is Capricorn Tower), which is a real office tower with a plot number and stays exact up to 30 companies.
 
-**Result** (`scripts/diff-builds.js` against version 29): exact pins 2,342 → **580**. Of the 1,762 that left the tier, 1,160 are now area-or-street pins, 567 emirate-level, 35 merged into a namesake. Nothing moved emirate; funded 323, won 481, lost 821 unchanged. Drawn 38,393 → 38,372 because pins that lost a street address merged
+All of this was adversarially reviewed the same day (three lenses, two skeptics per finding, 22 findings confirmed and fixed before publishing).
+
+**Result** (`scripts/diff-builds.js` against version 29): exact pins 2,342 → **574**. Of the 1,768 that left the tier, 1,095 are now area-or-street pins, 634 emirate-level, 39 merged into a namesake. Nothing moved emirate; funded 323, won 481, lost 821 unchanged. Drawn 38,393 → 38,366 because pins that lost a street address merged
 with their namesakes under the one-pin rule; one of those, a second Roamworks record carrying the same AED 0.5M deal, took open
 deals from 1,312 to 1,311 (AED 755.7M → AED 755.2M): the deal had been counted twice. Findings F7 and E9.
 
@@ -170,7 +173,7 @@ record, 11 whose record now names another country, 3 deleted in HubSpot). **1,38
 record now names**, **4,118 sharpened a precision tier**. Location unknown 2,772 → **411**; only
 412 companies in the whole CRM now lack every location field. Funded 317 → **323** (= 323 UAE funded clients),
 99 of them on their CRM record. Won 468 → 481, open 1,253 → 1,312 (AED 755.7M), lost 711 → 821.
-Conflicting records (UAE city, foreign ZIP or state) 1,171 → **1,933**. Exact building pins 1,089 → **2,342** (re-checked 6 Oct 2026: 580, see above).
+Conflicting records (UAE city, foreign ZIP or state) 1,171 → **1,933**. Exact building pins 1,089 → **2,342** (re-checked 6 Oct 2026: 574, see above).
 
 ## The CRM refresh of 24 Sep 2026
 
@@ -235,7 +238,7 @@ saying funded). Whether those 151 are real wins is a decision for the CRM owner 
 Until 24 Sep 2026 the pipeline and lost layers came from the Dubai build alone. All **4,274 deals** in the
 portal are now pulled (`parse-deal-spills-all.js`, fourteen createdate chunks each under the 500-row cap,
 reconciled to the COUNT), and every pin the Dubai build never saw is classified with the same approved
-stage map. Deals by the emirate of their company: Dubai 2,232 · Abu Dhabi 204 · Sharjah 98 · Ajman 32 ·
+stage map. Deals by the emirate of their company: Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 ·
 RAK 17 · Fujairah 7 · UAQ 3 · emirate unknown 30. **1,120 deals have no company attached at all** and 531
 attach to companies that are foreign or unplaceable. The pipeline is genuinely Dubai-concentrated: only 41
 pins outside the Dubai build carry a deal. 1,234 deals sit in the legacy "UAE Pipeline (default)" whose
@@ -243,7 +246,7 @@ stages are outside the approved map and stay unclassified, as decided on 19 Sep.
 
 ## The universe layer: all seven emirates
 
-39,370 real businesses from OpenStreetMap, inside each emirate boundary: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427.
+39,370 real businesses from OpenStreetMap, inside each emirate boundary: Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 · Fujairah 137 · Umm Al Quwain 119.
 Pulled 18-23 Sep 2026 with `pull-osm-universe.js`, seven category queries per emirate. Each place carries
 its emirate, so the emirate dropdown filters the universe too.
 
@@ -251,7 +254,7 @@ OpenStreetMap is volunteer-mapped: strong on shops, restaurants, clinics and wor
 trading from an office. It is a floor on the market, never a census. Measured 23 Sep 2026, CRM records per
 100 visible businesses: retail 7 · hospitality 31 · auto 38 · medical 60 — but contracting 153,
 manufacturing 462 and marketing 1,996, which says OpenStreetMap barely sees those categories. By emirate:
-Ajman 13 · Sharjah 23 · Fujairah 23 · Umm Al Quwain 23 · Abu Dhabi 36 · Ras Al Khaimah 77 · Dubai 129.
+Ajman 557 · Sharjah 1,807 · Fujairah 137 · Umm Al Quwain 119 · Abu Dhabi 3,797 · Ras Al Khaimah 400 · Dubai 28,465.
 
 **Known gap:** marketing agencies in Umm Al Quwain returned zero elements on every mirror; most likely there are none tagged. Re-run `pull-osm-universe.js --emirate "<name>"`; only the missing
 category is fetched, the rest is cached.
@@ -263,7 +266,7 @@ once in the admin app. Records with the same name (legal suffixes and punctuatio
 emirate are one company; copies in the same area, or with no area, merge into the best-located copy, which
 takes the most advanced stage (won > lost > in process > on the CRM; the admin app wins), the deal fields
 and both source links. Two street addresses in one area are **branches** and stay separate. Measured:
-1,180 pins merged across 981 companies, 5 of them HubSpot + admin-app copies of one merchant.
+1,207 pins merged across 1,005 companies, 5 of them HubSpot + admin-app copies of one merchant.
 Company names that are job titles (Chief Executive Officer x12, CEO x6) are left alone and logged as a
 CRM finding.
 

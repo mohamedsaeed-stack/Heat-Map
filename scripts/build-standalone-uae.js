@@ -361,6 +361,7 @@ function __main(){
   // coordinates did not (it snapped to a different florist when our geocode
   // was off), so coordinates are never passed. No API key, no cost.
   function gmapsUrl(name,area,emirate){
+    if(!name) return null;   // a nameless record would search for the district alone
     var q=[name, area, (emirate && emirate!=='UAE') ? emirate : null, 'UAE'].filter(Boolean).join(', ');
     return 'https://www.google.com/maps/search/?api=1&amp;hl=en&amp;query='+encodeURIComponent(q);
   }
@@ -509,6 +510,7 @@ function __main(){
       : 'No usable location on record.';
     if(c.rt) loc += '<br><span class="muted">Placed via: '+esc(c.rt)+'</span>';
     if(c.cf) loc += '<div class="pnote" style="border-top-color:#FDB022;color:#FDB022"><b>Record disagrees with itself.</b> The CRM city says <b>'+esc(c.e||'the UAE')+'</b> but the ZIP code or state on the same record points abroad, so the street address was not used. Fix the record in HubSpot and the pin sharpens on the next refresh.</div>';
+    var gm=gmapsUrl(c.n,c.a,c.e);
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
@@ -518,7 +520,7 @@ function __main(){
       '<div class="pid">'+
         [ c.ao ? null : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a>',
           (c.aid && ADMIN_CLIENT_URL) ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(c.aid))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a>' : null,
-          '<a href="'+gmapsUrl(c.n,c.a,c.e)+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a>'
+          gm ? '<a href="'+gm+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a>' : null
         ].filter(Boolean).join(' &middot; ')+
         (c.ao ? ' <span>no HubSpot record</span>' : '')+
       '</div></div>';
@@ -598,7 +600,7 @@ function __main(){
       m.bindPopup('<div class="pn">'+esc(p.n)+'</div><div class="pi">'+esc(DATA.categories[p.c]||p.c)+
         ' &middot; '+esc(String(p.k).replace(/_/g,' '))+'</div>'+
         '<div class="pnote">Market universe, from OpenStreetMap'+(p.e?' &middot; '+esc(p.e):'')+'. Not a CRM record.'+
-        '<div class="pid"><a href="'+gmapsUrl(p.n,null,p.e)+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a></div></div>');
+        (gmapsUrl(p.n,null,p.e)?'<div class="pid"><a href="'+gmapsUrl(p.n,null,p.e)+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a></div>':'')+'</div>');
       if(showLabels) m.bindTooltip(p.n,{permanent:true,direction:'right',offset:[5,0],className:'lbl'});
       else m.bindTooltip(p.n,{direction:'top',className:'lbl'});
       utarget.addLayer(m);

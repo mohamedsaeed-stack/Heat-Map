@@ -52,6 +52,11 @@ function adminCategoryOf(v) {
   return ADMIN_CATEGORY[k] || 'other';
 }
 
+// HubSpot returns some names HTML-encoded ("Dubai Culture &amp; Arts Authority",
+// 1,778 of them on 6 Oct 2026). Decoded once here so the popup, the hover
+// label, the find box and the Google Maps query all see the same name.
+const decodeEntities = v => String(v).replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/&gt;/g, '>').replace(/&lt;/g, '<').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
+
 function categoryOf(industry) {
   if (!industry) return 'blank';
   const key = String(industry).replace(/&amp;/g, '&');
@@ -186,7 +191,7 @@ for (const p of pins) {
   if (p.adminId) emirateByAdmin.set(p.adminId, p.emirate || 'UAE, emirate unknown');
 
   rec.i = String(p.id);
-  if (p.name) rec.n = p.name;
+  if (p.name) rec.n = decodeEntities(p.name);
   rec.c = cat;
   if (!rec.l) rec.l = 'crm';
   if (fresh) { rec.l = fresh.l; rec.s = fresh.s; rec.m = fresh.m; rec.o = fresh.o || rec.o; rec.t = fresh.t; rec.r = fresh.r; rec.cd = fresh.cd; rec.d = fresh.d; rec.lc = fresh.lc; rec.hs = null; rec.src = 'hubspot'; }
@@ -303,7 +308,7 @@ const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
     const loose = [];
     for (const c of group) {
       if (c.a) { const pk = 'a:' + c.a; if (!places.has(pk)) places.set(pk, []); places.get(pk).push(c); }
-      else if (c.h === 'exact') places.set('x:' + c.y + ',' + c.x, [c]);
+      else if (c.h === 'exact') { const pk = 'x:' + c.y + ',' + c.x; if (!places.has(pk)) places.set(pk, []); places.get(pk).push(c); }
       else loose.push(c);
     }
     if (loose.length) {
@@ -327,7 +332,10 @@ const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
       if (copies.length < 2) continue;
       dedup.groups++;
       if (copies.some(c => c.ao) && copies.some(c => !c.ao)) dedup.crossSystem++;
-      copies.sort((a, b) => (STAGE_RANK[b.l] - STAGE_RANK[a.l]) || (PREC_RANK[b.h] - PREC_RANK[a.h]));
+      // Stage first; then the copy whose verdict comes from the live deal pull
+      // (its HubSpot link is the record that actually carries the deal); then precision.
+      const live = c => dealsByCompanyAll.has(String(c.i)) ? 1 : 0;
+      copies.sort((a, b) => (STAGE_RANK[b.l] - STAGE_RANK[a.l]) || (live(b) - live(a)) || (PREC_RANK[b.h] - PREC_RANK[a.h]));
       const keep = copies[0];
       const bestLoc = copies.slice().sort((a, b) => PREC_RANK[b.h] - PREC_RANK[a.h])[0];
       // location from the best-located copy; stage, money and links merged in
@@ -337,6 +345,7 @@ const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
         if (!keep.aid && c.aid) keep.aid = c.aid;
         if (keep.ao && !c.ao) { keep.i = c.i; keep.ao = 0; }        // an admin-only winner adopts the HubSpot id, so both links show
         if (!keep.m && c.m) { keep.m = c.m; keep.s = keep.s || c.s; keep.o = keep.o || c.o; keep.cd = keep.cd || c.cd; keep.d = c.d || keep.d; }
+        if (!keep.o && c.o) keep.o = c.o;                            // the owner filter must still find the company
         if (c.ad) keep.ad = 1; if (c.af) keep.af = 1;
         if (c.ao || c.src === 'admin') keep.src = 'admin';
         if (c.hs && !keep.hs) keep.hs = c.hs;
@@ -551,7 +560,7 @@ console.log('    UAE only     ' + num(byPlacement.uae));
 console.log('  excluded, not UAE ' + num(excludedNotUAE) + '   (dropped entirely)');
 console.log('  excluded, unknown ' + num(excludedUnknown) + '   (no-location companies nothing could place)');
 console.log('deals: ' + allDeals.length + ' in the portal; ' + dealsFromAllPull + ' pins classified from the all-deals pull (outside the Dubai build)');
-console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + adminOnlyFunded.toLocaleString() + ' are admin-app-only pins');
+console.log('funded clients on the map ' + companies.filter(c => c.af).length.toLocaleString() + ' against ' + fundedScope.uae + ' UAE funded (' + fundedScope.total + ' minus ' + fundedScope.foreign + ' foreign), of which ' + companies.filter(c => c.af && c.ao).length.toLocaleString() + ' are admin-app-only pins');
 console.log('no-location companies (8,040 on 19 Sep; fewer since the 24 Sep CRM refresh gave many a city): drawn ' + noLoc.drawn.toLocaleString() + ', foreign ' + noLoc.foreign.toLocaleString() + ', still unknown ' + noLoc.unknown.toLocaleString() + ' = ' + (noLoc.drawn + noLoc.foreign + noLoc.unknown).toLocaleString());
 console.log('universe          ' + num(universe.length) + '   ' + Object.entries(universeByEmirate).map(([k, v]) => k + ' ' + v.toLocaleString()).join(' · '));
 console.log('areas ranked     ' + num(Object.keys(areas).length));

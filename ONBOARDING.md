@@ -43,20 +43,20 @@ known**.
 
 | | Companies |
 |---|---:|
-| **Drawn** | **38,372** |
-| — exact geocoded street address | 580 |
-| — inside a named area | 15,694 |
-| — inside a named emirate | 19,014 |
+| **Drawn** | **38,366** |
+| — exact geocoded street address | 574 |
+| — inside a named area | 15,067 |
+| — inside a named emirate | 19,641 |
 | — UAE, emirate unknown | 3,084 |
-| Duplicate pins merged away (same company, same place) | 1,201 |
+| Duplicate pins merged away (same company, same place) | 1,207 |
 | Location unknown — counted on the page, not drawn | 411 |
 | Dropped as foreign | 8,715 |
 | **Market universe (OpenStreetMap), all seven emirates** | **39,370** |
 
-Dubai 28,486 · Abu Dhabi 3,803 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
+Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 ·
 Fujairah 137 · Umm Al Quwain 119 · UAE, emirate unknown 3,084.
 
-Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,312 / AED 755.7M · closed lost 821 / AED 368.1M.
+Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in process 1,311 / AED 755.2M · closed lost 821 / AED 368.1M.
 
 ### Coverage, so the totals are never oversold
 
@@ -68,7 +68,7 @@ Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in proc
 | …says nothing at all | 413 | 412 have no location field at all (8,040 on 19 Sep, 3,699 on 24 Sep). Of the original 8,040: **2,379 now placed, 411 still unknown, 169 proved foreign** |
 | Admin-app clients | 8,645 | **1,730 (20.0%)** join to the CRM by name |
 | Funded clients | 378 | 55 are Egyptian merchants, outside a UAE map → **323 UAE**. **323 funded pins on the map** (224 admin-app-only + 99 via the CRM name join) |
-| **On the map** | **38,393** | every record with any UAE evidence, one pin per company per place |
+| **On the map** | **38,366** | every record with any UAE evidence, one pin per company per place |
 
 ---
 
@@ -104,14 +104,16 @@ Closed won 481 (AED 92.4M, held by the 134 with a HubSpot deal value) · in proc
 13. **Test, learn, scale** (6 Oct 2026, Mohamed's words). Before a new feature goes across 38,000 pins, try it on
     a sample from every tier and read what comes back. The Google Maps link was opened for 20 sample pins first:
     a search by name, area and emirate found the right listing every time; a search pinned to our coordinates
-    snapped to the wrong business; and the sample exposed 1,762 "exact" pins that were area names, bare
+    snapped to the wrong business; and the sample exposed 1,768 "exact" pins that were area names, bare
     street numbers or road names. Both results shaped the build (README, "6 Oct 2026").
 14. **Google Maps links are by name, never by coordinates.** `gmapsUrl(name, area, emirate)` in the page; no API
     key, no account, no cost. A link to our own point would send a rep to a wrong building with confidence.
 15. **"Exact" means a building.** A cached geocode is drawn as an exact building only when the address string names
-    one and the geocoder found one. Bare numbered streets, PO boxes, cluster letters, road names, area names, a
-    city/boundary/water geocode, and a placeholder number before a main road shared by 5+ companies are not
-    (`scripts/lib/generic-address.js`, `scatter-pins.js`). Exact pins: 580 of 38,372.
+    one and the geocoder answered with a building-class feature (whitelist in `scatter-pins.js`). Bare numbered
+    streets, unit numbers, PO boxes, cluster letters, road names, area names, a city/islet/water geocode, a
+    bridge, pitch, park or marina, and a placeholder number before a main road shared by 5+ companies are not
+    (`scripts/lib/generic-address.js`, `scatter-pins.js`); a named tower at that number stays exact. Exact pins:
+    574 of 38,366. Every rule change goes through the shared module, never one script.
 
 ---
 
@@ -156,7 +158,7 @@ produced 331M tokens.
    `legalAddresses` is **filled on 113 of 372** — real street addresses naming an area — so the old
    "always empty" claim came from a three-client sample; the licence authority names the emirate on
    193 more; **55 funded clients are Egyptian** (country EGY, +20 phones) and are counted, not drawn.
-   Result: **323 funded pins** on the map (from 46) — 2 exact, 122 area, 133 emirate, 66 UAE-only.
+   Result: **323 funded pins** on the map (from 46) — 2 exact, 119 area, 136 emirate, 66 UAE-only.
    Script: `scripts/admin-licence-emirate.js`; details in `lookups/admin-license-emirate.md`.
    Re-run: only if the funded book changes — the per-client pull is the expensive part.
 3. **The outstanding book — PARKED 20 Sep 2026. Mohamed likes it, wants it later, not now.** When it comes back: emirate level, all seven emirates. Mohamed's words:
@@ -169,7 +171,7 @@ produced 331M tokens.
    switch the session to a mode that asks him; then it is the licence-pull recipe again (8 agents,
    ~6 min). See `lookups/outstanding-book.md`.
 4. **Market universe for all seven emirates — DONE 23 Sep 2026.** 39,370 named OpenStreetMap
-   businesses: Dubai 18,018 · Abu Dhabi 9,179 · Sharjah 7,038 · Ajman 3,702 · Ras Al Khaimah 456 · Fujairah 550 · Umm Al Quwain 427. Pulled with
+   businesses: Dubai 28,465 · Abu Dhabi 3,797 · Sharjah 1,807 · Ajman 557 · Ras Al Khaimah 400 · Fujairah 137 · Umm Al Quwain 119. Pulled with
    `pull-osm-universe.js --emirate`, ~1 minute each at the mandatory 9 s spacing; `count-osm-universe.js`
    measures without downloading. **Known gaps:** the contractors category timed out on every Overpass
    mirror for Sharjah and Umm Al Quwain, and marketing for Umm Al Quwain - small categories, retry when

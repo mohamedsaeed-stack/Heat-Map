@@ -19,7 +19,7 @@ Say it in this order. Each line is measured; the number in bold is the one to sa
 - Two-thirds of funded clients sit in one emirate (HHI 6,525 - "highly concentrated" in a lender's vocabulary), and no one was measuring it.
 
 **3. What changes with the map (the solution).** One page, both systems, every company placed by emirate, area or
-street (38,393 pins), every funded client (323 of 323), every deal, and the visible market around them (39,370
+street (38,366 pins), every funded client (323 of 323), every deal, and the visible market around them (39,370
 businesses). Filters by emirate, category, precision, HubSpot owner and the commercial who closed it. One click to the
 HubSpot record or the admin-app client. Rebuilds in seconds when the CRM changes; today's address load flowed through the same day.
 Cost of external data: **AED 0**.
@@ -46,7 +46,7 @@ explained on the page.
 |---|---|---|
 | **Market coverage** — CRM records per 100 visible businesses, by category (UAE-wide, 23 Sep 2026) | Retail **7** · Hospitality 31 · Auto 38 · Medical 60 (contracting, manufacturing, marketing exceed 100: OpenStreetMap barely sees office-based firms) | Shows where we have barely prospected vs. saturated. Retail is the largest visible market and our thinnest coverage → that is where new prospecting effort should go. |
 | **Emirate share of CRM** | Dubai **74%** · Abu Dhabi 10% · Sharjah 5% · rest 3% | Tests whether "UAE expansion" is real. Three-quarters of all prospecting in one emirate is a growth ceiling, not a strategy. |
-| **Emirate coverage vs. visible market** — CRM records per 100 visible businesses | Ajman **13** · Sharjah 23 · Fujairah 23 · Umm Al Quwain 23 · Abu Dhabi 36 · RAK 77 · Dubai 129 | The white space by emirate. Ajman and Sharjah have thousands of visible shops and restaurants and almost no CRM presence. |
+| **Emirate coverage vs. visible market** — CRM records per 100 visible businesses | Ajman **13** · Sharjah 1,807 · Fujairah 137 · Umm Al Quwain 119 · Abu Dhabi 3,797 · RAK 77 · Dubai 28,465 | The white space by emirate. Ajman and Sharjah have thousands of visible shops and restaurants and almost no CRM presence. |
 | **Funded concentration** | Dubai holds **68%** of funded clients · HHI **6,525** | Portfolio risk. A Dubai-specific shock (rents, regulation, one sector) hits two-thirds of the book. Above 2,500 on HHI is "highly concentrated" in lenders' language — a board-level number. |
 | **CRM → funded conversion, by emirate** | UAE **1.5%** · Dubai 1.35% · **Ajman 3.3%** · **RAK 0%** (354 records, no client) | Shows where effort converts. Ajman converts at over twice the rate with almost no effort → cheapest growth. RAK has 354 prospects and zero clients → untouched or wrong market; decide which. |
 | **White space** — dense CRM areas, no funded client | Trade Centre: 178 companies, **0 funded** · Silicon Oasis: 454, **1 funded** | Records already exist, so a targeted push there costs nothing to source. Either a sales gap or a fit problem — both worth knowing. |
@@ -64,7 +64,7 @@ shares of funded clients by emirate, known emirates only.
 
 ## What the project delivered
 
-- 38,372 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
+- 38,366 companies placed, all seven emirates, one pin per company, one file, no login, refreshes in 5 seconds.
 - Every pin links to the company's Google Maps listing (6 Oct 2026): one click from a pin to the business, its phone and photos. Tested on a sample before it was scaled; AED 0.
 - Funded clients on the map: **46 → 323** (all 323 UAE funded clients); 99 of them sit on their own CRM record. Closed won on the map = 323 funded (admin app) + 158 won in HubSpot only.
 - Companies with no location: **8,040 → 411**, free sources only; two CRM address loads (24 and 29 Sep) each flowed through in one rebuild.
@@ -74,7 +74,7 @@ shares of funded clients by emirate, known emirates only.
 
 ## Caveats to state
 
-Deals are UAE-wide (all 4,274 pulled 24 Sep 2026); 1,120 of them have no company attached and cannot be placed. The visible market (OpenStreetMap) is a floor. 98% of pins are
+Deals are UAE-wide (all 4,274 pulled 24 Sep 2026); 1,120 of them have no company attached and cannot be placed. The visible market (OpenStreetMap) is a floor. 99% of pins are
 approximate by design — right area, not the building.
 
 ## What each team would use it for — three things each
