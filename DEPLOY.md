@@ -1,5 +1,29 @@
 # Deploying to Railway
 
+## Where this got to — 8 Oct 2026
+
+The Railway project exists and the service **builds and deploys green** from `main`. It has
+**no public domain**, so nothing is reachable yet and nothing is exposed. Auth was deferred.
+
+| | |
+|---|---|
+| Project | `flapkap-coverage-map` · `bebd91d0-0ced-4747-be9e-be2ffe04e909` |
+| Environment | `production` · `12ef971d-0e07-4703-af3b-c2557cfcaf50` |
+| Service | `coverage-map` · `80d0e768-644f-4385-a52f-8b68d286e92d` |
+| Source | `mohamedsaeed-stack/Heat-Map`, branch `main`, auto-deploys on push |
+| Domain | none yet — **deliberately** |
+
+**To finish, in this order.** Either auth works; the quick one is the password.
+
+1. Set auth variables — *either* `BASIC_AUTH_USER` + `BASIC_AUTH_PASS` (two minutes, no
+   external setup), *or* the three Google variables below (better revocation, needs a
+   Google Cloud OAuth client first).
+2. Only then generate the domain. A domain on a service with no auth variables serves the
+   whole client book to anyone with the URL — the server prints `auth: OFF` and keeps going.
+3. For Google only: add `https://<that-domain>/auth/callback` to the OAuth client.
+
+
+
 The map is a static page plus its JSON. `scripts/serve.js` serves both; there are no
 dependencies, so the build is just `npm install` doing nothing and `npm start`.
 
