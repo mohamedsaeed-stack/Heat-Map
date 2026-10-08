@@ -1,9 +1,13 @@
-<title>FlapKap Coverage Map</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlapKap &mdash; UAE Coverage Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* leaflet.min.css - inlined because the artifact viewer blocks external stylesheets */
 .leaflet-image-layer,.leaflet-layer,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-pane,.leaflet-pane>canvas,.leaflet-pane>svg,.leaflet-tile,.leaflet-tile-container,.leaflet-zoom-box{position:absolute;left:0;top:0}.leaflet-container{overflow:hidden}.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-tile{-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-user-drag:none}.leaflet-tile::selection{background:0 0}.leaflet-safari .leaflet-tile{image-rendering:-webkit-optimize-contrast}.leaflet-safari .leaflet-tile-container{width:1600px;height:1600px;-webkit-transform-origin:0 0}.leaflet-marker-icon,.leaflet-marker-shadow{display:block}.leaflet-container .leaflet-overlay-pane svg{max-width:none!important;max-height:none!important}.leaflet-container .leaflet-marker-pane img,.leaflet-container .leaflet-shadow-pane img,.leaflet-container .leaflet-tile,.leaflet-container .leaflet-tile-pane img,.leaflet-container img.leaflet-image-layer{max-width:none!important;max-height:none!important;width:auto;padding:0}.leaflet-container img.leaflet-tile{mix-blend-mode:plus-lighter}.leaflet-container.leaflet-touch-zoom{-ms-touch-action:pan-x pan-y;touch-action:pan-x pan-y}.leaflet-container.leaflet-touch-drag{-ms-touch-action:pinch-zoom;touch-action:none;touch-action:pinch-zoom}.leaflet-container.leaflet-touch-drag.leaflet-touch-zoom{-ms-touch-action:none;touch-action:none}.leaflet-container{-webkit-tap-highlight-color:transparent}.leaflet-container a{-webkit-tap-highlight-color:rgba(51,181,229,.4)}.leaflet-tile{filter:inherit;visibility:hidden}.leaflet-tile-loaded{visibility:inherit}.leaflet-zoom-box{width:0;height:0;-moz-box-sizing:border-box;box-sizing:border-box;z-index:800}.leaflet-overlay-pane svg{-moz-user-select:none}.leaflet-pane{z-index:400}.leaflet-tile-pane{z-index:200}.leaflet-overlay-pane{z-index:400}.leaflet-shadow-pane{z-index:500}.leaflet-marker-pane{z-index:600}.leaflet-tooltip-pane{z-index:650}.leaflet-popup-pane{z-index:700}.leaflet-map-pane canvas{z-index:100}.leaflet-map-pane svg{z-index:200}.leaflet-vml-shape{width:1px;height:1px}.lvml{behavior:url(#default#VML);display:inline-block;position:absolute}.leaflet-control{position:relative;z-index:800;pointer-events:visiblePainted;pointer-events:auto}.leaflet-bottom,.leaflet-top{position:absolute;z-index:1000;pointer-events:none}.leaflet-top{top:0}.leaflet-right{right:0}.leaflet-bottom{bottom:0}.leaflet-left{left:0}.leaflet-control{float:left;clear:both}.leaflet-right .leaflet-control{float:right}.leaflet-top .leaflet-control{margin-top:10px}.leaflet-bottom .leaflet-control{margin-bottom:10px}.leaflet-left .leaflet-control{margin-left:10px}.leaflet-right .leaflet-control{margin-right:10px}.leaflet-fade-anim .leaflet-popup{opacity:0;-webkit-transition:opacity .2s linear;-moz-transition:opacity .2s linear;transition:opacity .2s linear}.leaflet-fade-anim .leaflet-map-pane .leaflet-popup{opacity:1}.leaflet-zoom-animated{-webkit-transform-origin:0 0;-ms-transform-origin:0 0;transform-origin:0 0}svg.leaflet-zoom-animated{will-change:transform}.leaflet-zoom-anim .leaflet-zoom-animated{-webkit-transition:-webkit-transform .25s cubic-bezier(0,0,.25,1);-moz-transition:-moz-transform .25s cubic-bezier(0,0,.25,1);transition:transform .25s cubic-bezier(0,0,.25,1)}.leaflet-pan-anim .leaflet-tile,.leaflet-zoom-anim .leaflet-tile{-webkit-transition:none;-moz-transition:none;transition:none}.leaflet-zoom-anim .leaflet-zoom-hide{visibility:hidden}.leaflet-interactive{cursor:pointer}.leaflet-grab{cursor:-webkit-grab;cursor:-moz-grab;cursor:grab}.leaflet-crosshair,.leaflet-crosshair .leaflet-interactive{cursor:crosshair}.leaflet-control,.leaflet-popup-pane{cursor:auto}.leaflet-dragging .leaflet-grab,.leaflet-dragging .leaflet-grab .leaflet-interactive,.leaflet-dragging .leaflet-marker-draggable{cursor:move;cursor:-webkit-grabbing;cursor:-moz-grabbing;cursor:grabbing}.leaflet-image-layer,.leaflet-marker-icon,.leaflet-marker-shadow,.leaflet-pane>svg path,.leaflet-tile-container{pointer-events:none}.leaflet-image-layer.leaflet-interactive,.leaflet-marker-icon.leaflet-interactive,.leaflet-pane>svg path.leaflet-interactive,svg.leaflet-image-layer.leaflet-interactive path{pointer-events:visiblePainted;pointer-events:auto}.leaflet-container{background:#ddd;outline-offset:1px}.leaflet-container a{color:#0078a8}.leaflet-zoom-box{border:2px dotted #38f;background:rgba(255,255,255,.5)}.leaflet-container{font-family:"Helvetica Neue",Arial,Helvetica,sans-serif;font-size:12px;font-size:.75rem;line-height:1.5}.leaflet-bar{box-shadow:0 1px 5px rgba(0,0,0,.65);border-radius:4px}.leaflet-bar a{background-color:#fff;border-bottom:1px solid #ccc;width:26px;height:26px;line-height:26px;display:block;text-align:center;text-decoration:none;color:#000}.leaflet-bar a,.leaflet-control-layers-toggle{background-position:50% 50%;background-repeat:no-repeat;display:block}.leaflet-bar a:focus,.leaflet-bar a:hover{background-color:#f4f4f4}.leaflet-bar a:first-child{border-top-left-radius:4px;border-top-right-radius:4px}.leaflet-bar a:last-child{border-bottom-left-radius:4px;border-bottom-right-radius:4px;border-bottom:none}.leaflet-bar a.leaflet-disabled{cursor:default;background-color:#f4f4f4;color:#bbb}.leaflet-touch .leaflet-bar a{width:30px;height:30px;line-height:30px}.leaflet-touch .leaflet-bar a:first-child{border-top-left-radius:2px;border-top-right-radius:2px}.leaflet-touch .leaflet-bar a:last-child{border-bottom-left-radius:2px;border-bottom-right-radius:2px}.leaflet-control-zoom-in,.leaflet-control-zoom-out{font:bold 18px 'Lucida Console',Monaco,monospace;text-indent:1px}.leaflet-touch .leaflet-control-zoom-in,.leaflet-touch .leaflet-control-zoom-out{font-size:22px}.leaflet-control-layers{box-shadow:0 1px 5px rgba(0,0,0,.4);background:#fff;border-radius:5px}.leaflet-control-layers-toggle{background-image:url(images/layers.png);width:36px;height:36px}.leaflet-retina .leaflet-control-layers-toggle{background-image:url(images/layers-2x.png);background-size:26px 26px}.leaflet-touch .leaflet-control-layers-toggle{width:44px;height:44px}.leaflet-control-layers .leaflet-control-layers-list,.leaflet-control-layers-expanded .leaflet-control-layers-toggle{display:none}.leaflet-control-layers-expanded .leaflet-control-layers-list{display:block;position:relative}.leaflet-control-layers-expanded{padding:6px 10px 6px 6px;color:#333;background:#fff}.leaflet-control-layers-scrollbar{overflow-y:scroll;overflow-x:hidden;padding-right:5px}.leaflet-control-layers-selector{margin-top:2px;position:relative;top:1px}.leaflet-control-layers label{display:block;font-size:13px;font-size:1.08333em}.leaflet-control-layers-separator{height:0;border-top:1px solid #ddd;margin:5px -10px 5px -6px}.leaflet-default-icon-path{background-image:url(images/marker-icon.png)}.leaflet-container .leaflet-control-attribution{background:#fff;background:rgba(255,255,255,.8);margin:0}.leaflet-control-attribution,.leaflet-control-scale-line{padding:0 5px;color:#333;line-height:1.4}.leaflet-control-attribution a{text-decoration:none}.leaflet-control-attribution a:focus,.leaflet-control-attribution a:hover{text-decoration:underline}.leaflet-attribution-flag{display:inline!important;vertical-align:baseline!important;width:1em;height:.6669em}.leaflet-left .leaflet-control-scale{margin-left:5px}.leaflet-bottom .leaflet-control-scale{margin-bottom:5px}.leaflet-control-scale-line{border:2px solid #777;border-top:none;line-height:1.1;padding:2px 5px 1px;white-space:nowrap;-moz-box-sizing:border-box;box-sizing:border-box;background:rgba(255,255,255,.8);text-shadow:1px 1px #fff}.leaflet-control-scale-line:not(:first-child){border-top:2px solid #777;border-bottom:none;margin-top:-2px}.leaflet-control-scale-line:not(:first-child):not(:last-child){border-bottom:2px solid #777}.leaflet-touch .leaflet-bar,.leaflet-touch .leaflet-control-attribution,.leaflet-touch .leaflet-control-layers{box-shadow:none}.leaflet-touch .leaflet-bar,.leaflet-touch .leaflet-control-layers{border:2px solid rgba(0,0,0,.2);background-clip:padding-box}.leaflet-popup{position:absolute;text-align:center;margin-bottom:20px}.leaflet-popup-content-wrapper{padding:1px;text-align:left;border-radius:12px}.leaflet-popup-content{margin:13px 24px 13px 20px;line-height:1.3;font-size:13px;font-size:1.08333em;min-height:1px}.leaflet-popup-content p{margin:17px 0;margin:1.3em 0}.leaflet-popup-tip-container{width:40px;height:20px;position:absolute;left:50%;margin-top:-1px;margin-left:-20px;overflow:hidden;pointer-events:none}.leaflet-popup-tip{width:17px;height:17px;padding:1px;margin:-10px auto 0;pointer-events:auto;-webkit-transform:rotate(45deg);-moz-transform:rotate(45deg);-ms-transform:rotate(45deg);transform:rotate(45deg)}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#fff;color:#333;box-shadow:0 3px 14px rgba(0,0,0,.4)}.leaflet-container a.leaflet-popup-close-button{position:absolute;top:0;right:0;border:none;text-align:center;width:24px;height:24px;font:16px/24px Tahoma,Verdana,sans-serif;color:#757575;text-decoration:none;background:0 0}.leaflet-container a.leaflet-popup-close-button:focus,.leaflet-container a.leaflet-popup-close-button:hover{color:#585858}.leaflet-popup-scrolled{overflow:auto}.leaflet-oldie .leaflet-popup-content-wrapper{-ms-zoom:1}.leaflet-oldie .leaflet-popup-tip{width:24px;margin:0 auto}.leaflet-oldie .leaflet-control-layers,.leaflet-oldie .leaflet-control-zoom,.leaflet-oldie .leaflet-popup-content-wrapper,.leaflet-oldie .leaflet-popup-tip{border:1px solid #999}.leaflet-div-icon{background:#fff;border:1px solid #666}.leaflet-tooltip{position:absolute;padding:6px;background-color:#fff;border:1px solid #fff;border-radius:3px;color:#222;white-space:nowrap;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.4)}.leaflet-tooltip.leaflet-interactive{cursor:pointer;pointer-events:auto}.leaflet-tooltip-bottom:before,.leaflet-tooltip-left:before,.leaflet-tooltip-right:before,.leaflet-tooltip-top:before{position:absolute;pointer-events:none;border:6px solid transparent;background:0 0;content:""}.leaflet-tooltip-bottom{margin-top:6px}.leaflet-tooltip-top{margin-top:-6px}.leaflet-tooltip-bottom:before,.leaflet-tooltip-top:before{left:50%;margin-left:-6px}.leaflet-tooltip-top:before{bottom:0;margin-bottom:-12px;border-top-color:#fff}.leaflet-tooltip-bottom:before{top:0;margin-top:-12px;margin-left:-6px;border-bottom-color:#fff}.leaflet-tooltip-left{margin-left:-6px}.leaflet-tooltip-right{margin-left:6px}.leaflet-tooltip-left:before,.leaflet-tooltip-right:before{top:50%;margin-top:-6px}.leaflet-tooltip-left:before{right:0;margin-right:-12px;border-left-color:#fff}.leaflet-tooltip-right:before{left:0;margin-left:-12px;border-right-color:#fff}@media print{.leaflet-control{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-/* MarkerCluster.css - inlined because the artifact viewer blocks external stylesheets */
 .leaflet-cluster-anim .leaflet-marker-icon, .leaflet-cluster-anim .leaflet-marker-shadow {
 	-webkit-transition: -webkit-transform 0.3s ease-out, opacity 0.3s ease-in;
 	-moz-transition: -moz-transform 0.3s ease-out, opacity 0.3s ease-in;
@@ -19,7 +23,6 @@
 	transition: stroke-dashoffset 0.3s ease-out, stroke-opacity 0.3s ease-in;
 }
 
-/* MarkerCluster.Default.css - inlined because the artifact viewer blocks external stylesheets */
 .marker-cluster-small {
 	background-color: rgba(181, 226, 140, 0.6);
 	}
@@ -82,646 +85,865 @@
 	}
 </style>
 <style>
-  :root {
-    --ground:   #eef1f6;
-    --sidebar:  #0f1c33;
-    --card:     #ffffff;
-    --line:     #dde3ec;
-    --line-dk:  #2a3b5c;
-    --ink:      #0f1c33;
-    --ink-dk:   #e8edf6;
-    --muted:    #5b6b85;
-    --muted-dk: #93a3bd;
-    --accent:   #2970ff;
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{color-scheme:dark}
+  html,body{height:100%}
+  body{font-family:Montserrat,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#050505;color:#A0A0AB;overflow:hidden}
+  /* FlapKap design system, dark mode: canvas #050505, cards #18181B with #3F3F46 hairlines, body #A0A0AB, headings white at weight 400, blue #2970FF accent. */
 
-    --l-universe:   #00bbb9;
-    --l-crm:        #8494ad;
-    --l-process:    #2970ff;
-    --l-lost-sales: #d64545;
-    --l-lost-risk:  #e08600;
-    --l-won:        #12805c;
+  .header{background-color:#050505;background-image:radial-gradient(ellipse 48% 260% at 6% 50%,rgba(41,112,255,.22),rgba(0,187,185,.06) 55%,transparent 80%);border-bottom:1px solid #3F3F46;padding:0 1.5rem;display:flex;align-items:center;
+    justify-content:space-between;gap:14px;position:absolute;top:0;left:0;right:0;height:52px;z-index:1200}
+  .h-brand{display:flex;align-items:center;gap:1rem;min-width:0}
+  .h-logo{height:22px;width:auto;flex-shrink:0;display:block}
+  .h-title{font-size:16px;font-weight:400;color:#fff;white-space:nowrap;letter-spacing:.01em}
+  .h-sub{font-size:11px;color:#A0A0AB;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .legend{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .lg{display:flex;align-items:center;gap:6px;font-size:12px;color:#A0A0AB;cursor:pointer;user-select:none;white-space:nowrap}
+  .lg .dot{width:13px;height:13px;border-radius:50%;border:2px solid #26272B;
+    box-shadow:0 1px 3px rgba(0,0,0,.25);flex-shrink:0}
+  .lg.off{opacity:.32}
+  .lg .n{font-variant-numeric:tabular-nums;color:#70707B;font-size:11px}
 
-    --sans: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  #map{position:absolute;top:52px;left:0;right:0;bottom:0}
+
+  .stats{position:absolute;top:64px;left:.75rem;z-index:1000;display:flex;flex-direction:column;gap:.5rem}
+  .stat{background:#18181B;border:1px solid #3F3F46;border-radius:1em;padding:9px 13px;min-width:148px}
+  .stat .num{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.15}
+  .stat .lbl{font-size:10.5px;color:#A0A0AB;margin-top:1px}
+  .stat .amt{font-size:10.5px;color:#A0A0AB;margin-top:3px;font-variant-numeric:tabular-nums}
+
+  .panel{position:absolute;top:64px;right:12px;z-index:1000;background:#18181B;border:1px solid #3F3F46;border-radius:1em;
+    color:#A0A0AB;padding:.75rem;width:242px;font-size:12px;
+    max-height:calc(100% - 80px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
+  .panel h4{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;margin-bottom:6px;font-weight:500}
+  .panel.hidden{display:none}
+  .ptog{position:absolute;top:64px;right:266px;z-index:1001;width:22px;height:34px;border:1px solid #3F3F46;border-right:0;
+    border-radius:8px 0 0 8px;background:#18181B;color:#A0A0AB;font:20px/30px sans-serif;cursor:pointer;padding:0;
+    box-shadow:-2px 2px 6px rgba(0,0,0,.08)}
+  .ptog.closed{right:0;border-right:1px solid #3F3F46;border-radius:8px 0 0 8px}
+  .ptog:hover{color:#2970FF}
+  .panel h4:not(:first-child){margin-top:1rem}
+  .bmrow{display:flex;gap:4px}
+  .bm{flex:1;font:inherit;font-size:11px;padding:5px 4px;border:1px solid #3F3F46;background:transparent;
+    border-radius:99px;cursor:pointer;color:#A0A0AB}
+  .bm.on{background:#2970FF;border-color:#2970FF;color:#fff}
+  .cats{display:flex;flex-wrap:wrap;gap:4px}
+  .cat{font:inherit;font-size:10.5px;padding:3px 8px;border-radius:99px;border:1px solid #3F3F46;
+    background:transparent;cursor:pointer;color:#A0A0AB;display:flex;align-items:center;gap:5px}
+  .cat.on{color:#fff;border-color:transparent}
+  .cat .cn{font-variant-numeric:tabular-nums;opacity:.85}
+  .row{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11.5px;color:#A0A0AB;cursor:pointer}
+  .row input{margin:0;accent-color:#2970FF}
+  .muted{color:#70707B;font-size:10.5px;line-height:1.5;margin-top:8px}
+  .muted b{color:#E4E4E7}
+
+  .searchbox{width:100%;font:inherit;font-size:12px;padding:6px 11px;border:1px solid #3F3F46;border-radius:99px;background:#050505;color:#fff}
+  .searchbox::placeholder{color:#70707B}
+  .sel{width:100%;font:inherit;font-size:12px;padding:6px 8px;border:1px solid #3F3F46;border-radius:8px;background:#050505;color:#fff}
+  .sel:focus,.searchbox:focus{outline:none;border-color:#2970FF}
+  .sel option{background:#18181B;color:#E4E4E7}
+  .msel{position:relative}
+  .msel-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;font:inherit;font-size:12px;
+    padding:6px 10px;border:1px solid #3F3F46;border-radius:8px;background:#050505;color:#fff;cursor:pointer;text-align:left}
+  .msel-btn:hover,.msel.open .msel-btn{border-color:#2970FF}
+  .msel-btn .sum{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msel-btn .chev{flex-shrink:0;color:#A0A0AB;font-size:10px;transition:transform .15s}
+  .msel.open .msel-btn .chev{transform:rotate(180deg)}
+  .msel-pop{display:none;margin-top:4px;border:1px solid #3F3F46;border-radius:8px;background:#050505;padding:6px}
+  .msel.open .msel-pop{display:block}
+  .msel-tools{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+  .msel-tools button{font:inherit;font-size:10.5px;padding:2px 9px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;cursor:pointer}
+  .msel-tools button:hover{border-color:#2970FF;color:#fff}
+  .msel-find{flex:1;min-width:0;font:inherit;font-size:11px;padding:3px 8px;border:1px solid #3F3F46;border-radius:99px;background:#18181B;color:#fff}
+  .msel-find::placeholder{color:#A0A0AB}
+  .msel-list{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #050505}
+  .msel-row{display:flex;align-items:center;gap:7px;padding:3px 4px;border-radius:5px;font-size:11.5px;color:#D1D1D6;cursor:pointer}
+  .msel-row:hover{background:#18181B}
+  .msel-row input{margin:0;accent-color:#2970FF;flex-shrink:0}
+  .msel-row .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .msel-row .n{font-variant-numeric:tabular-nums;color:#A0A0AB;font-size:10.5px}
+  .msel-row.hide{display:none}
+  .hits{margin-top:5px;max-height:150px;overflow-y:auto}
+  .hit{padding:4px 6px;border-radius:5px;cursor:pointer;font-size:11.5px;color:#D1D1D6}
+  .hit:hover{background:#26272B}
+  .hit i{font-style:normal;color:#70707B;font-size:10.5px}
+
+  .note{position:absolute;left:12px;bottom:14px;z-index:1000;background:#18181B;border:1px solid #3F3F46;border-radius:1em;
+    padding:9px 12px;max-width:390px;font-size:11px;color:#A0A0AB;
+    border-left:3px solid #2970FF;line-height:1.5}
+  .note b{color:#fff;font-weight:500}
+  .note .x{float:right;cursor:pointer;color:#70707B;margin-left:8px;font-weight:600}
+
+  .leaflet-popup-content-wrapper{border-radius:1em!important;background:#18181B!important;color:#A0A0AB!important;border:1px solid #3F3F46;box-shadow:0 8px 30px rgba(0,0,0,.5)!important}
+  .leaflet-popup-tip{background:#18181B!important}
+  .leaflet-container a.leaflet-popup-close-button{color:#A0A0AB!important}
+  .leaflet-bar{border:1px solid #3F3F46!important;box-shadow:none!important}
+  .leaflet-bar a{background:#18181B!important;color:#fff!important;border-bottom:1px solid #3F3F46!important}
+  .leaflet-bar a:hover{background:#26272B!important}
+  .leaflet-control-attribution{background:rgba(5,5,5,.75)!important;color:#70707B!important}
+  .leaflet-control-attribution a{color:#84ADFF!important}
+  .leaflet-popup-content{margin:12px 14px!important;font-family:inherit;min-width:210px}
+  .pn{font-size:14px;font-weight:500;color:#fff;margin-bottom:3px;line-height:1.3}
+  .pi{font-size:11px;color:#A0A0AB;margin-bottom:7px}
+  .pb{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:99px;color:#fff}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:8px;font-size:11.5px}
+  .kv dt{color:#70707B}
+  .kv dd{color:#E4E4E7;font-variant-numeric:tabular-nums}
+  .pnote{font-size:10.5px;color:#A0A0AB;line-height:1.45;margin-top:8px;border-top:1px solid #3F3F46;padding-top:6px}
+  .pid{font-size:11px;color:#A0A0AB;margin-top:5px}
+  .pid a{color:#528BFF;text-decoration:none;font-weight:500}
+  .pid a:hover{text-decoration:underline}
+  .pid span{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#70707B;margin-left:6px}
+
+  .lbl{background:rgba(24,24,27,.95);border:1px solid #3F3F46;border-radius:6px;
+    padding:1px 6px;font-size:11px;color:#fff;font-weight:500;white-space:nowrap;
+    box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .lbl:before{display:none}
+  .marker-cluster div{font-family:inherit;font-weight:600}
+
+  .i{width:15px;height:15px;border-radius:50%;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;
+    font-size:10px;font-weight:700;line-height:1;cursor:pointer;padding:0;font-family:inherit;flex-shrink:0}
+  .i:hover{border-color:#2970FF;color:#2970FF}
+  .stat .lbl{display:flex;align-items:center;gap:5px;justify-content:space-between}
+  dialog.info{border:1px solid #3F3F46;border-radius:1em;padding:0;max-width:520px;width:calc(100% - 32px);
+    background:#18181B;color:#A0A0AB;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  dialog.info::backdrop{background:rgba(0,0,0,.65)}
+  .ih{padding:15px 18px 0;font-size:16px;font-weight:400;color:#fff}
+  .ib{padding:8px 18px 14px;font-size:12.5px;color:#A0A0AB;line-height:1.55}
+  .ib dt{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#70707B;font-weight:500;margin-top:12px}
+  .ib dd{margin:3px 0 0}
+  .ib code{display:block;background:#050505;border:1px solid #3F3F46;border-radius:6px;padding:7px 9px;
+    font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:#E4E4E7;white-space:pre-wrap;
+    margin-top:4px;line-height:1.45}
+  .if{padding:0 18px 15px;text-align:right}
+  .ibtn{font:inherit;font-size:12px;padding:6px 15px;border-radius:99px;background:#2970FF;color:#fff;border:0;cursor:pointer}
+
+  @media(max-width:820px){
+    .header{height:auto;padding:8px 12px;flex-direction:column;align-items:flex-start;gap:6px}
+    #map{top:96px}
+    .stats{top:108px;left:8px}
+    .stat{min-width:120px;padding:6px 9px}
+    .stat .num{font-size:16px}
+    .panel{top:108px;right:8px;width:180px}
+    .note{display:none}
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --ground: #0a1220; --card: #141f33; --line: #25324a;
-      --ink: #e8edf6; --muted: #93a3bd; --accent: #5b9dff;
-    }
-  }
-  :root[data-theme="dark"] {
-    --ground: #0a1220; --card: #141f33; --line: #25324a;
-    --ink: #e8edf6; --muted: #93a3bd; --accent: #5b9dff;
-  }
-
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0; background: var(--ground); color: var(--ink);
-    font-family: var(--sans); font-size: 14px; line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
-  .app { display: flex; height: 100%; align-items: stretch; }
-
-  .side {
-    width: 330px; flex: 0 0 330px; background: var(--sidebar); color: var(--ink-dk);
-    display: flex; flex-direction: column; overflow-y: auto;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .side-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--line-dk); }
-  .brand { font-size: 15px; font-weight: 650; letter-spacing: -0.01em; }
-  .brand span { color: var(--accent); }
-  .tagline { font-size: 11.5px; color: var(--muted-dk); margin-top: 3px; }
-  .stamp { font-family: var(--mono); font-size: 10.5px; color: var(--muted-dk); margin-top: 9px; line-height: 1.7; }
-  .stamp b { color: var(--ink-dk); font-weight: 500; }
-
-  .block { padding: 16px 20px; border-bottom: 1px solid var(--line-dk); }
-  .block-t {
-    font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
-    color: var(--muted-dk); margin-bottom: 11px; display: flex; align-items: center; gap: 7px;
-  }
-
-  .layer { display: flex; align-items: center; gap: 10px; padding: 6px 0; cursor: pointer; }
-  .layer input { position: absolute; opacity: 0; pointer-events: none; }
-  .sw { width: 30px; height: 17px; border-radius: 99px; background: #31415f; position: relative; flex: 0 0 30px; transition: background .15s; }
-  .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: transform .15s; }
-  .layer input:checked + .sw { background: var(--dot, var(--accent)); }
-  .layer input:checked + .sw::after { transform: translateX(13px); }
-  .layer input:disabled + .sw { opacity: .4; }
-  .layer.off { cursor: not-allowed; }
-  .lname { font-size: 12.5px; display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
-  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dot); flex: 0 0 9px; }
-  .lcount { font-family: var(--mono); font-size: 11px; color: var(--muted-dk); white-space: nowrap; }
-  .layer input:disabled ~ .lname { color: var(--muted-dk); }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip {
-    font: inherit; font-size: 11.5px; padding: 5px 10px; border-radius: 99px; cursor: pointer;
-    background: transparent; color: var(--muted-dk); border: 1px solid var(--line-dk);
-    display: flex; align-items: center; gap: 6px; transition: .12s;
-  }
-  .chip:hover { border-color: #40557e; color: var(--ink-dk); }
-  .chip[aria-pressed="true"] { color: #fff; border-color: transparent; background: var(--cc, var(--accent)); }
-  .chip .n { font-family: var(--mono); opacity: .8; font-size: 10.5px; }
-  .chip-acts { display: flex; gap: 12px; margin-top: 10px; }
-  .link { background: none; border: 0; padding: 0; font: inherit; font-size: 11px; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
-
-  .tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
-  .tbl th { text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-dk); padding: 0 0 6px; border-bottom: 1px solid var(--line-dk); }
-  .tbl th:last-child, .tbl td:last-child { text-align: right; }
-  .tbl td { padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
-  .tbl tr { cursor: pointer; }
-  .tbl tr:hover td { color: var(--accent); }
-  .tbl td.mono { font-family: var(--mono); color: var(--muted-dk); }
-  .tbl-wrap { max-height: 250px; overflow-y: auto; }
-
-  .main { flex: 1; min-width: 0; position: relative; }
-  #map { position: absolute; inset: 0; background: var(--ground); }
-  .leaflet-container { background: var(--ground); font-family: var(--sans); }
-
-  .stats { position: absolute; top: 14px; left: 14px; z-index: 600; display: flex; flex-direction: column; gap: 8px; max-width: 200px; }
-  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; box-shadow: 0 1px 3px rgba(15,28,51,.10); }
-  .stat .n { font-family: var(--mono); font-size: 19px; font-weight: 600; letter-spacing: -.02em; }
-  .stat .l { font-size: 10.5px; color: var(--muted); margin-top: 1px; display: flex; align-items: center; gap: 5px; }
-
-  .basemap-pick { position: absolute; top: 14px; right: 14px; z-index: 600; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 4px; display: flex; gap: 2px; box-shadow: 0 1px 3px rgba(15,28,51,.10); }
-  .bm { font: inherit; font-size: 11px; padding: 5px 10px; border-radius: 7px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
-  .bm[aria-pressed="true"] { background: var(--accent); color: #fff; }
-  .bm:disabled { opacity: .35; cursor: not-allowed; text-decoration: line-through; }
-
-  .notice { position: absolute; left: 14px; bottom: 22px; z-index: 600; max-width: 420px; background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--l-lost-risk); border-radius: 10px; padding: 10px 13px; box-shadow: 0 1px 3px rgba(15,28,51,.10); font-size: 11.5px; color: var(--muted); }
-  .notice b { color: var(--ink); font-weight: 600; }
-  .notice.ok { border-left-color: var(--l-won); }
-
-  .i { width: 14px; height: 14px; border-radius: 50%; border: 1px solid currentColor; background: none; color: var(--muted); font-size: 9px; font-weight: 700; line-height: 1; cursor: pointer; padding: 0; flex: 0 0 14px; font-family: var(--sans); }
-  .i:hover { color: var(--accent); }
-  .side .i { color: var(--muted-dk); }
-  dialog.info { border: 1px solid var(--line); border-radius: 12px; padding: 0; max-width: 470px; width: calc(100% - 32px); background: var(--card); color: var(--ink); box-shadow: 0 12px 40px rgba(15,28,51,.22); }
-  dialog.info::backdrop { background: rgba(15,28,51,.45); }
-  .info-h { padding: 14px 18px 0; font-size: 14px; font-weight: 650; }
-  .info-b { padding: 10px 18px 16px; font-size: 12.5px; color: var(--muted); }
-  .info-b dt { font-weight: 600; color: var(--ink); margin-top: 11px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; }
-  .info-b dd { margin: 3px 0 0; }
-  .info-b code { font-family: var(--mono); font-size: 11px; }
-  .info-f { padding: 0 18px 14px; text-align: right; }
-  .btn { font: inherit; font-size: 12px; padding: 6px 14px; border-radius: 99px; background: var(--accent); color: #fff; border: 0; cursor: pointer; }
-
-  .pop-name { font-size: 13px; font-weight: 650; color: var(--ink); }
-  .pop-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .pop-src { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; }
-  .leaflet-popup-content-wrapper { border-radius: 10px; }
-  .leaflet-popup-content { margin: 11px 13px; }
-
-  /* clusters, themed rather than the library default green/yellow */
-  .marker-cluster { background: transparent; }
-  .marker-cluster div {
-    width: 34px; height: 34px; margin-left: 1px; margin-top: 1px;
-    border-radius: 50%; color: #fff; text-align: center; font-family: var(--mono);
-    font-size: 11px; font-weight: 600; line-height: 34px;
-    border: 2px solid rgba(255,255,255,.85); box-shadow: 0 1px 4px rgba(15,28,51,.3);
-  }
-  .marker-cluster-small div  { background: rgba(41,112,255,.85); }
-  .marker-cluster-medium div { width: 40px; height: 40px; line-height: 40px; background: rgba(0,187,185,.88); }
-  .marker-cluster-large div  { width: 46px; height: 46px; line-height: 46px; background: rgba(15,28,51,.88); font-size: 12px; }
-
-  .legend { position: absolute; right: 14px; bottom: 96px; z-index: 600; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; box-shadow: 0 1px 3px rgba(15,28,51,.10); font-size: 11px; }
-  .legend-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; color: var(--muted); }
-  .legend-row i { width: 9px; height: 9px; border-radius: 50%; display: block; flex: 0 0 9px; }
-
-  @media (max-width: 860px) {
-    .app { flex-direction: column; }
-    .side { width: 100%; flex: 0 0 auto; max-height: 46%; }
-    .main { flex: 1 1 auto; min-height: 340px; }
-    .stats { max-width: 150px; }
-    .notice { max-width: calc(100% - 28px); }
-    .legend { display: none; }
-  }
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
+</head>
+<body>
 
-<div class="app">
-  <aside class="side">
-    <div class="side-head">
-      <div class="brand">FlapKap <span>Coverage Map</span></div>
-      <div class="tagline">Where the market is, what we hold, what we won</div>
-      <div class="stamp" id="stamps"></div>
+<div class="header">
+  <div class="h-brand">
+    <svg class="h-logo" viewBox="0 0 134 38" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="FlapKap"><path d="M126.102 2.14084C124.312 2.14084 122.595 2.84269 121.329 4.09199C120.063 5.3413 119.352 7.03572 119.352 8.8025V15.5204H126.958C127.844 15.5329 128.724 15.3728 129.548 15.0494C130.372 14.7261 131.123 14.2457 131.759 13.6358C132.394 13.0259 132.902 12.2984 133.253 11.4949C133.603 10.6913 133.79 9.82747 133.803 8.95262V2.14084H126.102Z" fill="#00C8C8"/><path d="M129.284 5.88733H121.754C119.981 5.88733 118.281 6.5902 117.028 7.84132C115.774 9.09244 115.07 10.7893 115.07 12.5587V19.2676H127.119C128.892 19.2676 130.592 18.5647 131.845 17.3136C133.099 16.0625 133.803 14.3656 133.803 12.5963V5.88733H129.284Z" fill="#280CFF"/><path d="M14.4567 11.4346V9.79107C14.4567 9.18237 13.9697 8.6954 13.361 8.6954H3.07395C2.46525 8.6954 1.97828 9.18237 1.97828 9.79107V28.9043C1.97828 29.513 2.46525 30 3.07395 30H5.0218C5.6305 30 6.11746 29.513 6.11746 28.9043V21.6303H12.4784C13.0871 21.6303 13.5741 21.1434 13.5741 20.5347V18.8912C13.5741 18.2825 13.0871 17.7955 12.4784 17.7955H6.11746V12.5302H13.361C13.9697 12.5302 14.4567 12.0433 14.4567 11.4346ZM17.6381 9.79107V28.9043C17.6381 29.513 18.1251 30 18.7338 30H20.4381C21.0164 30 21.5034 29.513 21.5034 28.9043V9.79107C21.5034 9.18237 21.0164 8.6954 20.4381 8.6954H18.7338C18.1251 8.6954 17.6381 9.18237 17.6381 9.79107ZM36.6926 15.6651V16.3955C35.7187 15.1172 34.1665 14.2042 31.7622 14.2042C26.9838 14.2042 24.2447 18.252 24.2447 22.2999C24.2447 26.3173 26.9838 30.3652 31.7622 30.3652C34.1665 30.3652 35.7187 29.4522 36.6926 28.1739V28.9043C36.6926 29.513 37.1796 30 37.7883 30H39.4622C40.0709 30 40.5579 29.513 40.5579 28.9043V15.6651C40.5579 15.0563 40.0709 14.5694 39.4622 14.5694H37.7883C37.1796 14.5694 36.6926 15.0563 36.6926 15.6651ZM32.3709 26.6826C29.723 26.6826 28.2012 24.6434 28.2012 22.2999C28.2012 19.926 29.723 17.9173 32.3709 17.9173C35.0187 17.9173 36.5405 19.8955 36.5405 22.2999C36.5405 24.6739 35.0187 26.6826 32.3709 26.6826ZM52.9747 14.2042C50.6008 14.2042 49.0486 15.1172 48.0747 16.3955V15.6651C48.0747 15.0563 47.5877 14.5694 46.979 14.5694H45.2746C44.6964 14.5694 44.2094 15.0563 44.2094 15.6651V34.8088C44.2094 35.387 44.6964 35.874 45.2746 35.874H46.979C47.5877 35.874 48.0747 35.387 48.0747 34.8088V28.1739C49.0486 29.4522 50.6008 30.3652 52.9747 30.3652C57.7835 30.3652 60.5226 26.3173 60.5226 22.2999C60.5226 18.252 57.7835 14.2042 52.9747 14.2042ZM52.3965 26.6826C49.7182 26.6826 48.2269 24.6739 48.2269 22.2999C48.2269 19.8955 49.7182 17.9173 52.3965 17.9173C55.0443 17.9173 56.5661 19.926 56.5661 22.2999C56.5661 24.6434 55.0443 26.6826 52.3965 26.6826ZM79.483 28.9043L71.6612 19.1955L78.7526 9.79107C79.0874 9.33454 78.783 8.6954 78.2352 8.6954H75.5569C75.1308 8.6954 74.7047 8.90845 74.4612 9.24324L67.522 18.8303V9.79107C67.522 9.18237 67.0351 8.6954 66.4568 8.6954H64.4785C63.9002 8.6954 63.4133 9.18237 63.4133 9.79107V28.9043C63.4133 29.513 63.9002 30 64.4785 30H66.4568C67.0351 30 67.522 29.513 67.522 28.9043V20.0781L74.9482 29.4826C75.2221 29.8174 75.6178 30 76.0134 30H78.9352C79.5135 30 79.8178 29.3304 79.483 28.9043ZM93.2533 15.6651V16.3955C92.2793 15.1172 90.7271 14.2042 88.3228 14.2042C83.5445 14.2042 80.8053 18.252 80.8053 22.2999C80.8053 26.3173 83.5445 30.3652 88.3228 30.3652C90.7271 30.3652 92.2793 29.4522 93.2533 28.1739V28.9043C93.2533 29.513 93.7402 30 94.3489 30H96.0229C96.6316 30 97.1185 29.513 97.1185 28.9043V15.6651C97.1185 15.0563 96.6316 14.5694 96.0229 14.5694H94.3489C93.7402 14.5694 93.2533 15.0563 93.2533 15.6651ZM88.9315 26.6826C86.2836 26.6826 84.7619 24.6434 84.7619 22.2999C84.7619 19.926 86.2836 17.9173 88.9315 17.9173C91.5793 17.9173 93.1011 19.8955 93.1011 22.2999C93.1011 24.6739 91.5793 26.6826 88.9315 26.6826ZM109.535 14.2042C107.161 14.2042 105.609 15.1172 104.635 16.3955V15.6651C104.635 15.0563 104.148 14.5694 103.54 14.5694H101.835C101.257 14.5694 100.77 15.0563 100.77 15.6651V34.8088C100.77 35.387 101.257 35.874 101.835 35.874H103.54C104.148 35.874 104.635 35.387 104.635 34.8088V28.1739C105.609 29.4522 107.161 30.3652 109.535 30.3652C114.344 30.3652 117.083 26.3173 117.083 22.2999C117.083 18.252 114.344 14.2042 109.535 14.2042ZM108.957 26.6826C106.279 26.6826 104.787 24.6739 104.787 22.2999C104.787 19.8955 106.279 17.9173 108.957 17.9173C111.605 17.9173 113.127 19.926 113.127 22.2999C113.127 24.6434 111.605 26.6826 108.957 26.6826Z" fill="white"/></svg>
+    <div style="min-width:0">
+      <div class="h-title">UAE Coverage Map</div>
+      <div class="h-sub" id="sub">&nbsp;</div>
     </div>
-
-    <div class="block">
-      <div class="block-t">Layers <button class="i" data-info="layers" aria-label="How the layers are derived">i</button></div>
-      <div id="layers"></div>
-    </div>
-
-    <div class="block">
-      <div class="block-t">Categories <button class="i" data-info="categories" aria-label="How categories are derived">i</button></div>
-      <div class="chips" id="chips"></div>
-      <div class="chip-acts">
-        <button class="link" id="all">Select all</button>
-        <button class="link" id="none">Clear</button>
-      </div>
-    </div>
-
-    <div class="block">
-      <div class="block-t">Areas <button class="i" data-info="areas" aria-label="How areas are derived">i</button></div>
-      <div class="tbl-wrap">
-        <table class="tbl">
-          <thead><tr><th>Community</th><th>Sector</th><th>Places</th></tr></thead>
-          <tbody id="areas"></tbody>
-        </table>
-      </div>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div id="map"></div>
-    <div class="stats" id="stats"></div>
-    <div class="basemap-pick" id="basemaps"></div>
-    <div class="legend" id="legend"></div>
-    <div class="notice" id="notice"><b>Loading…</b></div>
-  </main>
+  </div>
+  <div class="legend" id="legend"></div>
 </div>
 
+<div id="map"></div>
+<div class="stats" id="stats"></div>
+
+<button class="ptog" id="ptog" title="Hide the panel">&rsaquo;</button>
+<div class="panel" id="panel">
+  <h4>Find a business</h4>
+  <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
+  <div class="hits" id="hits"></div>
+
+  <h4>Display</h4>
+  <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
+  <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
+
+  <h4>Emirate</h4>
+  <div class="msel" id="ems"></div>
+
+  <h4 id="bookh" style="display:none">Outstanding book <button class="i" id="ibook" title="Why">i</button></h4>
+  <div id="book" style="display:none"></div>
+
+  <h4>Owner (HubSpot)</h4>
+  <div class="msel" id="hsown"></div>
+
+  <h4 id="ownh" style="display:none">Closed by (admin app)</h4>
+  <div class="msel" id="own" style="display:none"></div>
+  <div class="muted" id="ownnote" style="display:none;margin-top:4px">Tick fewer than all and the map shows only funded clients, by who closed them.</div>
+
+  <h4>How exact is the pin?</h4>
+  <div class="msel" id="prec"></div>
+  <div class="muted" style="margin-top:4px">A solid dot with a white ring is a real street address. Faded, ringless pins are scattered inside the area or emirate we know the business is in &mdash; they are not the building.</div>
+
+  <h4>Categories</h4>
+  <div class="msel" id="cats"></div>
+
+  <div class="muted" id="locnote"></div>
+</div>
+
+<div class="note" id="note"></div>
+
 <dialog class="info" id="dlg">
-  <div class="info-h" id="dlg-h"></div>
-  <div class="info-b" id="dlg-b"></div>
-  <div class="info-f"><button class="btn" id="dlg-x">Close</button></div>
+  <div class="ih" id="dlgh"></div>
+  <div class="ib" id="dlgb"></div>
+  <div class="if"><button class="ibtn" id="dlgx">Close</button></div>
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>
 <script>
-(function () {
-  'use strict';
+// The pin data travels gzipped and base64-encoded (5.2 MB -> 1.6 MB, measured
+// 23 Sep 2026) and is unpacked on open by the browser's built-in
+// DecompressionStream - no library, identical output. Every current browser has
+// it; an old one gets a plain message instead of a blank map.
+var DATA_GZ = null;
+// Server build only: the same payload lives in data/map-page.json instead of in this
+// file. serve.js gzips it on the way out, so the wire cost matches the inlined build
+// while the page itself stays small enough to read and diff.
+var DATA_URL = "data/map-page.json";
+var DATA = null;
+// Expand the dictionary-encoded fields back to their real values, so every
+// other line below sees the same shape the Dubai build produced.
+function __expand(){
+  var D=DATA.dict||{}, C=DATA.companies, ks=Object.keys(D);
+  for(var i=0;i<C.length;i++){
+    var c=C[i];
+    for(var j=0;j<ks.length;j++){ var k=ks[j]; if(typeof c[k]==='number') c[k]=D[k][c[k]]; }
+    if(c.lc===undefined)c.lc=0; if(c.ad===undefined)c.ad=0;
+    if(c.af===undefined)c.af=0; if(c.d===undefined)c.d=0;
+  }
+}</script>
+<script>var TILES = {};</script>
+<script>
+function __main(){
+  var LAYERS = [{"key":"closed_won","label":"Closed won","color":"#0b8043","r":9},{"key":"in_process","label":"In process","color":"#f5a623","r":8},{"key":"closed_lost","label":"Closed lost","color":"#d93025","r":7},{"key":"crm","label":"On the CRM","color":"#2f6fd6","r":6}];
+  var CAT_COLOR = {"hospitality_fnb":"#e8590c","medical_healthcare":"#1098ad","marketing_advertising":"#c2255c","auto_automotive":"#2f9e44","contracting_fitout":"#6741d9","retail":"#b58900","manufacturing_trading":"#ae3ec9","it_software":"#0b7285","other":"#7a8699","blank":"#9aa4b2"};
+  var BY_KEY = {}; LAYERS.forEach(function(l){ BY_KEY[l.key]=l; });
 
-  var $ = function (id) { return document.getElementById(id); };
-  var fmt = function (n) { return n == null ? '--' : n.toLocaleString('en-US'); };
-  var esc = function (s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
-    });
-  };
-
-  // Category colours. Assigned in a fixed order and never recycled, so a
-  // category keeps its colour no matter which others are switched on.
-  //
-  // Validated 19 Sep 2026 against light and dark surfaces: lightness band,
-  // chroma floor, colour-vision separation and normal-vision separation all
-  // pass in both. The first set used grey for manufacturing and amber for
-  // retail and failed the chroma floor and the contrast check. Grey is not a
-  // hue; on a map it reads as "no category".
-  var CAT_COLOR = {
-    hospitality_fnb:       '#e8590c',
-    medical_healthcare:    '#1098ad',
-    marketing_advertising: '#c2255c',
-    auto_automotive:       '#2f9e44',
-    contracting_fitout:    '#6741d9',
-    retail:                '#b58900',
-    manufacturing_trading: '#ae3ec9'
-  };
-
-  // Two providers have been ruled out, both only visible by looking at the page:
-  //
-  // CARTO Voyager still serves tiles without a key, but stamps "API KEY REQUIRED"
-  // across every one. It fires tileload, not tileerror, so no automatic check
-  // would have caught it.
-  //
-  // tile.openstreetmap.org was the Streets layer until 8 Oct 2026, when it started
-  // returning 403 "Access blocked - App is not following the tile usage policy"
-  // (osm.wiki/Blocked). Those are volunteer-run servers and the policy forbids bulk
-  // or app-scale fetching; a map with ~18,000 markers that people pan around is
-  // exactly the load it is meant to keep off them. The block lands on the viewer's
-  // IP, so it follows the office network rather than the deployment, and switching
-  // providers is the fix rather than waiting it out.
-  //
-  // Esri's public basemaps carry no such restriction and need no key. Light Gray is
-  // the default because a muted basemap is the right one under this many pins.
-  //
-  // OpenStreetMap remains the source of the business DATA (ODbL) and is credited
-  // throughout the page - that is unaffected by where the tiles come from.
+  // The offline street map stops at zoom 15: the sharpest embedded tiles are z13,
+  // two levels of scaling is still a map, four is a blur - and approximate pins
+  // do not justify street-level zoom. The online base maps keep their own maximum.
+  // Source-record links. HubSpot portal 25308329. The admin app is a Flutter web
+  // app with hash routing; its bundle declares the route /clients/:clientId, and
+  // the sign-in page lands on /#/login - measured 22 Sep 2026 from the public
+  // front-end, no login needed.
+  var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
+  var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
   var BASEMAPS = [
-    { key: 'streets', label: 'Streets',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19, attribution: 'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors' },
-    { key: 'esri', label: 'Detailed',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19, attribution: 'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors' },
-    { key: 'satellite', label: 'Satellite',
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors' }
+    {k:'streets',label:'Streets',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'detailed',label:'Detailed',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'satellite',label:'Satellite',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
   ];
+  var EMBEDDED = false;
 
-  var UAE = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
-  var DUBAI = L.latLngBounds([24.79, 54.90], [25.34, 55.60]);
+  // Google Maps, by name: a text search for the company name plus the area and
+  // emirate we know. Tested 6 Oct 2026 on a 20-pin sample across every tier:
+  // this form opened the right listing every time. A search pinned to our own
+  // coordinates did not (it snapped to a different florist when our geocode
+  // was off), so coordinates are never passed. No API key, no cost.
+  function gmapsUrl(name,area,emirate){
+    if(!name) return null;   // a nameless record would search for the district alone
+    var q=[name, area, (emirate && emirate!=='UAE') ? emirate : null, 'UAE'].filter(Boolean).join(', ');
+    return 'https://www.google.com/maps/search/?api=1&amp;hl=en&amp;query='+encodeURIComponent(q);
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];});}
+  function fmt(n){return (n==null?0:n).toLocaleString('en-US');}
+  function aed(n){
+    if(n==null) return null;
+    if(n>=1e6) return 'AED ' + (n/1e6).toFixed(n>=1e7?0:1) + 'M';
+    if(n>=1e3) return 'AED ' + Math.round(n/1e3) + 'K';
+    return 'AED ' + fmt(n);
+  }
 
-  var map = L.map('map', {
-    zoomControl: false, attributionControl: true, maxBounds: UAE.pad(0.4), minZoom: 7
-  }).setView([25.12, 55.25], 10);
+  // One shared canvas renderer for every pin. padding 0.5 pre-draws half a
+  // viewport beyond each edge, so a pan of up to half a screen needs no redraw
+  // at all (Leaflet's default 0.1 redraws almost every pan with 33k pins).
+  var pinRenderer = L.canvas({padding:0.5, tolerance:3});
+  var map = L.map('map',{zoomControl:true,preferCanvas:true,renderer:pinRenderer,maxBoundsViscosity:1.0}).setView([25.05,55.45],9);
+  window.__map = map;   // for in-browser checks only (redraw timing, layer counts)
+  // Locked to the UAE (23 Sep 2026): the view cannot leave the country, and the
+  // shallowest zoom is the one that fits the whole country on this screen - so
+  // there is only ever "zoom in". Re-computed when the window is resized.
+  var UAE_BOUNDS=L.latLngBounds([22.6,51.4],[26.5,56.6]);
+  map.setMaxBounds(UAE_BOUNDS.pad(0.03));
+  function lockZoom(){ var sz=map.getSize(); if(sz.x>0&&sz.y>0){ var z=map.getBoundsZoom(UAE_BOUNDS); if(isFinite(z)) map.setMinZoom(z); } }
+  map.on('resize',lockZoom);
+  L.control.scale({imperial:false}).addTo(map);
 
-  // Bottom right, clear of the stat cards top-left and the basemap switcher
-  // top-right. The default top-left position sat on top of the first stat card.
-  L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-  // Re-fit once the container has its real size; a fitBounds before layout
-  // settles lands on the whole country instead of the city.
-  setTimeout(function () { map.invalidateSize(); map.fitBounds(DUBAI, { padding: [20, 20] }); }, 250);
-
-  var tileState = {}, current = null, layerObj = {};
-
-  function makeTiles(b) {
-    var opts = { maxZoom: b.maxZoom, attribution: b.attribution };
-    if (b.subdomains) opts.subdomains = b.subdomains;
-    var t = L.tileLayer(b.url, opts), ok = 0, bad = 0;
-    t.on('tileload', function () { ok++; if (tileState[b.key] !== 'ok') { tileState[b.key] = 'ok'; paintBasemaps(); } });
-    t.on('tileerror', function () {
-      bad++;
-      if (ok === 0 && bad >= 5 && tileState[b.key] !== 'blocked') {
-        tileState[b.key] = 'blocked'; paintBasemaps();
-        if (current === b.key) nextBasemap();
+  // Embedded first; where no tile exists at this zoom, the nearest coarser
+  // embedded tile is scaled up rather than leaving grey (seen in Al Ain, 20 Sep
+  // 2026: only Dubai and Abu Dhabi city had deep tiles). Network last.
+  var EmbeddedTiles = L.TileLayer.extend({
+    createTile: function(c, done){
+      var k = c.z + '_' + c.x + '_' + c.y;
+      if (TILES[k]) return L.TileLayer.prototype.createTile.call(this, c, done);
+      var z = c.z, x = c.x, y = c.y, d = 0, pk = null;
+      while (z > 6) {
+        z--; x = Math.floor(x / 2); y = Math.floor(y / 2); d++;
+        if (TILES[z + '_' + x + '_' + y]) { pk = z + '_' + x + '_' + y; break; }
       }
+      if (!pk) return L.TileLayer.prototype.createTile.call(this, c, done);
+      var size = this.getTileSize(), tile = document.createElement('canvas');
+      tile.width = size.x; tile.height = size.y;
+      var img = new Image();
+      img.onload = function(){
+        var n = Math.pow(2, d), sw = img.width / n, sh = img.height / n;
+        var sx = (c.x - x * n) * sw, sy = (c.y - y * n) * sh;
+        var ctx = tile.getContext('2d'); ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size.x, size.y);
+        done(null, tile);
+      };
+      img.onerror = function(e){ done(e, tile); };
+      img.src = 'data:image/png;base64,' + TILES[pk];
+      return tile;
+    },
+    getTileUrl: function(c){
+      var k = c.z + '_' + c.x + '_' + c.y;
+      if (TILES[k]) return 'data:image/png;base64,' + TILES[k];
+      return L.TileLayer.prototype.getTileUrl.call(this, c);
+    }
+  });
+  var tileLayer=null,curBase=null;
+  function setBase(k){
+    if(curBase===k) return;
+    if(tileLayer) map.removeLayer(tileLayer);
+    var b=BASEMAPS.filter(function(x){return x.k===k;})[0];
+    // maxNativeZoom 13 is the sharpest embedded tile; upscaling beyond that is still
+    // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
+    tileLayer=((EMBEDDED&&b.k==='streets')
+                 ?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
+                 :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
+    tileLayer.bringToBack(); curBase=k;
+    Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
+      el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
+  }
+  setBase('streets');
+
+  var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
+  var catOn={}; DATA.target.forEach(function(c){catOn[c]=true;}); catOn.other=true; catOn.blank=true;
+  // Emirate filter, and a filter on HOW WELL a pin is located. The second one
+  // matters: switching off "emirate only" leaves just the pins whose position
+  // is actually meaningful, which is the honest view of the map.
+  var EMIRATES=Object.keys(DATA.stats.byEmirate||{}).filter(function(k){return k!=='unplaced'&&k!=='not UAE';});
+  var emOn={}; EMIRATES.forEach(function(e){emOn[e]=true;}); emOn.Unknown=true;
+  var PREC=[['exact','Exact building'],['area','Area or street'],['emirate','Emirate only'],['uae','UAE — emirate unknown']];
+  var precOn={exact:true,area:true,emirate:true,uae:true};
+  // Owner filters: key -> bool, filled on first render. Every key true = no filter.
+  var ownOn=null;     // commercial owner (admin app); key '__none' = funded, nobody assigned
+  var hsOwnOn=null;   // HubSpot owner; key '__none' = no owner
+  function allOn(m){ for(var k in m){ if(!m[k]) return false; } return true; }
+  var showLabels=false, sizeByValue=false;
+
+  function clusterIcon(bg){
+    return function(cl){
+      var n=cl.getChildCount(), s=n<10?32:n<100?38:46;
+      return L.divIcon({className:'',iconSize:[s,s],
+        html:'<div style="width:'+s+'px;height:'+s+'px;line-height:'+s+'px;border-radius:50%;background:'+bg+
+        ';color:#fff;text-align:center;border:2px solid rgba(255,255,255,.92);box-shadow:0 2px 6px rgba(0,0,0,.35);'+
+        'font-size:'+(n<100?12:11)+'px;font-weight:600">'+n+'</div>'});
+    };
+  }
+  // EVERY PIN IS DRAWN BY DEFAULT. Clustering was the reason this did not look
+  // like the Abu Dhabi demo: it replaces the coloured dots with big numbered
+  // bubbles until you zoom right in, which reads as a chart, not a map. Canvas
+  // rendering handles 3,000+ circle markers without it. Clustering stays as an
+  // opt-in for the 18,000-point universe layer, where raw dots do become a mess.
+  var crmPlain=L.layerGroup();
+  var crmCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
+    disableClusteringAtZoom:16,iconCreateFunction:clusterIcon('rgba(26,115,232,.86)')});
+  var uniPlain=L.layerGroup();
+  var uniCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:60,showCoverageOnHover:false,
+    disableClusteringAtZoom:17,iconCreateFunction:clusterIcon('rgba(0,150,148,.80)')});
+  var clusterOn=false;
+  function crmGroupNow(){ return clusterOn?crmCluster:crmPlain; }
+  function uniGroupNow(){ return clusterOn?uniCluster:uniPlain; }
+
+  var STAGE={closed_won:'Closed won',in_process:'In process',closed_lost:'Closed lost',crm:'On the CRM'};
+  var markerIndex=[];
+
+  function radiusFor(c,base){
+    if(!sizeByValue||!c.m) return base;
+    return Math.max(base, Math.min(20, 4 + Math.sqrt(c.m)/220));
+  }
+
+  function popupFor(c,color){
+    var kv='';
+    if(c.ga) kv+='<dt>Address</dt><dd>'+esc(c.ga)+'</dd>';
+    if(c.m) kv+='<dt>Deal value</dt><dd>'+esc(aed(c.m))+'</dd>';
+    if(c.s) kv+='<dt>Stage</dt><dd>'+esc(c.s)+'</dd>';
+    if(c.o) kv+='<dt>Owner</dt><dd>'+esc(c.o)+'</dd>';
+    if(c.cd) kv+='<dt>'+(c.ao?'Last disbursed':'Close date')+'</dt><dd>'+esc(c.cd)+'</dd>';
+    if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
+    if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
+    if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
+    if(c.co) kv+='<dt>Closed by</dt><dd>'+esc(c.co)+' <span style="color:#70707B">(admin app)</span></dd>';
+    var dis = c.hs ? '<div class="pnote" style="border-top-color:#FDB022;color:#FDB022">HubSpot still has this as <b>'+esc(STAGE[c.hs])+'</b>. The admin app is authoritative for won and lost, so the map follows it.</div>' : '';
+    var loc = (c.h==='exact'||c.h==='geocoded')
+      ? '<b>Exact.</b> Street address geocoded against OpenStreetMap.'
+      : c.h==='named'
+      ? 'Located by matching the business name to an OpenStreetMap record.'
+      : c.h==='area'
+      ? (c.a
+          ? '<b>Approximate &mdash; area only.</b> No exact street address on record. This pin is placed at a random point inside <b>'+esc(c.a)+'</b>, which is where we know the business is. It is <i>not</i> the building.'
+          : '<b>Approximate &mdash; street only.</b> The address on record is a road name, not a building. This pin is spread around a point on that road in <b>'+esc(c.e||'')+'</b>. It is <i>not</i> the building.')
+      : c.h==='uae'
+      ? '<b>UAE, emirate unknown.</b> This company&rsquo;s own record says its country is the United Arab Emirates, but nothing names an emirate — not its record, not its contacts, not its website. The pin sits at a random populated point in the country. It confirms the UAE and tells you <i>nothing</i> below that.'
+      : c.h==='emirate'
+      ? '<b>Approximate &mdash; emirate only.</b> No street address and no area on record. This pin is placed at a random point inside <b>'+esc(c.e||'')+'</b>. All it tells you is the emirate.'
+      : 'No usable location on record.';
+    if(c.rt) loc += '<br><span class="muted">Placed via: '+esc(c.rt)+'</span>';
+    if(c.cf) loc += '<div class="pnote" style="border-top-color:#FDB022;color:#FDB022"><b>Record disagrees with itself.</b> The CRM city says <b>'+esc(c.e||'the UAE')+'</b> but the ZIP code or state on the same record points abroad, so the street address was not used. Fix the record in HubSpot and the pin sharpens on the next refresh.</div>';
+    var gm=gmapsUrl(c.n,c.a,c.e);
+    return '<div class="pn">'+esc(c.n)+'</div>'+
+      '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
+      '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
+      (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
+      (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
+      '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
+      '<div class="pid">'+
+        [ c.ao ? null : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a>',
+          (c.aid && ADMIN_CLIENT_URL) ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(c.aid))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a>' : null,
+          gm ? '<a href="'+gm+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a>' : null
+        ].filter(Boolean).join(' &middot; ')+
+        (c.ao ? ' <span>no HubSpot record</span>' : '')+
+      '</div></div>';
+  }
+
+  function drawCRM(){
+    var ownAll=!ownOn||allOn(ownOn);
+    crmPlain.clearLayers(); crmCluster.clearLayers(); markerIndex=[];
+    var target=crmGroupNow(), other=clusterOn?crmPlain:crmCluster;
+    if(map.hasLayer(other)) map.removeLayer(other);
+    var shown=0;
+    // Draw order matters now there are 27,821 grey CRM pins against ~1,400
+    // coloured ones. In record order the grey layer lands on top and buries
+    // every won, in-process and lost deal - the pins anyone actually opens this
+    // map for. So the quiet layer is drawn first and the loud ones last.
+    if(!DATA._order){
+      var rank={crm:0,closed_lost:1,in_process:2,closed_won:3};
+      DATA._order=DATA.companies.slice().sort(function(a,b){
+        return (rank[a.l]||0)-(rank[b.l]||0);
+      });
+    }
+    DATA._order.forEach(function(c){
+      if(!on[c.l]||!catOn[c.c]) return;
+      if(!emOn[c.e||'Unknown']) return;
+      if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
+      if(hsOwnOn && !hsOwnOn[c.o||'__none']) return;
+      if(ownOn && !ownAll){
+        // any commercial owner deselected: only funded pins whose closer is ticked
+        if(!c.af) return;
+        var cos=c.co?c.co.split(', '):['__none'], hit=false;
+        for(var q=0;q<cos.length;q++){ if(ownOn[cos[q]]){ hit=true; break; } }
+        if(!hit) return;
+      }
+      var L0=BY_KEY[c.l]; if(!L0) return;
+      shown++;
+      var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : L0.color;   // purple: Risk rejection, distinct from in-process amber
+      var quiet = (c.l==='crm');
+      // A pin's STRENGTH encodes how well we know where it is. A solid dot with
+      // a white ring is a real geocoded address. Anything scattered inside an
+      // area or an emirate is drawn weaker and ringless, so a full-looking map
+      // can never be mistaken for a precise one.
+      var area = (c.h==='area'), vague = (c.h==='emirate'||c.h==='uae'), untraced = (c.h==='uae');
+      // Approximate pins must be TELLABLE APART from exact ones without
+      // becoming invisible. A first attempt dropped them to 20% opacity with no
+      // stroke and they vanished entirely at country zoom, which is worse than
+      // not distinguishing them at all - the map just looked empty.
+      // An exact pin keeps the white ring; approximate pins lose the ring and
+      // are softened, but stay clearly readable.
+      var fo = quiet?.8:.95;
+      if(area) fo*=.95; if(vague) fo*=.85; if(untraced) fo*=.75;
+      var m=L.circleMarker([c.y,c.x],{
+        radius: radiusFor(c,quiet?4:L0.r) * (untraced?.7:(vague?.85:(area?.92:1))),
+        color: (area||vague)?color:'#fff',
+        weight: vague?0.5:(area?1:(quiet?1:2)),
+        opacity: (area||vague)?.85:1,
+        fillColor:color, fillOpacity:fo});
+      m.bindPopup(popupFor(c,color));
+      if(showLabels) m.bindTooltip(c.n,{permanent:true,direction:'right',offset:[6,0],className:'lbl'});
+      else m.bindTooltip(c.n,{direction:'top',className:'lbl'});
+      target.addLayer(m);
+      markerIndex.push({c:c,m:m});
     });
-    return t;
+    if(!map.hasLayer(target)) map.addLayer(target);
+    return shown;
   }
-  function useBasemap(key) {
-    if (current === key) return;
-    if (current && layerObj[current]) map.removeLayer(layerObj[current]);
-    current = key;
-    var b = BASEMAPS.filter(function (x) { return x.key === key; })[0];
-    if (!layerObj[key]) layerObj[key] = makeTiles(b);
-    layerObj[key].addTo(map);
-    if (layerObj[key].bringToBack) layerObj[key].bringToBack();
-    paintBasemaps();
+
+  function drawUniverse(){
+    uniPlain.clearLayers(); uniCluster.clearLayers();
+    if(!on.universe){ if(map.hasLayer(uniPlain)) map.removeLayer(uniPlain); if(map.hasLayer(uniCluster)) map.removeLayer(uniCluster); return; }
+    var utarget=uniGroupNow(), uother=clusterOn?uniPlain:uniCluster;
+    if(map.hasLayer(uother)) map.removeLayer(uother);
+    DATA.universe.forEach(function(p){
+      if(!catOn[p.c]) return;
+      if(p.e && !emOn[p.e]) return;
+      var m=L.circleMarker([p.y,p.x],{radius:3.5,color:'#fff',weight:1,opacity:.9,
+        fillColor:CAT_COLOR[p.c]||'#009694',fillOpacity:.85});
+      m.bindPopup('<div class="pn">'+esc(p.n)+'</div><div class="pi">'+esc(DATA.categories[p.c]||p.c)+
+        ' &middot; '+esc(String(p.k).replace(/_/g,' '))+'</div>'+
+        '<div class="pnote">Market universe, from OpenStreetMap'+(p.e?' &middot; '+esc(p.e):'')+'. Not a CRM record.'+
+        (gmapsUrl(p.n,null,p.e)?'<div class="pid"><a href="'+gmapsUrl(p.n,null,p.e)+'" target="_blank" rel="noopener">Find on Google Maps &rarr;</a></div>':'')+'</div>');
+      if(showLabels) m.bindTooltip(p.n,{permanent:true,direction:'right',offset:[5,0],className:'lbl'});
+      else m.bindTooltip(p.n,{direction:'top',className:'lbl'});
+      utarget.addLayer(m);
+    });
+    if(!map.hasLayer(utarget)) map.addLayer(utarget);
   }
-  function nextBasemap() {
-    for (var i = 0; i < BASEMAPS.length; i++) {
-      if (tileState[BASEMAPS[i].key] !== 'blocked') { useBasemap(BASEMAPS[i].key); return; }
+
+  function renderLegend(){
+    var rows=LAYERS.map(function(l){
+      return '<label class="lg'+(on[l.key]?'':' off')+'" data-k="'+l.key+'">'+
+        '<span class="dot" style="background:'+l.color+'"></span>'+l.label+
+        ' <span class="n">'+fmt(DATA.stats.crm.byLayer[l.key]||0)+'</span></label>';});
+    rows.push('<label class="lg'+(on.universe?'':' off')+'" data-k="universe">'+
+      '<span class="dot" style="background:#009694"></span>Market universe <span class="n">'+
+      fmt(DATA.universe.length)+'</span></label>');
+    document.getElementById('legend').innerHTML=rows.join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.lg'),function(el){
+      el.onclick=function(){ on[el.getAttribute('data-k')]=!on[el.getAttribute('data-k')]; renderLegend(); redraw(); };});
+  }
+
+  // One dropdown per filter (23 Sep 2026, replacing rows of toggle chips): "All"
+  // or exactly one value. Simpler to read, and it leaves room on a small screen.
+  // A multi-select checklist (24 Sep 2026, replacing single-choice dropdowns):
+  // summary button, expands in place; All / None; a find box for long lists.
+  // isOn(k) reads a key; setOne(k,bool) writes one; setAll(bool) writes every key.
+  var mselOpen=null;
+  function closeMsel(focusBtn){
+    if(!mselOpen) return;
+    var b=mselOpen.querySelector('.msel-btn');
+    mselOpen.classList.remove('open'); b.setAttribute('aria-expanded','false');
+    if(focusBtn) b.focus();
+    mselOpen=null;
+  }
+  document.addEventListener('click',function(e){ if(mselOpen && !mselOpen.contains(e.target)) closeMsel(false); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && mselOpen) closeMsel(true); });
+  // Rebuilding 33k markers costs ~0.3 s; rapid ticks coalesce into one rebuild.
+  var redrawT=null;
+  function scheduleRedraw(){ clearTimeout(redrawT); redrawT=setTimeout(function(){ redrawT=null; redraw(); },180); }
+  function fillSelect(id, allLabel, items, isOn, setOne, setAll, tail){
+    var el=document.getElementById(id);
+    var wasOpen=el.classList.contains('open');
+    var h=el.previousElementSibling; if(h && h.tagName==='H4' && !h.id) h.id=id+'-h';
+    function summary(){
+      var onItems=items.filter(function(it){return isOn(it.k);});
+      if(onItems.length===items.length) return allLabel;
+      var t=tail?tail():'';
+      if(!onItems.length) return 'None selected'+t;
+      if(onItems.length<=2) return onItems.map(function(it){return it.label;}).join(', ')+t;
+      return onItems.length+' of '+items.length+' selected'+t;
+    }
+    el.innerHTML='<button type="button" class="msel-btn" aria-haspopup="true" aria-controls="'+id+'-pop"'+(h&&h.id?' aria-labelledby="'+h.id+' '+id+'-sum"':'')+' aria-expanded="'+(wasOpen?'true':'false')+'">'+
+        '<span class="sum" id="'+id+'-sum">'+esc(summary())+'</span><span class="chev" aria-hidden="true">&#9660;</span></button>'+
+      '<div class="msel-pop" id="'+id+'-pop"><div class="msel-tools"><button type="button" data-a="all">All</button><button type="button" data-a="none">None</button>'+
+        (items.length>10?'<input class="msel-find" type="search" placeholder="Find…" aria-label="Find">':'')+'</div>'+
+      '<div class="msel-list" role="group"'+(h&&h.id?' aria-labelledby="'+h.id+'"':'')+'>'+items.map(function(it,i){
+        return '<label class="msel-row"><input type="checkbox" data-i="'+i+'"'+(isOn(it.k)?' checked':'')+'>'+
+          '<span class="t">'+esc(it.label)+'</span><span class="n">'+fmt(it.n)+'</span></label>';
+      }).join('')+'</div></div>';
+    var btn=el.querySelector('.msel-btn'), sum=btn.querySelector('.sum'), boxes=el.querySelectorAll('input[type=checkbox]');
+    function refresh(){
+      sum.textContent=summary();
+      for(var i=0;i<boxes.length;i++) boxes[i].checked=isOn(items[i].k);
+      scheduleRedraw();
+    }
+    btn.onclick=function(e){
+      e.stopPropagation();
+      if(mselOpen===el){ closeMsel(false); return; }
+      closeMsel(false);
+      el.classList.add('open'); mselOpen=el; btn.setAttribute('aria-expanded','true');
+      // the list expands in place inside a scrolling panel: bring it into view, keeping the button visible
+      var pop=el.querySelector('.msel-pop'), panel=document.getElementById('panel');
+      if(panel){ var pr=panel.getBoundingClientRect(), over=pop.getBoundingClientRect().bottom-pr.bottom;
+        if(over>0) panel.scrollTop+=Math.min(over+8, Math.max(0, el.getBoundingClientRect().top-pr.top-8)); }
+      var fnd=el.querySelector('.msel-find'); if(fnd) fnd.focus({preventScroll:true});
+    };
+    el.querySelector('.msel-pop').onclick=function(e){ e.stopPropagation(); };
+    for(var i=0;i<boxes.length;i++){
+      boxes[i].onchange=(function(i){ return function(){ setOne(items[i].k, boxes[i].checked); refresh(); }; })(i);
+    }
+    var find=el.querySelector('.msel-find'), rows=el.querySelectorAll('.msel-row');
+    el.querySelectorAll('.msel-tools button').forEach(function(b){
+      b.onclick=function(e){
+        e.stopPropagation();
+        var v=b.getAttribute('data-a')==='all';
+        if(find && find.value){ for(var i=0;i<rows.length;i++) if(!rows[i].classList.contains('hide')) setOne(items[i].k,v); }
+        else setAll(v);
+        refresh();
+      };
+    });
+    if(find){
+      find.oninput=function(){
+        var q=find.value.toLowerCase();
+        for(var i=0;i<rows.length;i++) rows[i].classList.toggle('hide', !!q && items[i].label.toLowerCase().indexOf(q)<0);
+      };
+      // Escape clears a query first; only an empty box lets Escape close the list
+      find.onkeydown=function(e){ if(e.key==='Escape' && find.value){ e.stopPropagation(); find.value=''; find.oninput(); } };
     }
   }
-  function paintBasemaps() {
-    var host = $('basemaps'); host.innerHTML = '';
-    BASEMAPS.forEach(function (b) {
-      var btn = document.createElement('button');
-      btn.className = 'bm'; btn.type = 'button'; btn.textContent = b.label;
-      btn.setAttribute('aria-pressed', current === b.key ? 'true' : 'false');
-      if (tileState[b.key] === 'blocked') { btn.disabled = true; btn.title = 'Blocked by the viewer'; }
-      btn.onclick = function () { useBasemap(b.key); };
-      host.appendChild(btn);
-    });
+  function renderCats(){
+    var keys=DATA.target.concat(['other','blank']), bc=DATA.stats.crm.byCategory||{};
+    fillSelect('cats','All categories',
+      keys.map(function(k){return {k:k,label:DATA.categories[k]||k,n:bc[k]||0};}),
+      function(k){return !!catOn[k];},
+      function(k,v){ catOn[k]=v; },
+      function(v){ keys.forEach(function(k){ catOn[k]=v; }); });
+  }
+  function renderEms(){
+    var be=DATA.stats.byEmirate||{};
+    fillSelect('ems','All emirates',
+      EMIRATES.map(function(k){return {k:k,label:k,n:be[k]?be[k].total:0};}),
+      function(k){return !!emOn[k];},
+      function(k,v){
+        emOn[k]=v;
+        // pins with no emirate are filed under Unknown; they belong to the "UAE, emirate unknown" row
+        if(k==='UAE, emirate unknown') emOn.Unknown=v;
+      },
+      function(v){ EMIRATES.forEach(function(k){ emOn[k]=v; }); emOn.Unknown=v; });
+  }
+  function renderHsOwn(){
+    var counts={}, none=0;
+    DATA.companies.forEach(function(c){ if(c.o) counts[c.o]=(counts[c.o]||0)+1; else none++; });
+    var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
+    if(none) items.push({k:'__none',label:'No owner',n:none});
+    if(!hsOwnOn){ hsOwnOn={}; items.forEach(function(it){ hsOwnOn[it.k]=true; }); }
+    fillSelect('hsown','All owners',items,
+      function(k){return !!hsOwnOn[k];},
+      function(k,v){ hsOwnOn[k]=v; },
+      function(v){ items.forEach(function(it){ hsOwnOn[it.k]=v; }); });
+  }
+  function renderOwn(){
+    var counts={}, none=0;
+    DATA.companies.forEach(function(c){ if(!c.af) return; if(!c.co){ none++; return; } c.co.split(', ').forEach(function(o){ counts[o]=(counts[o]||0)+1; }); });
+    var names=Object.keys(counts).sort(function(a,b){return counts[b]-counts[a];});
+    if(!names.length) return;
+    document.getElementById('ownh').style.display=''; document.getElementById('own').style.display=''; document.getElementById('ownnote').style.display='';
+    var items=names.map(function(n){return {k:n,label:n,n:counts[n]};});
+    if(none) items.push({k:'__none',label:'Funded, nobody assigned',n:none});
+    if(!ownOn){ ownOn={}; items.forEach(function(it){ ownOn[it.k]=true; }); }
+    fillSelect('own','All funded clients, any owner',items,
+      function(k){return !!ownOn[k];},
+      function(k,v){ ownOn[k]=v; },
+      function(v){ items.forEach(function(it){ ownOn[it.k]=v; }); },
+      function(){ return ' · funded only'; });   // any closer unticked = only funded pins are drawn
+  }
+  function renderPrec(){
+    var bp=DATA.stats.byPlacement||{};
+    fillSelect('prec','All pins',
+      PREC.map(function(p){return {k:p[0],label:p[1],n:bp[p[0]]||0};}),
+      function(k){return !!precOn[k];},
+      function(k,v){ precOn[k]=v; },
+      function(v){ PREC.forEach(function(p){ precOn[p[0]]=v; }); });
   }
 
-  var META = null, COMM = null, UNI = null;
-  var uniData = {};                 // category key -> {places:[...]}
-  var selected = {}, layerOn = { universe: true };
-  var commLayer = L.layerGroup();
-  var uniCluster = null;
+  var INFO={
+    placement:{h:'How pins are placed',b:function(){var b=DATA.stats.byPlacement||{};var s=DATA.stats;return ''+
+      '<dl><dt>The number</dt><dd><b>'+fmt(s.drawn)+'</b> of '+fmt(s.total)+' companies are drawn. '+fmt(b.notdrawn||0)+' are counted but not drawn.</dd>'+
+      '<dt>How a pin is placed</dt><dd><code>1 street address  -> exact point   '+fmt(b.exact||0)+'\n2 known area      -> inside area   '+fmt(b.area||0)+'\n3 emirate only    -> inside emirate '+fmt(b.emirate||0)+'\n4 nothing usable  -> not drawn    '+fmt(b.notdrawn||0)+'</code></dd>'+
+      '<dt>Why this way</dt><dd>A company we know is in Al Quoz but have no address for is drawn <i>inside Al Quoz</i>, at a point chosen from its own record id so it never moves between rebuilds. The place is real and measured; only the exact spot within it is not. Nothing is ever drawn in a place we did not verify.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Reading a faded pin as a real address. Only '+fmt(b.exact||0)+' pins are true geocoded addresses &mdash; switch off the other precision filters to see just those. An emirate-only pin tells you the emirate and nothing more.</dd></dl>';}},
 
-  var LAYERS = [
-    { key: 'universe',    label: 'Market universe', color: 'var(--l-universe)' },
-    { key: 'crm',         label: 'On the CRM',      color: 'var(--l-crm)' },
-    { key: 'in_process',  label: 'In process',      color: 'var(--l-process)' },
-    { key: 'closed_lost', label: 'Closed lost',     color: 'var(--l-lost-sales)' },
-    { key: 'closed_won',  label: 'Closed won',      color: 'var(--l-won)' }
-  ];
+    book:{h:'Outstanding book, by emirate',b:function(){var b=DATA.stats.book;if(!b)return '';return ''+
+      '<dl><dt>What it counts</dt><dd>The amount funded clients currently owe FlapKap &mdash; the open principal, not what was disbursed and not fees &mdash; added up by the emirate each client sits in.</dd>'+
+      '<dt>Formula</dt><dd><code>for each funded client (admin.financingStatus = REFINANCING):<br>&nbsp;&nbsp;outstanding = latest open amount from the admin app<br>book[emirate] = sum of outstanding for clients whose pin is in that emirate</code></dd>'+
+      '<dt>Why this way</dt><dd>You asked for the book at emirate level, for the whole UAE. Balances are the most sensitive figure in the system, so they are added up <i>before</i> anything reaches this page: no single merchant’s balance exists in it. Emirates with fewer than '+b.minClients+' funded clients are merged into one row, because a total over two or three clients can be read back to one of them.</dd>'+
+      '<dt>Coverage</dt><dd>'+fmt(b.clientsWithBalance)+' funded clients have a balance and a pin; '+fmt(b.clientsNoBalance)+' returned no balance; '+fmt(b.clientsNotOnMap)+' are outside the UAE and excluded. Balances as of '+esc(b.asOf||'the pull date')+'.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Balances move daily; this is a snapshot. The row &ldquo;UAE, emirate unknown&rdquo; is real money that no source could place in an emirate &mdash; do not spread it across the others. Egyptian merchants are not in any row.</dd></dl>';}},
+    scope:{h:'What this map is NOT showing',b:function(){var s=DATA.stats.crmScope;if(!s)return '';return ''+
+      '<dl><dt>The whole CRM, split three ways</dt><dd><code>says United Arab Emirates  '+fmt(s.uaeCountry)+'\nsays somewhere else       '+fmt(s.elsewhere)+'\nsays nothing at all       '+fmt(s.noCountry)+'\n                        --------\ntotal in HubSpot          '+fmt(s.total)+'</code></dd>'+
+      '<dt>This map shows the first group</dt><dd><b>'+fmt(s.onMap)+'</b> companies. The '+fmt(s.elsewhere)+' that name another country are out of scope &mdash; this is a UAE map, and a company in Philadelphia or Cairo is not the market.</dd>'+
+      '<dt>The ones nobody can place</dt><dd><b>'+fmt(s.noLocationAtAll)+'</b> companies said <i>nothing</i> about where they are &mdash; no city, no country, no region, no address, no postcode. Since then <b>'+fmt(s.noLocationDrawn||0)+'</b> of them have been placed from the address on their own website, their phone area code, a .ae domain or a contact, and are on the map. <b>'+fmt((s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll))+'</b> still cannot be placed anywhere; they are not on this map and are not counted as UAE, because a company nobody can place could be anywhere.</dd>'+
+      '<dt>Why this matters</dt><dd>'+fmt((s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll))+' companies &mdash; '+Math.round(100*(s.noLocationStillUnknown!=null?s.noLocationStillUnknown:s.noLocationAtAll)/(s.total||47516))+'% of the CRM &mdash; are still in the dark. If even half of them are Emirati, this map is missing thousands of real UAE companies, not because they could not be placed but because nobody filled in where they are. That is a CRM data-quality item, not a map item.</dd></dl>';}},
 
-  function setNotice(title, body, ok) {
-    var n = $('notice');
-    n.className = 'notice' + (ok ? ' ok' : '');
-    n.innerHTML = '<b>' + esc(title) + '</b><br>' + esc(body);
-  }
+    closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
+      '<dt>Formula</dt><dd><code>admin.financingStatus = REFINANCING\n  OR HubSpot stage = Money Disbursed\n  OR HubSpot lifecyclestage = customer</code></dd>'+
+      '<dt>Why this way</dt><dd>You said the admin app is more reliable than HubSpot for won and lost, so it overrides the deal stage. '+fmt(s.adminOverrode||0)+' companies were reclassified by it.</dd>'+
+      '<dt>Funded clients on the map</dt><dd>The admin app holds <b>'+fmt((DATA.stats.fundedScope||{}).total||372)+'</b> funded clients; <b>'+fmt((DATA.stats.fundedScope||{}).foreign||0)+'</b> are Egyptian merchants and outside a UAE map, leaving <b>'+fmt((DATA.stats.fundedScope||{}).uae||372)+'</b>. <b>'+fmt(DATA.stats.fundedOnMap||0)+'</b> pins carry the funded flag: '+fmt(DATA.stats.adminOnlyFunded||0)+' exist only in the admin app &mdash; HubSpot has no record of them &mdash; and are placed by their registered address or the emirate their trade licence was issued in (DET-Dubai, EDD-Sharjah, ADDED&hellip;); the rest reached the map through a CRM company matched by name. Admin-only pins carry no deal value, so the AED figure covers only the '+fmt(((DATA.stats.money||{}).wonN||0)-((DATA.stats.money||{}).wonNoValue||0))+' funded clients that have a HubSpot deal.</dd>'+
+      '<dt>What would make it wrong</dt><dd>REFINANCING marks a client who is refinancing, so it catches those funded at least once. The admin app has no DISBURSED status. Read this as a floor, not a total.</dd></dl>';}},
 
-  function renderStamps() {
-    var s = META.snapshot;
-    $('stamps').innerHTML =
-      'CRM snapshot <b>' + esc(s.crm_pulled) + '</b><br>' +
-      'Map data <b>OpenStreetMap, ' + esc(UNI ? UNI._pulled : s.osm_pulled) + '</b><br>' +
-      'Admin app <b>' + (s.admin_pulled ? esc(s.admin_pulled) : 'not connected') + '</b>';
-  }
+    in_process:{h:'In process',b:function(){return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses with a live deal, not yet funded and not yet lost.</dd>'+
+      '<dt>Formula</dt><dd><code>deal (pipeline, stage id) maps to "open"\n  in lookups/stage-map.json\n  AND the company has no won or lost deal</code></dd>'+
+      '<dt>Why this way</dt><dd>Stage names in this portal do not match their ids. The id <b>closedwon</b> is labelled "Offer Sent" and <b>closedlost</b> is labelled "Signed". Every pipeline and stage id pair is mapped by hand rather than trusted.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Four stage labels exist under three or four different ids each. Grouping by label instead of id would silently merge them.</dd></dl>';}},
 
-  function universeCount() {
-    if (!UNI) return 0;
-    return Object.keys(UNI.categories).reduce(function (s, k) {
-      return s + (selected[k] ? (UNI.categories[k].places || 0) : 0);
-    }, 0);
-  }
+    closed_lost:{h:'Closed lost',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Businesses lost by sales, rejected by Risk, or closed in the admin app.</dd>'+
+      '<dt>Formula</dt><dd><code>admin.status IN (LOST_IN_ACQUISITION,\n    POST_ANALYSIS_REJECTION, AUTO_REJECTION, CLOSED)\n  OR deal stage maps to "lost_sales" or "lost_risk"</code></dd>'+
+      '<dt>Why this way</dt><dd>Same rule as won: the admin app wins. '+fmt(s.adminLost||0)+' of these come from the admin app rather than from HubSpot.</dd>'+
+      '<dt>What would make it wrong</dt><dd><b>Three different loss taxonomies sit in this one layer.</b> A merchant who went quiet, one rejected by Risk, and one lost before any analysis are not the same thing. Amber pins are Risk rejections; red are the rest.</dd></dl>';}},
 
-  function renderLayers() {
-    var host = $('layers'); host.innerHTML = '';
-    LAYERS.forEach(function (l) {
-      var info = META.layers[l.key] || { built: false };
-      var built = l.key === 'universe' ? !!UNI : !!info.built;
-      var lab = document.createElement('label');
-      lab.className = 'layer' + (built ? '' : ' off');
-      lab.style.setProperty('--dot', l.color);
-      var cb = document.createElement('input');
-      cb.type = 'checkbox'; cb.id = 'layer-' + l.key; cb.disabled = !built;
-      cb.checked = built && layerOn[l.key] !== false;
-      cb.onchange = function () { layerOn[l.key] = cb.checked; draw(); };
-      var sw = document.createElement('span'); sw.className = 'sw';
-      var nm = document.createElement('span'); nm.className = 'lname';
-      nm.innerHTML = '<span class="dot"></span>' + esc(l.label);
-      var ct = document.createElement('span'); ct.className = 'lcount';
-      ct.textContent = built ? (l.key === 'universe' ? fmt(universeCount()) : fmt(info.count)) : 'not pulled yet';
-      lab.appendChild(cb); lab.appendChild(sw); lab.appendChild(nm); lab.appendChild(ct);
-      host.appendChild(lab);
-    });
-  }
+    crm:{h:'On the CRM',b:function(){var s=DATA.stats.crm;return ''+
+      '<dl><dt>What it counts</dt><dd>Every company record pulled for this map.</dd>'+
+      '<dt>Formula</dt><dd><code>SELECT ... FROM COMPANY\nWHERE city LIKE &#39;%dubai%&#39;\n   OR associations.DEAL IS NOT NULL</code></dd>'+
+      '<dt>Why this way</dt><dd>City is the only location field HubSpot fills reliably. The deal clause adds every company that has a deal anywhere, so no won or lost business is missed because its city is blank.</dd>'+
+      '<dt>What would make it wrong</dt><dd>A company trading in Dubai but registered elsewhere, with no deal, is not here. '+fmt(s.byCategory.blank||0)+' of these have no industry at all.</dd></dl>';}},
 
-  function renderChips() {
-    var host = $('chips'); host.innerHTML = '';
-    META.categories.filter(function (c) { return c.target; }).forEach(function (c) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'chip'; b.id = 'chip-' + c.key;
-      b.style.setProperty('--cc', CAT_COLOR[c.key] || 'var(--accent)');
-      b.setAttribute('aria-pressed', selected[c.key] ? 'true' : 'false');
-      var n = UNI && UNI.categories[c.key] ? UNI.categories[c.key].places : c.companies;
-      b.innerHTML = esc(c.label) + ' <span class="n">' + fmt(n) + '</span>';
-      b.onclick = function () {
-        selected[c.key] = !selected[c.key];
-        b.setAttribute('aria-pressed', selected[c.key] ? 'true' : 'false');
-        draw();                       // categories never touch the layer toggles
-      };
-      host.appendChild(b);
-    });
-  }
-
-  function renderLegend() {
-    if (!UNI) { $('legend').hidden = true; return; }
-    $('legend').hidden = false;
-    $('legend').innerHTML = META.categories.filter(function (c) { return c.target && selected[c.key]; })
-      .map(function (c) {
-        var u = UNI.categories[c.key] || {};
-        return '<div class="legend-row"><i style="background:' + (CAT_COLOR[c.key] || '#888') + '"></i>' +
-               esc(c.label) + (u.credible === false ? ' <span style="opacity:.6">(thin)</span>' : '') + '</div>';
-      }).join('') || '<div class="legend-row">No categories selected</div>';
-  }
-
-  function renderStats() {
-    var picked = META.categories.filter(function (c) { return c.target && selected[c.key]; });
-    var crm = picked.reduce(function (s, c) { return s + c.companies; }, 0);
-    var cust = picked.reduce(function (s, c) { return s + c.customers; }, 0);
-    var rows = [
-      { n: fmt(universeCount()), l: 'Businesses on the map', info: 'universe', color: 'var(--l-universe)' },
-      { n: fmt(crm),  l: 'On the CRM', info: 'crm', color: 'var(--l-crm)' },
-      { n: fmt(cust), l: 'Customers',  info: 'won', color: 'var(--l-won)' }
-    ];
-    $('stats').innerHTML = rows.map(function (r) {
-      return '<div class="stat"><div class="n" style="color:' + r.color + '">' + r.n + '</div>' +
-             '<div class="l"><span>' + esc(r.l) + '</span>' +
-             '<button class="i" data-info="' + r.info + '" aria-label="How this is derived">i</button></div></div>';
-    }).join('');
-    wireInfo();
-  }
-
-  function renderAreas() {
-    var names = Object.keys(COMM.communities).sort();
-    $('areas').innerHTML = names.map(function (n) {
-      var c = COMM.communities[n];
-      return '<tr data-c="' + esc(n) + '"><td>' + esc(n) + '</td><td class="mono">' + esc(c.sector) +
-             '</td><td class="mono" data-n="' + esc(n) + '">--</td></tr>';
-    }).join('');
-    Array.prototype.forEach.call($('areas').querySelectorAll('tr'), function (tr) {
-      tr.onclick = function () {
-        var c = COMM.communities[tr.getAttribute('data-c')];
-        if (c) map.flyTo([c.lat, c.lng], 14, { duration: .6 });
-      };
-    });
-  }
-
-  // Count universe places per community by nearest centroid, so the area table
-  // ranks by something real rather than sitting empty.
-  function fillAreaCounts() {
-    var names = Object.keys(COMM.communities);
-    var pts = names.map(function (n) { return { n: n, lat: COMM.communities[n].lat, lng: COMM.communities[n].lng }; });
-    var tally = {};
-    Object.keys(uniData).forEach(function (k) {
-      if (!selected[k]) return;
-      uniData[k].places.forEach(function (p) {
-        var best = null, bd = Infinity;
-        for (var i = 0; i < pts.length; i++) {
-          var dy = pts[i].lat - p.y, dx = (pts[i].lng - p.x) * 0.9;
-          var d = dy * dy + dx * dx;
-          if (d < bd) { bd = d; best = pts[i].n; }
-        }
-        // ~4.5km cutoff; beyond that the nearest centroid is not a real answer
-        if (best && bd < 0.0016) tally[best] = (tally[best] || 0) + 1;
-      });
-    });
-    var rows = Array.prototype.slice.call($('areas').querySelectorAll('td[data-n]'));
-    rows.forEach(function (td) { td.textContent = fmt(tally[td.getAttribute('data-n')] || 0); });
-    // re-sort the table by count, descending
-    var tbody = $('areas');
-    var trs = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
-    trs.sort(function (a, b) {
-      return (tally[b.getAttribute('data-c')] || 0) - (tally[a.getAttribute('data-c')] || 0);
-    });
-    trs.forEach(function (tr) { tbody.appendChild(tr); });
-  }
-
-  function drawUniverse() {
-    if (uniCluster) { map.removeLayer(uniCluster); uniCluster = null; }
-    if (!UNI || layerOn.universe === false) return;
-
-    uniCluster = L.markerClusterGroup({
-      chunkedLoading: true, maxClusterRadius: 55,
-      spiderfyOnMaxZoom: true, showCoverageOnHover: false,
-      disableClusteringAtZoom: 17
-    });
-
-    Object.keys(uniData).forEach(function (k) {
-      if (!selected[k]) return;
-      var color = CAT_COLOR[k] || '#888';
-      var label = (META.categories.filter(function (c) { return c.key === k; })[0] || {}).label || k;
-      uniData[k].places.forEach(function (p) {
-        L.circleMarker([p.y, p.x], {
-          radius: 5, color: '#ffffff', weight: 1.5, opacity: .9,
-          fillColor: color, fillOpacity: .85
-        }).bindPopup(
-          '<div class="pop-name">' + esc(p.n) + '</div>' +
-          '<div class="pop-meta">' + esc(label) + ' &middot; ' + esc(String(p.k).replace(/_/g, ' ')) + '</div>' +
-          '<div class="pop-src">OpenStreetMap ' + esc(p.id) + '</div>'
-        ).addTo(uniCluster);
-      });
-    });
-    map.addLayer(uniCluster);
-  }
-
-  function draw() {
-    renderStats();
-    renderLegend();
-    renderLayers();
-    drawUniverse();
-    fillAreaCounts();
-  }
-
-  var INFO = {
-    layers: { h: 'The five layers', b: function () {
-      return '<dl>' + LAYERS.map(function (l) {
-        var i = META.layers[l.key] || {};
-        var note = (l.key === 'universe' && UNI)
-          ? 'Built. ' + fmt(Object.keys(UNI.categories).reduce(function (s, k) { return s + (UNI.categories[k].places || 0); }, 0)) +
-            ' named businesses in ' + esc(UNI._emirate) + ' from OpenStreetMap, pulled ' + esc(UNI._pulled) + '.'
-          : (i.note || '');
-        return '<dt>' + esc(l.label) + '</dt><dd>' + note + '</dd>';
-      }).join('') + '</dl>' +
-      '<dt>What would make this wrong</dt><dd>A layer switched on before its data is pulled would show ' +
-      'an empty map that looks like an answer. An unbuilt layer cannot be switched on.</dd>'; } },
-
-    universe: { h: 'Businesses on the map', b: function () {
-      if (!UNI) return 'Not pulled yet.';
-      var rows = Object.keys(UNI.categories).map(function (k) {
-        var c = UNI.categories[k];
-        return '<dt>' + esc(c.label) + '</dt><dd>' + fmt(c.places) + ' named places' +
-          (c.unnamed_dropped ? ', ' + fmt(c.unnamed_dropped) + ' unnamed features dropped' : '') +
-          (c.credible === false ? '. <b>Thin.</b> OpenStreetMap barely maps this category in the UAE, so it is shown but coverage must not be computed from it.' : '') +
-          '</dd>';
-      }).join('');
-      return '<dl><dt>Derivation</dt><dd>Every business OpenStreetMap holds inside the ' +
-      esc(UNI._emirate) + ' administrative boundary, pulled through the free Overpass API on ' +
-      esc(UNI._pulled) + '. The boundary relation is used rather than a bounding box, because a ' +
-      'box around Dubai clips into Sharjah.</dd>' +
-      '<dt>Only named places are shown</dt><dd>An unnamed feature is real but cannot be matched to a ' +
-      'CRM company, so it is counted and dropped rather than drawn as a business.</dd>' + rows +
-      '<dt>What would make this wrong</dt><dd>OpenStreetMap is volunteer-mapped. It is strong on ' +
-      'shops, restaurants, clinics and workshops, and weak on offices, so it undercounts every ' +
-      'category that trades from an office. It is a floor on the market, never a census.</dd></dl>'; } },
-
-    categories: { h: 'How a company gets a category', b: function () {
-      return '<dl><dt>On the CRM side</dt><dd>HubSpot’s <code>industry</code> picklist has 130 values ' +
-      'in Dubai. Each maps to one of seven buckets through <code>lookups/industry-map.json</code>, ' +
-      'applied after the query returns, never in SQL.</dd>' +
-      '<dt>On the map side</dt><dd>OpenStreetMap tags are mapped to the same seven buckets by ' +
-      '<code>scripts/pull-osm-universe.js</code>. The two sides are mapped separately, which is why ' +
-      'a coverage ratio between them carries both mappings’ errors.</dd>' +
-      '<dt>Retail</dt><dd>Split out of general trading on 19 Sep 2026: 7 Dubai customers and 895 ' +
-      'companies made it a real segment.</dd>' +
-      '<dt>What would make this wrong</dt><dd><b>2,635</b> Dubai companies have no industry at all and ' +
-      'sit outside all seven buckets; another <b>5,500</b> fall in Other. Fourteen picklist values are ' +
-      'genuinely ambiguous, Apparel and Design among them.</dd></dl>'; } },
-
-    crm: { h: 'On the CRM', b: function () {
-      var u = META.universe;
-      return '<dl><dt>Derivation</dt><dd>' + esc(u.definition) + '</dd>' +
-      '<dt>Reconciliation</dt><dd>' + esc(u.reconciliation) + '</dd>' +
-      '<dt>Not on the map yet</dt><dd>These companies are <b>counted, not placed</b>. Putting them on ' +
-      'the map needs the row-level HubSpot pull, which no connector in this session could reach. Only ' +
-      '<b>' + fmt(u.with_address) + '</b> of them hold a street address; the other <b>' +
-      fmt(u.with_city_only) + '</b> hold a city only and will sit on a community centroid or stay ' +
-      'unlocated. No coordinate is ever invented.</dd>' +
-      '<dt>What would make this wrong</dt><dd>The figure counts companies whose <code>city</code> says ' +
-      'Dubai. A company trading in Dubai but registered elsewhere is missing from it.</dd></dl>'; } },
-
-    won: { h: 'Customers', b: function () {
-      return '<dl><dt>Derivation</dt><dd>HubSpot companies in Dubai at lifecycle stage Customer, by ' +
-      'category.</dd>' +
-      '<dt>This is the cross-check, not the truth</dt><dd>HubSpot holds <b>106</b> Dubai customers ' +
-      'against roughly <b>8,400</b> clients in the FlapKap admin app. The admin app is primary for ' +
-      'anything involving money, and its connector is dead. Read 106 as a floor.</dd>' +
-      '<dt>What would make this wrong</dt><dd>The only link between the two systems is a hand-typed ' +
-      'field on the Deal object, missing on about 17% of deals.</dd></dl>'; } },
-
-    areas: { h: 'Areas', b: function () {
-      var missing = META.communities.without_centroid;
-      return '<dl><dt>Derivation</dt><dd><b>' + META.communities.defined + '</b> communities are defined ' +
-      'in <code>lookups/dubai-communities.json</code>. The count beside each is the number of universe ' +
-      'businesses whose nearest community centroid is that one, within about 4.5 km.</dd>' +
-      '<dt>Coordinates</dt><dd>Every centroid comes from OpenStreetMap through Nominatim and carries the ' +
-      'OSM id that produced it. Only place, boundary and landuse features are accepted: an earlier run ' +
-      'that took the first result gave Hatta a road 90 km from the town and Al Fahidi a shop.</dd>' +
-      '<dt>Not located</dt><dd><b>' + missing.length + '</b> communities have no usable centroid, so ' +
-      'nothing is ever assigned to them: ' + esc(missing.join(', ')) + '.</dd>' +
-      '<dt>What would make this wrong</dt><dd>Nearest-centroid is not the same as inside-the-boundary. ' +
-      'A business near the edge of two communities can be counted in the wrong one, and the ranking is ' +
-      'indicative rather than exact.</dd></dl>'; } }
+    pins:{h:'How every pin is placed',b:function(){var s=DATA.stats, b=s.byPlacement||{}, sc=s.crmScope||{};return ''+
+      '<dl><dt>The number</dt><dd><b>'+fmt(s.drawn||0)+'</b> companies are on the map. '+fmt(s.excludedNotUAE||0)+' name another country and are left off; '+fmt(sc.noLocationStillUnknown||0)+' say nothing about where they are and cannot be placed.</dd>'+
+      '<dt>How a pin is placed</dt><dd><code>1 street address, geocoded &rarr; solid pin, white ring &nbsp;'+fmt(b.exact||0)+'<br>2 area known &rarr; scattered inside that area &nbsp;'+fmt(b.area||0)+'<br>3 emirate known &rarr; scattered inside that emirate &nbsp;'+fmt(b.emirate||0)+'<br>4 UAE only &rarr; a populated point in the country &nbsp;'+fmt(b.uae||0)+'</code></dd>'+
+      '<dt>Where the evidence comes from</dt><dd>The company record itself first (city, region, address, then name), then the address it publishes on its own website, then its phone area code or .ae domain, then its contacts. A contact can name an emirate but never produces a street pin: only 53 contacts in the whole CRM carry an address. No phone number is stored anywhere; only the emirate its area code names.</dd>'+
+      '<dt>What would make it wrong</dt><dd>Reading a scattered pin as the building. Only the '+fmt(b.exact||0)+' ringed pins are real addresses; every other pin is inside the right place but at a chosen point, seeded from the record id so it never moves between rebuilds. No place is invented.</dd></dl>';}}
   };
 
-  function wireInfo() {
-    Array.prototype.forEach.call(document.querySelectorAll('.i'), function (b) {
-      b.onclick = function () {
-        var i = INFO[b.getAttribute('data-info')];
-        if (!i) return;
-        $('dlg-h').textContent = i.h;
-        $('dlg-b').innerHTML = i.b();
-        $('dlg').showModal();
-      };
-    });
+  function openInfo(k){
+    var i=INFO[k]; if(!i) return;
+    document.getElementById('dlgh').textContent=i.h;
+    document.getElementById('dlgb').innerHTML=i.b();
+    document.getElementById('dlg').showModal();
   }
-  $('dlg-x').onclick = function () { $('dlg').close(); };
+  document.getElementById('dlgx').onclick=function(){ document.getElementById('dlg').close(); };
 
-  function j(u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error(u + ' -> ' + r.status); return r.json(); }); }
+  function renderStats(){
+    var s=DATA.stats.crm;
+    var rows=[
+      {k:'closed_won',n:fmt(s.byLayer.closed_won||0),l:'Closed won',c:'#0b8043',a:aed(s.wonAmount)},
+      {k:'in_process',n:fmt(s.byLayer.in_process||0),l:'In process',c:'#f5a623',a:aed(s.pipelineAmount)},
+      {k:'closed_lost',n:fmt(s.byLayer.closed_lost||0),l:'Closed lost',c:'#d93025',a:aed(s.lostAmount)},
+      {k:'crm',n:fmt(s.total),l:'On the CRM',c:'#7d8894',a:null}
+    ];
+    // The number the user asked to have flagged: companies nothing places
+    // anywhere. Not UAE, not foreign - unknown. Shown beside the map's own
+    // totals so the 28,748 is never read as "all our companies".
+    var sc=DATA.stats.crmScope;
+    if(sc) rows.push({k:'scope',n:fmt(sc.noLocationStillUnknown!=null?sc.noLocationStillUnknown:sc.noLocationAtAll),l:'Location unknown',c:'#b06000',
+      a:'not on this map &middot; might be UAE'});
+    document.getElementById('stats').innerHTML=rows.map(function(r){
+      return '<div class="stat"><div class="num" style="color:'+r.c+'">'+r.n+'</div>'+
+        '<div class="lbl"><span>'+r.l+'</span><button class="i" data-i="'+r.k+'" title="How this is worked out">i</button></div>'+
+        (r.a?'<div class="amt">'+r.a+'</div>':'')+'</div>';}).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.stat .i'),function(el){
+      el.onclick=function(){ openInfo(el.getAttribute('data-i')); };});
+  }
 
-  Promise.all([j('data/meta.json'), j('data/communities.json')])
-    .then(function (res) {
-      META = res[0]; COMM = res[1];
-      META.categories.forEach(function (c) { if (c.target) selected[c.key] = true; });
-      renderStamps(); renderLayers(); renderChips(); renderAreas(); renderStats(); wireInfo();
-      nextBasemap();
-      return j('data/universe-dubai.json').catch(function () { return null; });
-    })
-    .then(function (u) {
-      if (!u) {
-        setNotice('Universe not built', 'data/universe-dubai.json is missing, so the map has no ' +
-          'businesses on it. Run scripts/pull-osm-universe.js.');
-        return;
-      }
-      UNI = u;
-      var keys = Object.keys(UNI.categories).filter(function (k) { return UNI.categories[k].file; });
-      return Promise.all(keys.map(function (k) {
-        return j('data/' + UNI.categories[k].file).then(function (d) { uniData[k] = d; })
-          .catch(function () { uniData[k] = { places: [] }; });
-      })).then(function () {
-        renderStamps();
-        renderChips();
-        draw();
-        var total = universeCount();
-        var thin = Object.keys(UNI.categories).filter(function (k) { return UNI.categories[k].credible === false; }).length;
-        setNotice(fmt(total) + ' real businesses on the map',
-          'Every pin is an OpenStreetMap record inside the ' + UNI._emirate + ' boundary, with its own ' +
-          'coordinates and its OSM id in the popup. Click a cluster to open it. The CRM, pipeline and ' +
-          'customer layers are counted but not placed: that needs the HubSpot row pull, which no ' +
-          'connector in this session could reach. ' + thin + ' categories are thin in OpenStreetMap and ' +
-          'are marked so in the legend.', true);
-      });
-    })
-    .catch(function (e) { setNotice('Could not load the data files', String(e && e.message ? e.message : e)); });
+  function redraw(){
+    var shown=drawCRM(); drawUniverse(); renderStats();
+    var s=DATA.stats, b=s.byPlacement||{}, sc=s.crmScope||{};
+    document.getElementById('locnote').innerHTML=
+      'Drawing <b>'+fmt(shown)+'</b> pins from the layers you have switched on. '+
+      '<b>'+fmt(s.drawn||0)+'</b> companies are on the map &mdash; '+
+      fmt(b.exact||0)+' at an exact street address, '+
+      fmt(b.area||0)+' inside a known area, '+
+      fmt(b.emirate||0)+' inside a known emirate, '+
+      fmt(b.uae||0)+' somewhere in the UAE. '+
+      fmt(s.excludedNotUAE||0)+' name another country and are left off; '+
+      fmt(sc.noLocationStillUnknown||0)+' say nothing about where they are. '+
+      '<button class="i" id="ipins" title="Why">i</button>';
+    var ip=document.getElementById('ipins'); if(ip) ip.onclick=function(){ openInfo('pins'); };
+  }
+
+  // search
+  document.getElementById('q').oninput=function(e){
+    var q=e.target.value.trim().toLowerCase();
+    var box=document.getElementById('hits');
+    if(q.length<2){ box.innerHTML=''; return; }
+    var hits=markerIndex.filter(function(x){return (x.c.n||'').toLowerCase().indexOf(q)>=0;}).slice(0,25);
+    box.innerHTML=hits.map(function(x,i){
+      return '<div class="hit" data-i="'+i+'">'+esc(x.c.n)+' <i>'+esc(STAGE[x.c.l])+'</i></div>';}).join('')
+      || '<div class="hit"><i>No pinned business matches</i></div>';
+    Array.prototype.forEach.call(box.querySelectorAll('.hit[data-i]'),function(el){
+      el.onclick=function(){
+        var h=hits[Number(el.getAttribute('data-i'))];
+        // Never past the layer maximum, and never an animated fly on a map whose
+        // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
+        var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
+        if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
+        if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
+        else h.m.openPopup();
+      };});
+  };
+
+  document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
+  document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
+
+  var s=DATA.stats.crm;
+  document.getElementById('sub').textContent =
+    'CRM snapshot '+DATA.pulled+' \u00b7 '+fmt(s.total)+' companies \u00b7 '+
+    fmt(DATA.stats.deals.total)+' deals \u00b7 '+fmt(DATA.universe.length)+' businesses from OpenStreetMap';
+
+  document.getElementById('note').innerHTML =
+    '<span class="x" onclick="this.parentNode.style.display=\'none\'">&times;</span>'+
+    '<b>Every pin is a real record.</b> Green is a funded client, amber an open deal, red a loss, '+
+    'purple a Risk rejection, blue a company on the CRM with no deal yet. The <b>On the CRM</b> layer is '+fmt(s.byLayer.crm||0)+' companies and '+
+    'starts switched off because it covers the city - click it in the legend to bring it in. '+
+    'Click any pin for its deal value, stage, '+
+    'owner and close date. '+fmt((DATA.stats.byPlacement||{}).exact||0)+' pins sit at a real geocoded street address and keep the white ring; '+
+    'every other pin is scattered inside the area or emirate the business is known to be in, and is drawn without it.';
+
+  var disN=DATA.companies.filter(function(c){return c.hs;}).length;
+  if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';
+  function renderBook(){
+    var b=DATA.stats.book; if(!b||!b.rows||!b.rows.length) return;
+    var h='<table style="width:100%;font-size:11.5px;border-collapse:collapse">';
+    b.rows.forEach(function(r){ h+='<tr><td style="padding:2px 0;color:#444">'+esc(r.emirate)+'</td><td style="text-align:right;color:#9a9a9a">'+fmt(r.clients)+'</td><td style="text-align:right;font-variant-numeric:tabular-nums;color:#111">'+esc(aed(r.outstanding))+'</td></tr>'; });
+    h+='<tr><td style="padding-top:4px;border-top:1px solid #eee;font-weight:600">Total</td><td style="text-align:right;border-top:1px solid #eee;color:#9a9a9a">'+fmt(b.clientsWithBalance)+'</td><td style="text-align:right;border-top:1px solid #eee;font-weight:600">'+esc(aed(b.total))+'</td></tr></table>';
+    h+='<div class="muted" style="margin-top:4px">Funded clients and what they currently owe, by emirate. As of '+esc(b.asOf||'the pull date')+'. Rows with fewer than '+b.minClients+' clients are merged.</div>';
+    document.getElementById('book').innerHTML=h;
+    document.getElementById('book').style.display='';
+    document.getElementById('bookh').style.display='';
+    var ib=document.getElementById('ibook'); if(ib) ib.onclick=function(){ openInfo('book'); };
+  }
+  // The panel hides behind a < / > handle; the map takes the space and re-measures itself.
+  document.getElementById('ptog').onclick=function(){
+    var p=document.getElementById('panel'), t=this, closed=p.classList.toggle('hidden');
+    t.classList.toggle('closed',closed); t.innerHTML=closed?'&lsaquo;':'&rsaquo;'; t.title=closed?'Show the panel':'Hide the panel';
+    setTimeout(function(){ map.invalidateSize(); lockZoom(); },50);
+  };
+  renderLegend(); renderCats(); renderEms(); renderPrec(); renderHsOwn(); renderOwn(); renderBook(); redraw();
+
+  // The container has no size until layout settles. Fitting before that lands on
+  // the whole world, which is what happened the first time.
+  function pct(arr,p){ var a=arr.slice().sort(function(x,y){return x-y;}); return a[Math.floor((a.length-1)*p)]; }
+  function fit(){
+    map.invalidateSize();
+    var lats=DATA.companies.map(function(c){return c.y;});
+    var lngs=DATA.companies.map(function(c){return c.x;});
+    if(!lats.length) return;
+    // Open on the whole country and lock the shallowest zoom there. fitBounds
+    // reads the container size, so it only runs when the container has one;
+    // a hidden tab gets the fixed country view instead and locks on resize.
+    var sz=map.getSize();
+    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS); lockZoom(); }
+    else map.setView([25.05,55.35], 8);
+  }
+  if(document.readyState==='complete') setTimeout(fit,60);
+  else window.addEventListener('load',function(){ setTimeout(fit,60); });
+}
+// Unpack the data, then run the page.
+(function(){
+  function fail(e){
+    document.body.innerHTML='<div style="padding:40px;font:15px -apple-system,Segoe UI,sans-serif;max-width:560px;line-height:1.5">'+
+      '<b>This map needs a current browser</b> - Chrome, Edge, Safari 16.4 or newer, Firefox 113 or newer.<br><br>'+
+      '<span style="color:#888">'+String(e&&e.message||e)+'</span></div>';
+  }
+  function start(t){ DATA=(typeof t==='string')?JSON.parse(t):t; __expand(); __main(); }
+  try{
+    if(DATA_URL){
+      // Server build: the server gzips this on the way out, so the bytes on the wire
+      // match the inlined build. A 401 here means the session expired - say so rather
+      // than letting it surface as a JSON parse error.
+      fetch(DATA_URL)
+        .then(function(r){
+          if(r.status===401) throw new Error('Your session expired. Reload the page and sign in again.');
+          if(!r.ok) throw new Error(DATA_URL+' -> '+r.status);
+          return r.json();
+        })
+        .then(start).catch(fail);
+    } else {
+      var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+      new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+        .then(start).catch(fail);
+    }
+  }catch(e){ fail(e); }
 })();
 </script>
+</body>
+</html>

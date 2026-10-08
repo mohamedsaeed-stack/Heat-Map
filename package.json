@@ -7,7 +7,10 @@
   "scripts": {
     "start": "node scripts/serve.js",
     "dev": "node scripts/serve.js 8099",
-    "build:page": "node scripts/build-page.js"
+    "build": "node scripts/build-standalone-uae.js --server",
+    "build:standalone": "node scripts/build-standalone-uae.js",
+    "_comment:build:dubai-stub": "SUPERSEDED 8 Oct 2026. build-page.js writes the Dubai-only page from index.src.html - the one whose CRM, pipeline and customer layers all read 'not pulled yet'. Running it OVERWRITES page/index.html with that stub. `npm run build` is the real page.",
+    "build:dubai-stub": "node scripts/build-page.js"
   },
   "engines": {
     "node": ">=20"

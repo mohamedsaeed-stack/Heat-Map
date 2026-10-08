@@ -119,6 +119,25 @@ Anything else resolves under `page/`. Paths that try to escape the repo get a 40
 browser accepts it — 8.2 MB goes over the wire as 1.4 MB. Files are also ETagged, so a
 reload after the first visit is a 304 and no bytes.
 
+## Which page gets served
+
+`page/index.html` is **generated**, not hand-edited. Since 8 Oct 2026 it comes from the
+same generator as the standalone file, so the hosted map and the double-click file cannot
+drift apart in features:
+
+```bash
+npm run build              # -> page/index.html + data/map-page.json   (the hosted map)
+npm run build:standalone   # -> dist/flapkap-uae-map.html              (one file, opens offline)
+```
+
+The server build fetches `data/map-page.json` over HTTP and pulls Esri tiles at run time.
+The standalone build inlines the data and base64-embeds tiles, because artifact viewers
+block external images. Everything else — layers, filters, popups, statistics — is shared.
+
+**`npm run build:dubai-stub` is superseded and destructive.** It writes the old Dubai-only
+page over `page/index.html`: 18,018 businesses and four layers reading "not pulled yet".
+It is kept only because `page/index.src.html` is still the source of that older page.
+
 ## Redeploying after a data rebuild
 
 The data files are committed, so a rebuild is a normal commit:

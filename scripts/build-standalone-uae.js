@@ -14,6 +14,24 @@
 const fs = require('fs');
 const path = require('path');
 
+// Two targets from one generator, so the hosted map and the file people double-click
+// can never drift apart in features:
+//
+//   node scripts/build-standalone-uae.js            -> dist/flapkap-uae-map.html
+//     One file, opens offline, data inlined, tiles base64-embedded. For an artifact
+//     viewer or an email attachment, where external images are blocked.
+//
+//   node scripts/build-standalone-uae.js --server   -> page/index.html + data/map-page.json
+//     For Railway. The data is fetched over HTTP (the server gzips it) instead of
+//     inlined, and tiles come from Esri at run time instead of being embedded. A
+//     real server has no content-security policy stopping them, and embedding tiles
+//     means bulk-downloading them, which is what got the office IP blocked by
+//     OpenStreetMap on 8 Oct 2026.
+//
+// Everything between those two points - every layer, filter, popup and statistic -
+// is shared, which is the whole reason this is one script and not two.
+const SERVER = process.argv.includes('--server');
+
 const ROOT = path.join(__dirname, '..');
 const V = f => fs.readFileSync(path.join(ROOT, 'page', 'vendor', f), 'utf8');
 const zlib = require('zlib');
@@ -98,6 +116,35 @@ const payload = {
   categories: map.stats.categories,
   target: map.stats.targetCategories,
 };
+
+// The standalone file carries its own tiles and so offers one basemap at z15. The
+// server build has no such limit, so it gets all three Esri layers - and none from
+// tile.openstreetmap.org, whose usage policy forbids this kind of load and which
+// now returns 403 to the office network.
+// The standalone file has to carry Leaflet inside it - it is opened from disk with no
+// network assumed. The server build loads it from cdnjs instead: the browser caches it
+// across visits, the page stays small, and page/vendor/*.js is not in the repo anyway
+// (only the CSS is), so inlining would make the server build impossible to run here.
+const LEAFLET_JS = SERVER
+  ? `<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>`
+  : `<script>${V('leaflet.min.js')}</script>
+<script>${V('leaflet.markercluster.min.js')}</script>`;
+
+const BASEMAPS_JS = SERVER ? `[
+    {k:'streets',label:'Streets',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'detailed',label:'Detailed',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'satellite',label:'Satellite',max:19,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
+  ]` : `[
+    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
+     attr:'&copy; OpenStreetMap contributors'},
+  ]`;
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -314,14 +361,17 @@ ${V('MarkerCluster.Default.css')}
   <div class="if"><button class="ibtn" id="dlgx">Close</button></div>
 </dialog>
 
-<script>${V('leaflet.min.js')}</script>
-<script>${V('leaflet.markercluster.min.js')}</script>
+${LEAFLET_JS}
 <script>
 // The pin data travels gzipped and base64-encoded (5.2 MB -> 1.6 MB, measured
 // 23 Sep 2026) and is unpacked on open by the browser's built-in
 // DecompressionStream - no library, identical output. Every current browser has
 // it; an old one gets a plain message instead of a blank map.
-var DATA_GZ = "${zlib.gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }).toString('base64')}";
+var DATA_GZ = ${SERVER ? 'null' : `"${zlib.gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }).toString('base64')}"`};
+// Server build only: the same payload lives in data/map-page.json instead of in this
+// file. serve.js gzips it on the way out, so the wire cost matches the inlined build
+// while the page itself stays small enough to read and diff.
+var DATA_URL = ${SERVER ? '"data/map-page.json"' : 'null'};
 var DATA = null;
 // Expand the dictionary-encoded fields back to their real values, so every
 // other line below sees the same shape the Dubai build produced.
@@ -334,7 +384,7 @@ function __expand(){
     if(c.af===undefined)c.af=0; if(c.d===undefined)c.d=0;
   }
 }</script>
-<script>var TILES = ${JSON.stringify(TILES)};</script>
+<script>var TILES = ${SERVER ? '{}' : JSON.stringify(TILES)};</script>
 <script>
 function __main(){
   var LAYERS = ${JSON.stringify(LAYERS)};
@@ -350,10 +400,8 @@ function __main(){
   // front-end, no login needed.
   var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
   var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
-  var BASEMAPS = [
-    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
-     attr:'&copy; OpenStreetMap contributors'},
-  ];   // Streets only, since 23 Sep 2026: the online base maps needed a network the viewers do not always have.
+  var BASEMAPS = ${BASEMAPS_JS};
+  var EMBEDDED = ${SERVER ? 'false' : 'true'};
 
   // Google Maps, by name: a text search for the company name plus the area and
   // emirate we know. Tested 6 Oct 2026 on a 20-pin sample across every tier:
@@ -428,8 +476,11 @@ function __main(){
     if(curBase===k) return;
     if(tileLayer) map.removeLayer(tileLayer);
     var b=BASEMAPS.filter(function(x){return x.k===k;})[0];
-    tileLayer=(b.k==='streets'?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
-                              :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
+    // maxNativeZoom 13 is the sharpest embedded tile; upscaling beyond that is still
+    // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
+    tileLayer=((EMBEDDED&&b.k==='streets')
+                 ?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
+                 :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
     tileLayer.bringToBack(); curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
@@ -936,21 +987,43 @@ function __main(){
       '<b>This map needs a current browser</b> - Chrome, Edge, Safari 16.4 or newer, Firefox 113 or newer.<br><br>'+
       '<span style="color:#888">'+String(e&&e.message||e)+'</span></div>';
   }
+  function start(t){ DATA=(typeof t==='string')?JSON.parse(t):t; __expand(); __main(); }
   try{
-    var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
-    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
-      .then(function(t){ DATA=JSON.parse(t); __expand(); __main(); })
-      .catch(fail);
+    if(DATA_URL){
+      // Server build: the server gzips this on the way out, so the bytes on the wire
+      // match the inlined build. A 401 here means the session expired - say so rather
+      // than letting it surface as a JSON parse error.
+      fetch(DATA_URL)
+        .then(function(r){
+          if(r.status===401) throw new Error('Your session expired. Reload the page and sign in again.');
+          if(!r.ok) throw new Error(DATA_URL+' -> '+r.status);
+          return r.json();
+        })
+        .then(start).catch(fail);
+    } else {
+      var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+      new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+        .then(start).catch(fail);
+    }
   }catch(e){ fail(e); }
 })();
 </script>
 </body>
 </html>`;
 
-const OUT = path.join(ROOT, 'dist', 'flapkap-uae-map.html');
+const OUT = SERVER
+  ? path.join(ROOT, 'page', 'index.html')
+  : path.join(ROOT, 'dist', 'flapkap-uae-map.html');
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
+
+// Server build: the payload the page fetches, beside the page.
+if (SERVER) {
+  const dataOut = path.join(ROOT, 'data', 'map-page.json');
+  fs.writeFileSync(dataOut, JSON.stringify(payload));
+  console.log('wrote data/map-page.json  ' + (fs.statSync(dataOut).size / 1024 / 1024).toFixed(1) + ' MB');
+}
 
 console.log('pinned companies   ' + pinned.length +
   '   (geocoded ' + pinned.filter(c => c.h === 'geocoded').length +
@@ -958,4 +1031,5 @@ console.log('pinned companies   ' + pinned.length +
 console.log('with a deal value  ' + pinned.filter(c => c.m).length);
 console.log('with an owner      ' + pinned.filter(c => c.o).length);
 console.log('universe places    ' + map.universe.length);
-console.log('wrote dist/flapkap-uae-map.html  ' + (fs.statSync(OUT).size / 1024 / 1024).toFixed(1) + ' MB');
+console.log('wrote ' + path.relative(ROOT, OUT).replace(/\\/g, '/') +
+  '  ' + (fs.statSync(OUT).size / 1024 / 1024).toFixed(1) + ' MB');
