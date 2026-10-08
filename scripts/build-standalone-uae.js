@@ -131,14 +131,18 @@ const LEAFLET_JS = SERVER
   : `<script>${V('leaflet.min.js')}</script>
 <script>${V('leaflet.markercluster.min.js')}</script>`;
 
+// max is how far the user may zoom; nat is the deepest zoom the provider actually
+// has tiles for. Leaflet upscales between the two, so zooming past nat gives a
+// softer image rather than a blank grey square - which is what a bare max would do.
+// Satellite carries the deepest real imagery, so it earns the highest ceiling.
 const BASEMAPS_JS = SERVER ? `[
-    {k:'streets',label:'Streets',max:19,
+    {k:'streets',label:'Streets',max:20,nat:19,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
-    {k:'detailed',label:'Detailed',max:19,
+    {k:'detailed',label:'Detailed',max:20,nat:19,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
-    {k:'satellite',label:'Satellite',max:19,
+    {k:'satellite',label:'Satellite',max:21,nat:19,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
   ]` : `[
@@ -198,6 +202,7 @@ ${V('MarkerCluster.Default.css')}
   .ptog.closed{right:0;border-right:1px solid #3F3F46;border-radius:8px 0 0 8px}
   .ptog:hover{color:#2970FF}
   .panel h4:not(:first-child){margin-top:1rem}
+  .bmrow{display:flex;gap:4px}
   .bmrow{display:flex;gap:4px}
   .bm{flex:1;font:inherit;font-size:11px;padding:5px 4px;border:1px solid #3F3F46;background:transparent;
     border-radius:99px;cursor:pointer;color:#A0A0AB}
@@ -325,6 +330,9 @@ ${V('MarkerCluster.Default.css')}
   <h4>Find a business</h4>
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
+
+  <h4>Base map</h4>
+  <div class="bmrow" id="bms"></div>
 
   <h4>Display</h4>
   <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
@@ -480,11 +488,27 @@ function __main(){
     // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
     tileLayer=((EMBEDDED&&b.k==='streets')
                  ?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
-                 :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
+                 :L.tileLayer(b.url,{maxZoom:b.max,maxNativeZoom:b.nat||b.max,
+                                     updateWhenZooming:false,keepBuffer:3,attribution:b.attr})).addTo(map);
+    // The map itself must allow the deepest ceiling any basemap offers, or switching
+    // to Satellite would silently not go as far as its own tiles do.
+    map.setMaxZoom(Math.max.apply(null,BASEMAPS.map(function(x){return x.max;})));
     tileLayer.bringToBack(); curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
   }
+  // Render the switcher from BASEMAPS rather than hard-coding buttons: the standalone
+  // build ships one basemap and the server build three, and a hard-coded row would
+  // show dead buttons in whichever build has fewer.
+  (function(){
+    var host=document.getElementById('bms');
+    if(!host) return;
+    if(BASEMAPS.length<2){ var h=host.previousElementSibling; if(h&&h.tagName==='H4') h.style.display='none'; host.style.display='none'; return; }
+    host.innerHTML=BASEMAPS.map(function(b){
+      return '<button class="bm" data-k="'+b.k+'">'+b.label+'</button>'; }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('.bm'),function(el){
+      el.onclick=function(){ setBase(el.getAttribute('data-k')); };});
+  })();
   setBase('streets');
 
   var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
@@ -516,10 +540,42 @@ function __main(){
   // bubbles until you zoom right in, which reads as a chart, not a map. Canvas
   // rendering handles 3,000+ circle markers without it. Clustering stays as an
   // opt-in for the 18,000-point universe layer, where raw dots do become a mess.
-  var crmPlain=L.layerGroup();
+  // Ungrouped mode draws every matching pin, and with 38,000 of them a plain
+  // L.layerGroup hands all 38,000 to the canvas renderer on every pan and zoom -
+  // which is exactly the drag the smaller Dubai page did not have. This group keeps
+  // the full set in memory but only ever puts the ones inside the viewport (plus a
+  // 30% margin, so a short pan has pins ready) on the map. Clustering already culls
+  // this way internally; this gives the ungrouped view the same treatment without
+  // changing how it looks.
+  var CullingGroup=L.LayerGroup.extend({
+    initialize:function(){ L.LayerGroup.prototype.initialize.call(this); this._all=[]; },
+    addLayer:function(m){ this._all.push(m); return this; },
+    clearLayers:function(){ this._all=[]; return L.LayerGroup.prototype.clearLayers.call(this); },
+    // Call once after a draw loop has finished adding; moveend handles the rest.
+    commit:function(){ this._cull(); return this; },
+    onAdd:function(mp){ L.LayerGroup.prototype.onAdd.call(this,mp); mp.on('moveend',this._cull,this); this._cull(); },
+    onRemove:function(mp){ mp.off('moveend',this._cull,this); L.LayerGroup.prototype.onRemove.call(this,mp); },
+    _cull:function(){
+      if(!this._map) return;
+      var b=this._map.getBounds().pad(0.3), all=this._all;
+      L.LayerGroup.prototype.clearLayers.call(this);
+      for(var i=0;i<all.length;i++){
+        if(b.contains(all[i].getLatLng())) L.LayerGroup.prototype.addLayer.call(this,all[i]);
+      }
+    },
+    // The search panel jumps to a pin that may be culled out of view. Fly first,
+    // re-cull, then open - otherwise openPopup fires on a marker that is not on
+    // the map and nothing happens.
+    reveal:function(m,cb){
+      var self=this;
+      this._map.once('moveend',function(){ self._cull(); cb(); });
+      this._map.setView(m.getLatLng(), Math.max(this._map.getZoom(),15));
+    }
+  });
+  var crmPlain=new CullingGroup();
   var crmCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
     disableClusteringAtZoom:16,iconCreateFunction:clusterIcon('rgba(26,115,232,.86)')});
-  var uniPlain=L.layerGroup();
+  var uniPlain=new CullingGroup();
   var uniCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:60,showCoverageOnHover:false,
     disableClusteringAtZoom:17,iconCreateFunction:clusterIcon('rgba(0,150,148,.80)')});
   var clusterOn=false;
@@ -635,6 +691,7 @@ function __main(){
       markerIndex.push({c:c,m:m});
     });
     if(!map.hasLayer(target)) map.addLayer(target);
+    if(target.commit) target.commit();   // ungrouped: render only what is in view
     return shown;
   }
 
@@ -657,6 +714,7 @@ function __main(){
       utarget.addLayer(m);
     });
     if(!map.hasLayer(utarget)) map.addLayer(utarget);
+    if(utarget.commit) utarget.commit();
   }
 
   function renderLegend(){
@@ -920,7 +978,10 @@ function __main(){
         var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
         if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
         if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
-        else h.m.openPopup();
+        // Ungrouped: the pin may be culled out of view, in which case openPopup
+        // would fire on a marker that is not on the map and do nothing. reveal()
+        // flies to it, re-culls so it exists, then opens.
+        else crmPlain.reveal(h.m,function(){ h.m.openPopup(); });
       };});
   };
 
