@@ -7,10 +7,29 @@ dependencies, so the build is just `npm install` doing nothing and `npm start`.
 
 **The map is not public data.** Every pin carries a company name, and the popups link to the
 HubSpot record and the admin-app client page. A Railway service gets a public
-`*.up.railway.app` URL the moment you generate a domain. Set the two auth variables below
+`*.up.railway.app` URL the moment you generate a domain. Set the auth variables below
 *before* generating that domain, or the client book is on the open internet.
 
-The server starts either way — it prints `basic auth: OFF` when the variables are missing.
+The server starts either way — it prints `auth: OFF` when the variables are missing.
+
+**Access is Google sign-in, flapkap.com accounts only.** Not a shared password: a password
+gets forwarded once and is then outside the company for good, and it cannot be taken back
+from one person. With Google, access follows the Workspace account — someone who leaves
+loses the map the moment IT disables them. `ALLOWED_EMAILS` exists for the occasional
+person outside the domain.
+
+## One-time Google setup
+
+You do this part — it is in your Google account and involves a client secret, so I cannot.
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → create a project (or reuse one).
+2. **APIs & Services → OAuth consent screen** → *Internal* (that alone restricts it to
+   flapkap.com) → app name "FlapKap Coverage Map" → save.
+3. **Credentials → Create credentials → OAuth client ID** → *Web application*.
+   - **Authorised redirect URI:** `https://YOUR-DOMAIN/auth/callback`
+     You get `YOUR-DOMAIN` from step 4 below, so do that first and come back, or add it
+     after and let Railway redeploy.
+4. Copy the **client ID** and **client secret** — they go into Railway next.
 
 ## Deploy
 
@@ -21,20 +40,37 @@ The server starts either way — it prints `basic auth: OFF` when the variables 
    Railway reads `railway.json`, detects Node from `package.json`, and runs `npm start`.
    Nothing else to configure.
 
-3. **Set the password**, in *Variables*:
+3. **Set the variables**, in *Variables*:
 
    | Variable | Value |
    |---|---|
-   | `BASIC_AUTH_USER` | whatever you want, e.g. `flapkap` |
-   | `BASIC_AUTH_PASS` | a long random string |
+   | `GOOGLE_CLIENT_ID` | from the Google step above |
+   | `GOOGLE_CLIENT_SECRET` | from the Google step above |
+   | `SESSION_SECRET` | a long random string — signs the session cookie |
+   | `ALLOWED_DOMAIN` | optional; defaults to `flapkap.com` |
+   | `ALLOWED_EMAILS` | optional; comma-separated addresses outside the domain |
 
    Do **not** set `PORT` — Railway injects it, and the server reads it.
 
-4. **Generate a domain**: *Settings → Networking → Generate Domain*. Open it; the browser
-   asks for the username and password.
+   A good `SESSION_SECRET`: `node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"`
 
-The health check is `GET /healthz`, which answers before the auth check so a password does
-not fail the deploy.
+4. **Generate a domain**: *Settings → Networking → Generate Domain*. Put that domain into
+   the Google redirect URI as `https://THAT-DOMAIN/auth/callback`.
+
+5. Open the domain. You get a sign-in card; signing in with a flapkap.com account lands you
+   on the map. Any other account is refused by name, and the refusal is logged.
+
+The health check is `GET /healthz`, which answers before the auth check so sign-in cannot
+fail the deploy.
+
+### How the auth works, briefly
+
+Authorization-code flow, no dependencies (`scripts/lib/google-auth.js`). The session is an
+HMAC-signed cookie, HttpOnly, SameSite=Lax, Secure behind Railway's TLS, 12 hours. Google's
+`hd` claim *and* the email suffix must both say flapkap.com — the suffix alone would accept
+a lookalike domain. `/auth/logout` clears the session. Unauthenticated requests to
+`/data/*.json` get a 401 JSON body rather than the HTML card, so a signed-out tab fails
+visibly in the console instead of as a JSON parse error.
 
 ## What is served
 

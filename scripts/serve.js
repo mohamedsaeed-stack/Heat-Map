@@ -10,13 +10,16 @@
 // data/map-uae.json is 8 MB and data/map.json 6 MB, so responses are gzipped
 // when the client accepts it. Without that every page load ships ~15 MB.
 //
-// The map is NOT public data - it carries client names and HubSpot links. Set
-// BASIC_AUTH_USER and BASIC_AUTH_PASS to put the whole site behind a password.
+// The map is NOT public data - it carries client names, outstanding book and
+// HubSpot/admin links. Access control lives in scripts/lib/google-auth.js: Google
+// sign-in restricted to one Workspace domain. BASIC_AUTH_USER/BASIC_AUTH_PASS stay
+// as a fallback for local use and for a deploy where Google is not set up.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
+const auth = require('./lib/google-auth');
 
 const ROOT = path.join(__dirname, '..');
 const PORT = Number(process.argv[2] || process.env.PORT || 8099);
@@ -46,7 +49,7 @@ function authOk(header) {
   return got.length === want.length && crypto.timingSafeEqual(got, want);
 }
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { 'Allow': 'GET, HEAD' }); res.end(); return;
   }
@@ -60,7 +63,15 @@ const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('ok'); return;
   }
 
-  if (!authOk(req.headers.authorization)) {
+  // Google sign-in owns the request when it is configured: it answers the sign-in
+  // page, the redirect and the callback itself, and returns true when it has.
+  if (auth.CONFIGURED) {
+    try { if (await auth.handle(req, res, p)) return; }
+    catch (e) {
+      console.error('auth error:', e.message);
+      res.writeHead(500, { 'Content-Type': 'text/plain' }); res.end('auth error'); return;
+    }
+  } else if (!authOk(req.headers.authorization)) {
     res.writeHead(401, {
       'WWW-Authenticate': 'Basic realm="FlapKap Coverage Map", charset="UTF-8"',
       'Content-Type': 'text/plain',
@@ -121,8 +132,9 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log('serving ' + ROOT + ' on http://' + HOST + ':' + PORT);
-  if (AUTH) console.log('basic auth: ON');
-  else console.log('basic auth: OFF - set BASIC_AUTH_USER and BASIC_AUTH_PASS before exposing this publicly');
+  if (auth.CONFIGURED) console.log('auth: Google sign-in, ' + auth.ALLOWED_DOMAIN + ' accounts only');
+  else if (AUTH) console.log('auth: basic (shared password)');
+  else console.log('auth: OFF - set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and SESSION_SECRET before exposing this publicly');
 });
 
 // Railway sends SIGTERM on redeploy; exit cleanly instead of being killed.
