@@ -320,20 +320,35 @@
     manufacturing_trading: '#ae3ec9'
   };
 
-  // CARTO Voyager was the first choice and is NOT usable: it still serves tiles
-  // without a key, but every tile is stamped "API KEY REQUIRED" across the map.
-  // It fires tileload, not tileerror, so no automatic check would have caught
-  // it - only looking at the rendered page did. Dropped entirely.
+  // Two providers have been ruled out, both only visible by looking at the page:
+  //
+  // CARTO Voyager still serves tiles without a key, but stamps "API KEY REQUIRED"
+  // across every one. It fires tileload, not tileerror, so no automatic check
+  // would have caught it.
+  //
+  // tile.openstreetmap.org was the Streets layer until 8 Oct 2026, when it started
+  // returning 403 "Access blocked - App is not following the tile usage policy"
+  // (osm.wiki/Blocked). Those are volunteer-run servers and the policy forbids bulk
+  // or app-scale fetching; a map with ~18,000 markers that people pan around is
+  // exactly the load it is meant to keep off them. The block lands on the viewer's
+  // IP, so it follows the office network rather than the deployment, and switching
+  // providers is the fix rather than waiting it out.
+  //
+  // Esri's public basemaps carry no such restriction and need no key. Light Gray is
+  // the default because a muted basemap is the right one under this many pins.
+  //
+  // OpenStreetMap remains the source of the business DATA (ODbL) and is credited
+  // throughout the page - that is unaffected by where the tiles come from.
   var BASEMAPS = [
     { key: 'streets', label: 'Streets',
-      url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors' },
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+      maxZoom: 19, attribution: 'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors' },
     { key: 'esri', label: 'Detailed',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19, attribution: 'Esri, HERE, Garmin' },
+      maxZoom: 19, attribution: 'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors' },
     { key: 'satellite', label: 'Satellite',
       url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics' }
+      maxZoom: 19, attribution: 'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors' }
   ];
 
   var UAE = L.latLngBounds([22.6, 51.5], [26.2, 56.5]);
