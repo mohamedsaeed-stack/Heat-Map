@@ -338,7 +338,7 @@ function __main(){
     {k:'detailed',label:'Detailed',max:20,nat:16,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
-    {k:'satellite',label:'Satellite',max:21,nat:18,
+    {k:'satellite',label:'Satellite',max:20,nat:18,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
      ref:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
@@ -376,6 +376,12 @@ function __main(){
   // there is only ever "zoom in". Re-computed when the window is resized.
   var UAE_BOUNDS=L.latLngBounds([22.6,51.4],[26.5,56.6]);
   map.setMaxBounds(UAE_BOUNDS.pad(0.03));
+  // Zooming out past the country shows oceans and neighbouring states with no pins on
+  // them, which reads as the map breaking. The floor is the zoom at which the UAE just
+  // fills the window, recomputed on resize. The fixed 6 is a backstop for the case
+  // lockZoom cannot run - a container with no size yet - where leaving minZoom at
+  // Leaflet's default 0 let the map zoom out to the whole world.
+  map.setMinZoom(6);
   function lockZoom(){ var sz=map.getSize(); if(sz.x>0&&sz.y>0){ var z=map.getBoundsZoom(UAE_BOUNDS); if(isFinite(z)) map.setMinZoom(z); } }
   map.on('resize',lockZoom);
   L.control.scale({imperial:false}).addTo(map);
@@ -423,15 +429,20 @@ function __main(){
     // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
     tileLayer=((EMBEDDED&&b.k==='streets')
                  ?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
+                 // updateWhenZooming:false was tried for smoothness on 8 Oct and
+                 // reverted the same day: suppressing tile updates mid-zoom is exactly
+                 // what made zooming out flash grey gaps. keepBuffer alone is safe.
                  :L.tileLayer(b.url,{maxZoom:b.max,maxNativeZoom:b.nat||b.max,
-                                     updateWhenZooming:false,keepBuffer:3,attribution:b.attr})).addTo(map);
-    // The map itself must allow the deepest ceiling any basemap offers, or switching
-    // to Satellite would silently not go as far as its own tiles do.
-    map.setMaxZoom(Math.max.apply(null,BASEMAPS.map(function(x){return x.max;})));
+                                     keepBuffer:3,attribution:b.attr})).addTo(map);
+    // The map's ceiling must match THIS basemap, not the deepest of all of them. With
+    // the map at 21 and a layer capped at 20, Leaflet hides the layer above 20 and the
+    // map goes grey - which is what "it still goes grey when I zoom all the way in"
+    // was. All three are 20 now, so the two can never disagree again.
+    map.setMaxZoom(b.max);
     tileLayer.bringToBack();
     // Place names and roads over the imagery, so a satellite view can still be read.
     if(b.ref){
-      refLayer=L.tileLayer(b.ref,{maxZoom:b.max,maxNativeZoom:b.nat,updateWhenZooming:false,
+      refLayer=L.tileLayer(b.ref,{maxZoom:b.max,maxNativeZoom:b.nat,
                                   keepBuffer:3,opacity:.9,pane:'overlayPane'}).addTo(map);
       refLayer.bringToBack(); tileLayer.bringToBack();
     }
