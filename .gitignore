@@ -4,3 +4,4 @@ node_modules/
 *.log
 dist/
 page/vendor/
+data/map-page.json
