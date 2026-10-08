@@ -258,6 +258,7 @@
   <h4>Display</h4>
   <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
   <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
+  <div class="muted" id="drawnote" style="display:none;margin-top:4px"></div>
 
   <h4>Emirate</h4>
   <div class="msel" id="ems"></div>
@@ -331,14 +332,15 @@ function __main(){
   var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
   var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
   var BASEMAPS = [
-    {k:'streets',label:'Streets',max:20,nat:19,
-     url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
-    {k:'detailed',label:'Detailed',max:20,nat:19,
+    {k:'streets',label:'Streets',max:20,nat:17,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
-    {k:'satellite',label:'Satellite',max:21,nat:19,
+    {k:'detailed',label:'Detailed',max:20,nat:16,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'satellite',label:'Satellite',max:21,nat:18,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+     ref:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
      attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
   ];
   var EMBEDDED = false;
@@ -411,10 +413,11 @@ function __main(){
       return L.TileLayer.prototype.getTileUrl.call(this, c);
     }
   });
-  var tileLayer=null,curBase=null;
+  var tileLayer=null,refLayer=null,curBase=null;
   function setBase(k){
     if(curBase===k) return;
     if(tileLayer) map.removeLayer(tileLayer);
+    if(refLayer){ map.removeLayer(refLayer); refLayer=null; }
     var b=BASEMAPS.filter(function(x){return x.k===k;})[0];
     // maxNativeZoom 13 is the sharpest embedded tile; upscaling beyond that is still
     // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
@@ -425,7 +428,14 @@ function __main(){
     // The map itself must allow the deepest ceiling any basemap offers, or switching
     // to Satellite would silently not go as far as its own tiles do.
     map.setMaxZoom(Math.max.apply(null,BASEMAPS.map(function(x){return x.max;})));
-    tileLayer.bringToBack(); curBase=k;
+    tileLayer.bringToBack();
+    // Place names and roads over the imagery, so a satellite view can still be read.
+    if(b.ref){
+      refLayer=L.tileLayer(b.ref,{maxZoom:b.max,maxNativeZoom:b.nat,updateWhenZooming:false,
+                                  keepBuffer:3,opacity:.9,pane:'overlayPane'}).addTo(map);
+      refLayer.bringToBack(); tileLayer.bringToBack();
+    }
+    curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
   }
@@ -489,11 +499,23 @@ function __main(){
     onRemove:function(mp){ mp.off('moveend',this._cull,this); L.LayerGroup.prototype.onRemove.call(this,mp); },
     _cull:function(){
       if(!this._map) return;
-      var b=this._map.getBounds().pad(0.3), all=this._all;
+      var z=this._map.getZoom();
+      // Culling by viewport does nothing at country zoom, where every pin IS in the
+      // viewport - which is exactly where the map felt heaviest. Below z11 the draw is
+      // capped as well. _all arrives priority-sorted (closed won, in process, closed
+      // lost, then CRM), so a cap drops the least important pins first, and the count
+      // it drops is printed on screen rather than left for someone to notice.
+      var budget = z<9 ? 4000 : (z<11 ? 9000 : (z<13 ? 20000 : Infinity));
+      var b=this._map.getBounds().pad(0.2), all=this._all, drawn=0, inView=0;
       L.LayerGroup.prototype.clearLayers.call(this);
       for(var i=0;i<all.length;i++){
-        if(b.contains(all[i].getLatLng())) L.LayerGroup.prototype.addLayer.call(this,all[i]);
+        if(!b.contains(all[i].getLatLng())) continue;
+        inView++;
+        if(drawn>=budget) continue;
+        L.LayerGroup.prototype.addLayer.call(this,all[i]); drawn++;
       }
+      this._drawn=drawn; this._inView=inView;
+      if(typeof onCull==='function') onCull();
     },
     // The search panel jumps to a pin that may be culled out of view. Fly first,
     // re-cull, then open - otherwise openPopup fires on a marker that is not on
@@ -504,6 +526,22 @@ function __main(){
       this._map.setView(m.getLatLng(), Math.max(this._map.getZoom(),15));
     }
   });
+  // Tell the viewer whenever the low-zoom cap is actually biting. Silence would make a
+  // thinned map look like the whole picture, which is the one thing this map must not do.
+  function onCull(){
+    var el=document.getElementById('drawnote');
+    if(!el) return;
+    var hidden=0;
+    [crmPlain,uniPlain].forEach(function(g){
+      if(g && g._map && typeof g._inView==='number') hidden += (g._inView - g._drawn);
+    });
+    if(hidden>0){
+      el.textContent='Drawing the '+( (crmPlain._drawn||0) + (uniPlain._drawn||0) ).toLocaleString()+
+        ' most important pins here; '+hidden.toLocaleString()+' more are in view. Zoom in, or tick '+
+        '"Group nearby pins", to see every one.';
+      el.style.display='';
+    } else el.style.display='none';
+  }
   var crmPlain=new CullingGroup();
   var crmCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
     disableClusteringAtZoom:16,iconCreateFunction:clusterIcon('rgba(26,115,232,.86)')});
