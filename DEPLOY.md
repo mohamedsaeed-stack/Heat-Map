@@ -1,9 +1,18 @@
 # Deploying to Railway
 
-## Where this got to — 8 Oct 2026
+## Live — 8 Oct 2026
 
-The Railway project exists and the service **builds and deploys green** from `main`. It has
-**no public domain**, so nothing is reachable yet and nothing is exposed. Auth was deferred.
+**https://coverage-map-production.up.railway.app** — behind a shared password.
+
+The username is `flapkap`; the password is in Railway's variables, not in this repo. Ask
+Mohamed, or read `BASIC_AUTH_PASS` in the service's Variables tab.
+
+Verified against the live URL on deploy: `/` and `/data/*.json` answer 401 without the
+password and 200 with it, `/healthz` answers 200 to anyone so the health check cannot be
+locked out, and `map-uae.json` goes over the wire as 2.07 MB of the 12 MB on disk.
+
+Upgrading to Google sign-in later needs no code change and no redeploy of a different
+build: set the three Google variables and `google-auth.js` takes over, same URL.
 
 | | |
 |---|---|
