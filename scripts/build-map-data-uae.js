@@ -82,7 +82,9 @@ const stageLayerAll = new Map();
 for (const st of stageMapAll.stages) stageLayerAll.set(st.pipeline + '|' + st.stage_id, st.layer);
 const ownersAll = (() => { try { const o = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/owners.json'), 'utf8')); const m = {}; for (const w of (o.owners || [])) m[String(w.id)] = w.name || null; return m; } catch (e) { return {}; } })();
 const dealsByCompanyAll = new Map();
-for (const d of allDeals) { if (!d.company_id) continue; if (!dealsByCompanyAll.has(d.company_id)) dealsByCompanyAll.set(d.company_id, []); dealsByCompanyAll.get(d.company_id).push(d); }
+// A deal still pointing at a company that was merged away belongs to the survivor.
+let MERGED_GONE = {}; try { MERGED_GONE = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/merged-away.json'), 'utf8')); } catch (e) {}
+for (const d of allDeals) { if (!d.company_id) continue; const cid = MERGED_GONE[d.company_id] || d.company_id; if (!dealsByCompanyAll.has(cid)) dealsByCompanyAll.set(cid, []); dealsByCompanyAll.get(cid).push(d); }
 const LAYER_RANK_ALL = { closed_won: 4, in_process: 3, closed_lost: 2, crm: 1 };
 const numAmt = v => { const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
 function dealInfoFor(hsId, lifecyclestage) {
@@ -530,13 +532,13 @@ const out = {
     // The CRM refresh of 24 Sep 2026 (parse-company-delta.js): what the team's
     // address load did to the map. `delta` marks a record the refresh touched,
     // `src === 'crm-delta'` one the pool had never seen before it.
-    pulled: '2026-09-29',   // the CRM refresh date (full re-pull of all 48,327 companies); the Dubai build's 2026-09-19 came through prev.stats
+    pulled: '2026-10-09',   // CRM + admin refresh: 30,259 companies changed since 29 Sep re-pulled, 3,431 merged records applied, 4,413 deals and 8,789 admin clients re-listed
     refresh: (() => {
       const d = pins.filter(p => p.delta);
       const fresh = d.filter(p => p.src === 'crm-delta');
       const tier = arr => arr.reduce((o, p) => { const k = p.placement || (p.unknown ? 'unknown' : 'notUAE'); o[k] = (o[k] || 0) + 1; return o; }, {});
       return {
-        pulledOn: '2026-09-29', changedSince: 'full re-pull (every record had changed since 24 Sep)',
+        pulledOn: '2026-10-09', changedSince: '29 Sep 2026 (30,259 companies; 8,154 merged-away records dropped)',
         touched: d.length, touchedByTier: tier(d),
         newCompanies: fresh.length, newByTier: tier(fresh),
         conflicts: pins.filter(p => p.conflict).length,

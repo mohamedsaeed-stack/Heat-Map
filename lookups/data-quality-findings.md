@@ -110,3 +110,9 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - **24 Sep 2026** — A10 (16,400 unowned companies), D9 (174 funded clients with no commercial owner), D10 (owner names inconsistent) from the owner pull and the owner filter.
 - **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.
 - **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).
+## 9 Oct 2026 refresh (CRM + admin app)
+- 30,259 companies changed since 29 Sep were re-pulled (2,273 new); 3,431 survivors carry `hs_merged_object_ids` naming 8,154 merged-away records, now dropped from the pool and deals re-pointed to the survivor.
+- 155 companies became HubSpot "customer" since 29 Sep with no admin-app funding; 125 have no deal at all. HubSpot-only wins went 158 -> 308. CRM owner to confirm.
+- "UAE only" (country set, no city) grew 3,084 -> 8,049: bulk country fill, no location gained.
+- Admin app: 8,645 -> 8,789 clients; funded 378 -> 385 (7 new); funded UAE pins 323 -> 329 (one new funded client names Lebanon by phone and is left off).
+- Geocoder resolved 116 of 327 new addresses; 211 returned nothing.
