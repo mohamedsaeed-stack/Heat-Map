@@ -116,3 +116,4 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - "UAE only" (country set, no city) grew 3,084 -> 8,049: bulk country fill, no location gained.
 - Admin app: 8,645 -> 8,789 clients; funded 378 -> 385 (7 new); funded UAE pins 323 -> 329 (one new funded client names Lebanon by phone and is left off).
 - Geocoder resolved 116 of 327 new addresses; 211 returned nothing.
+- **Funded was undercounted (fixed 9 Oct):** "funded" had meant admin `financingStatus = REFINANCING` (round 2+), 385 clients. Counting approved invoices with a disbursed amount gives **545** (UAE 484 on the map; EGY 57 and SAU 3 left off; 1 foreign by phone). 160 were funded once and still read NEW. Closed won on the map 637 -> 739. Pins now carry financing count, first/latest date, ongoing or ended. The 160 newly counted have no licence/address pull, so most sit at emirate or UAE-only precision (164 funded pins UAE-only).
