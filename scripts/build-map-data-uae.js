@@ -138,7 +138,9 @@ try {
 } catch (e) { /* pull not run yet */ }
 // The 8,040 that said nothing about where they are, split by what became of them.
 const noLoc = { drawn: 0, unknown: 0, foreign: 0 };
+let GM = {}; try { GM = JSON.parse(fs.readFileSync(path.join(ROOT, "raw/gmaps-overrides.json"), "utf8")); } catch (e) {}
 for (const p of pins) {
+  { const G = GM[String(p.id)]; if (G) { p.lat = G.y; p.lon = G.x; p.placement = "exact"; if (G.e) p.emirate = G.e; if (G.a) p.area = G.a; p.route = "Google Maps place"; p.address = G.ga; } }
   if (p.nolocation) { if (p.placement) noLoc.drawn++; else if (p.unknown) noLoc.unknown++; else noLoc.foreign++; }
   // Companies that are not in the UAE at all are DROPPED, by the user's
   // instruction of 19 Sep 2026: "the ones who are not totally in the UAE,
