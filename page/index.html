@@ -578,6 +578,7 @@ function __main(){
     if(c.s) kv+='<dt>Stage</dt><dd>'+esc(c.s)+'</dd>';
     if(c.o) kv+='<dt>Owner</dt><dd>'+esc(c.o)+'</dd>';
     if(c.cd) kv+='<dt>'+(c.ao?'Last disbursed':'Close date')+'</dt><dd>'+esc(c.cd)+'</dd>';
+    if(c.fi){var f=c.fi;kv+='<dt>Financed</dt><dd>'+(f[0]>1?f[0]+' times (repeat client)':'Once')+'</dd><dt>First disbursed</dt><dd>'+esc(f[1])+(f[5]?' <span style="color:#70707B">(approx.)</span>':'')+'</dd>'+(f[0]>1?'<dt>Latest disbursed</dt><dd>'+esc(f[2])+'</dd>':'')+'<dt>Status</dt><dd>'+(f[3]?'Ongoing &mdash; last instalment due '+esc(f[4]):'Ended '+esc(f[4]||f[2]))+'</dd>';}
     if(c.r) kv+='<dt>Reason</dt><dd>'+esc(c.r)+'</dd>';
     if(c.d) kv+='<dt>Deals</dt><dd>'+c.d+'</dd>';
     if(c.ai) kv+='<dt>Admin industry</dt><dd>'+esc(String(c.ai).replace(/_/g,' ').toLowerCase())+'</dd>';
@@ -854,7 +855,7 @@ function __main(){
 
     book:{h:'Outstanding book, by emirate',b:function(){var b=DATA.stats.book;if(!b)return '';return ''+
       '<dl><dt>What it counts</dt><dd>The amount funded clients currently owe FlapKap &mdash; the open principal, not what was disbursed and not fees &mdash; added up by the emirate each client sits in.</dd>'+
-      '<dt>Formula</dt><dd><code>for each funded client (admin.financingStatus = REFINANCING):<br>&nbsp;&nbsp;outstanding = latest open amount from the admin app<br>book[emirate] = sum of outstanding for clients whose pin is in that emirate</code></dd>'+
+      '<dt>Formula</dt><dd><code>for each funded client (an approved disbursement in the admin app):<br>&nbsp;&nbsp;outstanding = latest open amount from the admin app<br>book[emirate] = sum of outstanding for clients whose pin is in that emirate</code></dd>'+
       '<dt>Why this way</dt><dd>You asked for the book at emirate level, for the whole UAE. Balances are the most sensitive figure in the system, so they are added up <i>before</i> anything reaches this page: no single merchant’s balance exists in it. Emirates with fewer than '+b.minClients+' funded clients are merged into one row, because a total over two or three clients can be read back to one of them.</dd>'+
       '<dt>Coverage</dt><dd>'+fmt(b.clientsWithBalance)+' funded clients have a balance and a pin; '+fmt(b.clientsNoBalance)+' returned no balance; '+fmt(b.clientsNotOnMap)+' are outside the UAE and excluded. Balances as of '+esc(b.asOf||'the pull date')+'.</dd>'+
       '<dt>What would make it wrong</dt><dd>Balances move daily; this is a snapshot. The row &ldquo;UAE, emirate unknown&rdquo; is real money that no source could place in an emirate &mdash; do not spread it across the others. Egyptian merchants are not in any row.</dd></dl>';}},
@@ -866,10 +867,10 @@ function __main(){
 
     closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
       '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
-      '<dt>Formula</dt><dd><code>admin.financingStatus = REFINANCING\n  OR HubSpot stage = Money Disbursed\n  OR HubSpot lifecyclestage = customer</code></dd>'+
+      '<dt>Formula</dt><dd><code>admin app: at least one approved disbursement\n  OR HubSpot stage = Money Disbursed\n  OR HubSpot lifecyclestage = customer</code></dd>'+
       '<dt>Why this way</dt><dd>You said the admin app is more reliable than HubSpot for won and lost, so it overrides the deal stage. '+fmt(s.adminOverrode||0)+' companies were reclassified by it.</dd>'+
       '<dt>Funded clients on the map</dt><dd>The admin app holds <b>'+fmt((DATA.stats.fundedScope||{}).total||372)+'</b> funded clients; <b>'+fmt((DATA.stats.fundedScope||{}).foreign||0)+'</b> are Egyptian merchants and outside a UAE map, leaving <b>'+fmt((DATA.stats.fundedScope||{}).uae||372)+'</b>. <b>'+fmt(DATA.stats.fundedOnMap||0)+'</b> pins carry the funded flag: '+fmt(DATA.stats.adminOnlyFunded||0)+' exist only in the admin app &mdash; HubSpot has no record of them &mdash; and are placed by their registered address or the emirate their trade licence was issued in (DET-Dubai, EDD-Sharjah, ADDED&hellip;); the rest reached the map through a CRM company matched by name. Admin-only pins carry no deal value, so the AED figure covers only the '+fmt(((DATA.stats.money||{}).wonN||0)-((DATA.stats.money||{}).wonNoValue||0))+' funded clients that have a HubSpot deal.</dd>'+
-      '<dt>What would make it wrong</dt><dd>REFINANCING marks a client who is refinancing, so it catches those funded at least once. The admin app has no DISBURSED status. Read this as a floor, not a total.</dd></dl>';}},
+      '<dt>What would make it wrong</dt><dd>Funded means at least one approved invoice with a disbursed amount in the admin app, counted from the invoice list on 9 Oct 2026. Financing dates use the disbursement date, or the invoice creation date where that is missing (marked approx.). The financing count is one per client per calendar day.</dd></dl>';}},
 
     in_process:{h:'In process',b:function(){return ''+
       '<dl><dt>What it counts</dt><dd>Businesses with a live deal, not yet funded and not yet lost.</dd>'+
