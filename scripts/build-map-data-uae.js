@@ -82,7 +82,10 @@ const stageLayerAll = new Map();
 for (const st of stageMapAll.stages) stageLayerAll.set(st.pipeline + '|' + st.stage_id, st.layer);
 const ownersAll = (() => { try { const o = JSON.parse(fs.readFileSync(path.join(ROOT, 'lookups/owners.json'), 'utf8')); const m = {}; for (const w of (o.owners || [])) m[String(w.id)] = w.name || null; return m; } catch (e) { return {}; } })();
 const dealsByCompanyAll = new Map();
-for (const d of allDeals) { if (!d.company_id) continue; if (!dealsByCompanyAll.has(d.company_id)) dealsByCompanyAll.set(d.company_id, []); dealsByCompanyAll.get(d.company_id).push(d); }
+// A deal still pointing at a company that was merged away belongs to the survivor.
+let FIN = {}; try { FIN = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/admin-finance.json'), 'utf8')); } catch (e) {}   // admin-finance.js: who was disbursed, how often, when
+let MERGED_GONE = {}; try { MERGED_GONE = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/merged-away.json'), 'utf8')); } catch (e) {}
+for (const d of allDeals) { if (!d.company_id) continue; const cid = MERGED_GONE[d.company_id] || d.company_id; if (!dealsByCompanyAll.has(cid)) dealsByCompanyAll.set(cid, []); dealsByCompanyAll.get(cid).push(d); }
 const LAYER_RANK_ALL = { closed_won: 4, in_process: 3, closed_lost: 2, crm: 1 };
 const numAmt = v => { const n = Number(String(v || '').replace(/[^0-9.\-]/g, '')); return Number.isFinite(n) && n > 0 ? n : null; };
 function dealInfoFor(hsId, lifecyclestage) {
@@ -135,7 +138,9 @@ try {
 } catch (e) { /* pull not run yet */ }
 // The 8,040 that said nothing about where they are, split by what became of them.
 const noLoc = { drawn: 0, unknown: 0, foreign: 0 };
+let GM = {}; try { GM = JSON.parse(fs.readFileSync(path.join(ROOT, "raw/gmaps-overrides.json"), "utf8")); } catch (e) {}
 for (const p of pins) {
+  { const G = GM[String(p.id)]; if (G) { p.lat = G.y; p.lon = G.x; p.placement = "exact"; if (G.e) p.emirate = G.e; if (G.a) p.area = G.a; p.route = "Google Maps place"; p.address = G.ga; } }
   if (p.nolocation) { if (p.placement) noLoc.drawn++; else if (p.unknown) noLoc.unknown++; else noLoc.foreign++; }
   // Companies that are not in the UAE at all are DROPPED, by the user's
   // instruction of 19 Sep 2026: "the ones who are not totally in the UAE,
@@ -220,6 +225,8 @@ for (const p of pins) {
       if (!rec.cd) rec.cd = p.disbursed || null;
     }
   }
+  // Financing history for a funded pin: [times financed, first, latest, ongoing, end/next due, approx date].
+  { const f = FIN[rec.aid || p.adminId]; if (f && rec.af) rec.fi = [f.n, f.first, f.last, f.ongoing ? 1 : 0, f.end || '', f.approx ? 1 : 0]; }
   // "Funded" has exactly one source: the licence join (p.adminId, allocate-places.js).
   // A Dubai-build copy may still carry af=1 from an older name join that the
   // licence join no longer makes - a foreign client (Palma, Maxim Food) or a
@@ -234,7 +241,7 @@ for (const p of pins) {
   // side note. Funded (p.adminId) always wins over this.
   {
     const am = adminMatchByHs.get(String(p.id));
-    if (!adminOnly && !p.adminId && am && am.fin !== 'REFINANCING' && ADMIN_LOST[am.status]) {
+    if (!adminOnly && !p.adminId && am && am.fin !== 'REFINANCING' && !FIN[am.adminId] && ADMIN_LOST[am.status]) {
       if (rec.l !== 'closed_lost') { rec.hs = rec.l; rec.l = 'closed_lost'; }
       rec.t = ADMIN_LOST[am.status];
       rec.r = rec.r || am.status.replace(/_/g, ' ').toLowerCase();
@@ -346,7 +353,7 @@ const dedup = { groups: 0, removed: 0, genericNames: {}, crossSystem: 0 };
         if (keep.ao && !c.ao) { keep.i = c.i; keep.ao = 0; }        // an admin-only winner adopts the HubSpot id, so both links show
         if (!keep.m && c.m) { keep.m = c.m; keep.s = keep.s || c.s; keep.o = keep.o || c.o; keep.cd = keep.cd || c.cd; keep.d = c.d || keep.d; }
         if (!keep.o && c.o) keep.o = c.o;                            // the owner filter must still find the company
-        if (c.ad) keep.ad = 1; if (c.af) keep.af = 1;
+        if (c.ad) keep.ad = 1; if (c.af) keep.af = 1; if (!keep.fi && c.fi) keep.fi = c.fi;
         if (c.ao || c.src === 'admin') keep.src = 'admin';
         if (c.hs && !keep.hs) keep.hs = c.hs;
         drop.add(c);
@@ -530,13 +537,13 @@ const out = {
     // The CRM refresh of 24 Sep 2026 (parse-company-delta.js): what the team's
     // address load did to the map. `delta` marks a record the refresh touched,
     // `src === 'crm-delta'` one the pool had never seen before it.
-    pulled: '2026-09-29',   // the CRM refresh date (full re-pull of all 48,327 companies); the Dubai build's 2026-09-19 came through prev.stats
+    pulled: '2026-10-09',   // CRM + admin refresh: 30,259 companies changed since 29 Sep re-pulled, 3,431 merged records applied, 4,413 deals and 8,789 admin clients re-listed
     refresh: (() => {
       const d = pins.filter(p => p.delta);
       const fresh = d.filter(p => p.src === 'crm-delta');
       const tier = arr => arr.reduce((o, p) => { const k = p.placement || (p.unknown ? 'unknown' : 'notUAE'); o[k] = (o[k] || 0) + 1; return o; }, {});
       return {
-        pulledOn: '2026-09-29', changedSince: 'full re-pull (every record had changed since 24 Sep)',
+        pulledOn: '2026-10-09', changedSince: '29 Sep 2026 (30,259 companies; 8,154 merged-away records dropped)',
         touched: d.length, touchedByTier: tier(d),
         newCompanies: fresh.length, newByTier: tier(fresh),
         conflicts: pins.filter(p => p.conflict).length,

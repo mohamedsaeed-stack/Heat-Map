@@ -4,3 +4,6 @@ node_modules/
 *.log
 dist/
 page/vendor/
+
+# Remotion renders
+video/out/

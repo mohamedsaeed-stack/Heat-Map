@@ -110,3 +110,8 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - **24 Sep 2026** — A10 (16,400 unowned companies), D9 (174 funded clients with no commercial owner), D10 (owner names inconsistent) from the owner pull and the owner filter.
 - **24 Sep 2026** — B6 (1,120 deals with no company) and B7 (1,234 legacy-pipeline deals unclassified) from the all-deals pull; pipeline and lost layers now UAE-wide.
 - **23 Sep 2026** — A8 (duplicates, measured by the merge pass) and A9 (job-title names) added after the one-pin-per-company rule; universe extended to all seven emirates, CRM-per-visible ratios measured (README).
+## 9 Oct 2026: Google Maps pass on funded "UAE only" pins
+- 164 funded pins sat at "UAE only" precision. Each was searched on Google Maps by company name; 73 were accepted where the Google listing clearly is the same company (name matches, single result, UAE address). 72 of them are funded, so funded pins at building level went from 3 to 75.
+- Skipped on purpose: multi-branch lists, look-alike names (e.g. "Ryno Cars" for CAR CASH DEALS AUCTIONS, "Taaleem" for Al Taaleem Almethalia, "Middle East Infra Contracting" for Middle East Road Marking), and generic names. About 90 funded pins remain at "UAE only".
+- Two admin-only duplicates (Duncan & Ross, Flora Jewellery) now sit on the same spot as their HubSpot record and were merged by the duplicate check.
+- Source file: raw/gmaps-results.jsonl, applied by scripts/apply-gmaps.js through raw/gmaps-overrides.json.

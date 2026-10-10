@@ -34,6 +34,7 @@ const companies = (() => {
   add(opt('raw/uae-nocity-groupBC.json'), 'hs_object_id');
   add(opt('raw/unlocated-recovered.json'), 'id');
   add(opt('raw/hubspot-companies-delta.json'), 'hs_object_id');
+  try { for (const id of Object.keys(read('raw/merged-away.json'))) byId.delete(id); } catch (e) { /* none */ }
   return [...byId.values()];
 })();
 

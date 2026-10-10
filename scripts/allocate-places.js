@@ -282,6 +282,15 @@ function main() {
     }
   }
 
+  // MERGED COMPANIES (raw/merged-away.json, built from hs_merged_object_ids on the
+  // surviving record): HubSpot deletes the record that was merged away, so any
+  // copy of it in an older pull is a duplicate of the survivor. Drop them.
+  let GONE = {};
+  try { GONE = JSON.parse(fs.readFileSync(path.join(ROOT, 'raw/merged-away.json'), 'utf8')); } catch (err) { /* none */ }
+  let mergedDropped = 0;
+  for (const id of Object.keys(GONE)) if (byId.delete(id)) mergedDropped++;
+  console.log('merged-away records dropped from the pool: ' + mergedDropped);
+
   // Contact evidence: the only route that reaches a company carrying no
   // location of its own. It is used LAST, and only to name an emirate - a
   // contact's city never produces a street-level pin, because just 53 contacts
@@ -304,7 +313,7 @@ function main() {
   // returned about their company.
   let contactOnly = 0;
   for (const [cid, e] of evidence) {
-    if (byId.has(cid)) continue;
+    if (byId.has(cid) || GONE[cid]) continue;
     byId.set(cid, { hs_object_id: cid, name: e.name, industry: e.industry, _src: 'contact-only' });
     contactOnly++;
   }
