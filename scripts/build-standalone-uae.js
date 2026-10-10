@@ -339,6 +339,22 @@ ${V('MarkerCluster.Default.css')}
   .pwarn{color:#FDB022}
   .rtn{width:18px;height:18px;border-radius:50%;background:#2970FF;border:1.5px solid #fff;color:#fff;font:600 10px/15px Montserrat,sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.5)}
   .plan-drawing,.plan-drawing .leaflet-interactive{cursor:crosshair!important}
+  .pchk{display:flex;align-items:center;gap:6px;font-size:11px;color:#A0A0AB;margin:2px 0 5px;cursor:pointer}
+  .pchk input{accent-color:#2970FF;margin:0}
+  .pfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 4px;min-height:26px}
+  .pctl{display:flex;gap:3px;flex-shrink:0;margin-left:auto}
+  .pmv{font:inherit;font-size:10px;width:26px;height:26px;padding:0;border-radius:6px;border:1px solid #3F3F46;background:transparent;color:#D1D1D6;cursor:pointer;line-height:1}
+  .pmv:hover:not(:disabled){border-color:#2970FF;color:#fff}
+  .pmv:disabled{opacity:.25;cursor:default}
+  .pmv.x{font-size:14px}
+  .pnear{margin-top:2px;font-size:10px;color:#70707B}
+  .pnear a{color:#70707B;cursor:pointer;text-decoration:underline dotted}
+  .pnear a:hover{color:#A0A0AB}
+  .pnrows{margin:3px 0 2px;padding-left:6px;border-left:2px solid #26272B}
+  .pnrow{display:flex;align-items:center;gap:6px;padding:1px 0}
+  .pnrow .pname{font-size:11px;color:#A0A0AB;flex:1;min-width:0}
+  .pnrow .pdist{font-size:10px;color:#70707B;flex-shrink:0}
+  .pplans{font:inherit;font-size:11px;padding:5px 8px;border-radius:99px;border:1px solid #3F3F46;background:#18181B;color:#D1D1D6;max-width:100%;min-width:0;flex:1}
 
   @media(max-width:820px){
     .header{height:auto;padding:8px 12px;flex-direction:column;align-items:flex-start;gap:6px}
@@ -378,12 +394,15 @@ ${V('MarkerCluster.Default.css')}
     <summary>Plan a visit day</summary>
     <div class="plan-body">
       <div class="prow2"><button class="pbtn pri" id="pdraw">Draw an area</button><button class="pbtn" id="pclear">Clear</button></div>
+      <label class="pchk"><input type="checkbox" id="ponly" checked> Only exact pins (buildings)</label>
       <div class="muted" id="pmsg" style="margin-top:0">Switch on the layers you want in the legend, then drag a box over the area.</div>
       <div class="plist" id="plist"></div>
       <div class="prow2" id="pact" style="display:none"><button class="pbtn pri" id="porder">Order stops</button><button class="pbtn" id="ploc">Start from my location</button></div>
       <div class="muted" id="ptotal" style="display:none"></div>
       <div id="plinks" style="margin-top:6px"></div>
-      <div class="prow2" id="pcsvrow" style="display:none;margin-top:4px"><button class="pbtn" id="pcsv">Download CSV</button></div>
+      <div class="prow2" id="pcsvrow" style="display:none;margin-top:4px"><button class="pbtn" id="pcsv">Download CSV</button><button class="pbtn" id="pwa" style="display:none">Send via WhatsApp</button></div>
+      <div class="prow2" id="psaverow" style="display:none"><button class="pbtn" id="psave">Save</button><button class="pbtn" id="pcopy">Copy link</button></div>
+      <div class="prow2" id="pplansrow" style="display:none;align-items:center"><select class="pplans" id="pplans" aria-label="My plans"></select><button class="pbtn" id="pdel">Delete</button></div>
       <div class="muted">Approximate stops are placed inside their area, not at the building &mdash; confirm the address before driving.</div>
     </div>
   </details>
@@ -731,6 +750,7 @@ function __main(){
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
+      '<div class="pid"><a href="#" onclick="window.__planAdd(\\''+c._pid+'\\');return false;">+ Add to visit day</a></div>'+
       '<div class="pid">'+
         [ c.ao ? null : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a>',
           (c.aid && ADMIN_CLIENT_URL) ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(c.aid))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a>' : null,
@@ -1142,6 +1162,16 @@ function __main(){
   var planDrawing=false, planDrag=null;
   var planRenderer=L.svg({padding:.5});   // own layer, so redraw() and the pin canvas never repaint over the route
   var planLayer=L.layerGroup().addTo(map);
+  var NEAR_M=300, NEAR_MAX=5, WA_MAX=1800, WA_STOPS=15, PLANS_KEEP=20, PLANS_KEY='fk_plans';
+  // A stop's id: the HubSpot id, or 'a'+admin id for an admin-only pin (it has no
+  // HubSpot id). Both survive a data refresh, so saved plans and shared links keep
+  // pointing at the same company; a positional index would not. Set once on every
+  // company, before the first pin is drawn, so popupFor can read it.
+  var planById={};
+  DATA.companies.forEach(function(c,i){
+    c._pid=(c.ao||c.i==null)?'a'+(c.aid!=null?c.aid:'x'+i):String(c.i);
+    planById[c._pid]=c;
+  });
 
   function planEl(id){ return document.getElementById(id); }
   function planMsg(t,warn){ var el=planEl('pmsg'); el.textContent=t||''; el.className='muted'+(warn?' pwarn':''); }
@@ -1154,11 +1184,44 @@ function __main(){
     return 12742*Math.asin(Math.sqrt(h));
   }
 
+  // Pins within NEAR_M of a stop that could be added to the day: exact or geocoded only,
+  // not already a stop, not the stop itself. Every pin on the map, whatever the filters say.
+  // Nearest first; a tie (same building) goes to the better stage. Pool built on first use.
+  var planPool=null;
+  function planNear(c,inPlan){
+    if(!planPool) planPool=DATA.companies.filter(planPrecise);
+    var dl=NEAR_M/111320, dn=dl/Math.max(.2,Math.cos(c.y*Math.PI/180)), out=[];
+    for(var i=0;i<planPool.length;i++){
+      var o=planPool[i];
+      if(o===c||inPlan[o._pid]||Math.abs(o.y-c.y)>dl||Math.abs(o.x-c.x)>dn) continue;
+      var d=planKm([c.y,c.x],[o.y,o.x])*1000;
+      if(d<=NEAR_M) out.push({c:o,m:d});
+    }
+    out.sort(function(a,b){
+      return (Math.round(a.m)-Math.round(b.m))||((planRank[a.c.l]!=null?planRank[a.c.l]:9)-(planRank[b.c.l]!=null?planRank[b.c.l]:9));
+    });
+    return out;
+  }
+
   function planRender(){
-    var box=planEl('plist'), chk=planChecked(), n=0;
+    var box=planEl('plist'), chk=planChecked(), n=0, inPlan={};
+    planStops.forEach(function(s){ inPlan[s.c._pid]=1; });
     box.innerHTML=planStops.map(function(s,i){
       var c=s.c, color=(c.l==='closed_lost'&&c.t==='risk_rejected')?'#8e24aa':BY_KEY[c.l].color;
       var no=(planRouted&&s.on)?(++n):'';
+      var near=planPrecise(c)?planNear(c,inPlan):[], nr='', rows='';
+      if(!planPrecise(c)) nr='';   // an approximate pin sits at a scattered point, so "nearby" would mean nothing
+      else if(!near.length) nr='<div class="pnear">no exact pins within '+NEAR_M+' m</div>';
+      else{
+        nr='<div class="pnear"><a data-near="'+i+'">'+near.length+' nearby'+(s.near?' &#9652;':' &#9662;')+'</a></div>';
+        if(s.near){
+          rows='<div class="pnrows">'+near.slice(0,NEAR_MAX).map(function(x){
+            return '<div class="pnrow"><span class="pname" data-pid="'+esc(x.c._pid)+'" title="'+esc(x.c.n)+'">'+esc(x.c.n)+'</span>'+
+              '<span class="pdist">'+planShort[x.c.l]+' &middot; '+Math.round(x.m)+' m</span>'+
+              '<button class="pmv" data-add="'+esc(x.c._pid)+'" title="Add to the visit day" aria-label="Add '+esc(x.c.n)+'">+</button></div>';
+          }).join('')+(near.length>NEAR_MAX?'<div class="pnear">nearest '+NEAR_MAX+' of '+near.length+'</div>':'')+'</div>';
+        }
+      }
       return '<div class="pstop'+(s.on?'':' off')+'">'+
         '<input type="checkbox" data-i="'+i+'"'+(s.on?' checked':'')+'>'+
         '<span class="pno">'+no+'</span>'+
@@ -1168,11 +1231,17 @@ function __main(){
           (c.fi?'<span class="pb2" style="background:#0b8043">Funded</span>':'')+
           (planApprox(c)?'<span class="pb2 amb">approximate</span>':'')+
           (c.o?'<span>'+esc(c.o)+'</span>':'')+
-        '</div></div></div>';
+        '</div><div class="pfoot">'+nr+'<div class="pctl">'+
+          ((planRouted&&s.on)?'<button class="pmv" data-mv="-1" data-i="'+i+'" title="Move up"'+(no===1?' disabled':'')+'>&#9650;</button>'+
+            '<button class="pmv" data-mv="1" data-i="'+i+'" title="Move down"'+(no===chk.length?' disabled':'')+'>&#9660;</button>':'')+
+          '<button class="pmv x" data-rm="'+i+'" title="Remove from the visit day" aria-label="Remove '+esc(c.n)+'">&times;</button>'+
+        '</div></div>'+rows+'</div></div>';
     }).join('');
     var hasAny=planStops.length>0;
     planEl('pact').style.display=hasAny?'':'none';
     planEl('pcsvrow').style.display=chk.length?'':'none';
+    planEl('pwa').style.display=(planRouted&&chk.length)?'':'none';
+    planEl('psaverow').style.display=chk.length?'':'none';
     planEl('ptotal').style.display=planRouted?'':'none';
     if(planRouted) planEl('ptotal').textContent='Straight-line total: '+planKmTotal.toFixed(1)+' km. Roads will be longer.';
     planLinks();
@@ -1180,18 +1249,23 @@ function __main(){
 
   // The stops inside a box, from the pins currently shown (so layer and filter
   // choices count). Closed won first, then in process, CRM, closed lost.
+  // With "Only exact pins" on (the default) the approximate ones are left out and counted.
   function planFromBounds(b){
-    var s=b.getSouth(), n=b.getNorth(), w=b.getWest(), e=b.getEast(), hit=[];
+    var s=b.getSouth(), n=b.getNorth(), w=b.getWest(), e=b.getEast(), hit=[], total=0, only=planEl('ponly').checked;
     markerIndex.forEach(function(x){
-      var c=x.c; if(c.y>=s&&c.y<=n&&c.x>=w&&c.x<=e) hit.push(c);
+      var c=x.c; if(!(c.y>=s&&c.y<=n&&c.x>=w&&c.x<=e)) return;
+      total++;
+      if(!only||planPrecise(c)) hit.push(c);
     });
     hit.sort(function(a,b2){ return (planRank[a.l]!=null?planRank[a.l]:9)-(planRank[b2.l]!=null?planRank[b2.l]:9); });
+    var left=total-hit.length, tail=left?', '+fmt(left)+' approximate left out':'';
     planFound=hit.length;
     planStops=hit.slice(0,PLAN_MAX).map(function(c){ return {c:c,on:true}; });
     planUnroute();
-    if(!planFound) planMsg('No pins in that box with the layers you have on. Switch on more layers in the legend, or draw a bigger area.');
-    else if(planFound>PLAN_MAX) planMsg('Showing '+PLAN_MAX+' of '+fmt(planFound)+', draw a smaller area.');
-    else planMsg(planFound+' pin'+(planFound===1?'':'s')+' in the box. Untick any you will skip, then order them.');
+    if(!total) planMsg('No pins in that box with the layers you have on. Switch on more layers in the legend, or draw a bigger area.');
+    else if(!planFound) planMsg(fmt(total)+' pin'+(total===1?'':'s')+' in the box'+tail+'. Untick "Only exact pins" to include them.');
+    else if(planFound>PLAN_MAX) planMsg('Showing '+PLAN_MAX+' of '+fmt(planFound)+(only?' exact':'')+' pins'+tail+', draw a smaller area.');
+    else planMsg(fmt(total)+' pin'+(total===1?'':'s')+' in the box'+tail+'. Untick any you will skip, then order them.');
     planRender();
   }
   function planSetRect(b){
@@ -1235,16 +1309,34 @@ function __main(){
     var ordered=path.filter(function(x){ return x.s; }).map(function(x){ return x.s; });
     planStops=ordered.concat(planStops.filter(function(s){ return !s.on; }));
     planRouted=true;
-    var pts=path.map(function(x){ return x.p; }), km=0;
-    for(i=1;i<pts.length;i++) km+=planKm(pts[i-1],pts[i]);
-    planKmTotal=km;
+    planRedrawRoute();
+    planMsg('');
+    planRender();
+  }
+  // The one place the route is drawn: the line, the numbered markers and the km total,
+  // from the ticked stops in their current order (and the start, if set). Used after
+  // ordering and after a hand move; it never changes the order itself.
+  function planRedrawRoute(){
+    planLayer.clearLayers(); planLine=null; planKmTotal=0;
+    var chk=planChecked(), pts=chk.map(function(s){ return [s.c.y,s.c.x]; }), i;
+    if(planStart) pts.unshift(planStart);
+    for(i=1;i<pts.length;i++) planKmTotal+=planKm(pts[i-1],pts[i]);
     if(pts.length>1) planLine=L.polyline(pts,{color:'#2970FF',weight:3,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
-    ordered.forEach(function(s,idx){
+    chk.forEach(function(s,idx){
       L.marker([s.c.y,s.c.x],{interactive:false,keyboard:false,
         icon:L.divIcon({className:'rtn',html:String(idx+1),iconSize:[18,18]})}).addTo(planLayer);
     });
-    planMsg('');
-    planRender();
+  }
+  // Move a ticked stop one place up (-1) or down (+1) among the ticked ones.
+  function planMove(i,dir){
+    var s=planStops[i]; if(!s||!s.on||!planRouted) return;
+    var j=i+dir;
+    while(j>=0&&j<planStops.length&&!planStops[j].on) j+=dir;
+    if(j<0||j>=planStops.length) return;
+    planStops[i]=planStops[j]; planStops[j]=s;
+    planRedrawRoute(); planRender();
+    var b=planEl('plist').querySelector('[data-mv="'+dir+'"][data-i="'+j+'"]');
+    if(b&&!b.disabled) b.focus();
   }
 
   // Google Maps links. A stop is written as lat,lng only when we hold a real street
@@ -1311,20 +1403,28 @@ function __main(){
     setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
   }
 
-  function planLocate(){
+  // Set or drop the start point (your location, or the one in a shared link), with its dot and button label.
+  function planSetStart(ll){
+    planStart=ll||null;
+    if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
     var btn=planEl('ploc');
     if(planStart){
-      planStart=null; if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
+      planStartMk=L.circleMarker(planStart,{radius:7,color:'#fff',weight:2,fillColor:'#2970FF',fillOpacity:1,interactive:false,renderer:planRenderer}).addTo(map);
+      btn.textContent='Don\\'t start from my location'; btn.classList.add('on');
+    }else{
       btn.textContent='Start from my location'; btn.classList.remove('on');
+    }
+  }
+  function planLocate(){
+    if(planStart){
+      planSetStart(null);
       if(planRouted) planOrder();
       return;
     }
     if(!navigator.geolocation){ planMsg('This browser cannot share your location. The route starts at the first stop.',true); return; }
     planMsg('Finding your location...');
     navigator.geolocation.getCurrentPosition(function(pos){
-      planStart=[pos.coords.latitude,pos.coords.longitude];
-      planStartMk=L.circleMarker(planStart,{radius:7,color:'#fff',weight:2,fillColor:'#2970FF',fillOpacity:1,interactive:false,renderer:planRenderer}).addTo(map);
-      btn.textContent='Don\\'t start from my location'; btn.classList.add('on');
+      planSetStart([pos.coords.latitude,pos.coords.longitude]);
       if(planRouted) planOrder(); else planMsg('Starting from your location. Order the stops to plan the route.');
     },function(err){
       planMsg('Could not get your location ('+((err&&err.message)||'not allowed')+'). The route starts at the first stop.',true);
@@ -1335,10 +1435,174 @@ function __main(){
     planDrawOff();
     if(planRect){ map.removeLayer(planRect); planRect=null; }
     planStops=[]; planFound=0; planUnroute();
-    planStart=null; if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
-    planEl('ploc').textContent='Start from my location'; planEl('ploc').classList.remove('on');
+    planSetStart(null);
     planMsg('Switch on the layers you want in the legend, then drag a box over the area.');
     planRender();
+  }
+
+  // Add or drop a stop by hand. A stop is found by id: the HubSpot id, or 'a'+index for
+  // an admin-only pin. Changing the list un-routes it, like ticking a box does.
+  function planAdd(id){
+    var c=planById[String(id)];
+    if(!c){ planMsg('That pin is not on this map.',true); return; }
+    planEl('plan').open=true;
+    for(var i=0;i<planStops.length;i++){
+      if(planStops[i].c===c){ planMsg(c.n+' is already in the visit day.'); return; }
+    }
+    var was=planRouted;
+    planStops.push({c:c,on:true});
+    if(was) planUnroute();
+    planMsg('Added '+c.n+'.'+(was?' Order the stops again.':''));
+    planRender();
+  }
+  function planRemove(i){
+    var s=planStops[i]; if(!s) return;
+    var was=planRouted;
+    planStops.splice(i,1);
+    if(was) planUnroute();
+    planMsg('Removed '+s.c.n+'.'+(was?' Order the stops again.':''));
+    planRender();
+  }
+  // Fly to a company's pin and open it; if a filter hides it now, just centre on where it is.
+  function planShow(c){
+    for(var j=0;j<markerIndex.length;j++){ if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; } }
+    map.setView([c.y,c.x],Math.min(17,map.getMaxZoom()));
+  }
+  function planZoom(){
+    var pts=planStops.map(function(s){ return [s.c.y,s.c.x]; }), sz=map.getSize();
+    if(planStart) pts.push(planStart);
+    if(!pts.length||!(sz.x>0&&sz.y>0)) return;
+    map.fitBounds(L.latLngBounds(pts),{padding:[40,40],maxZoom:16,animate:false});
+  }
+
+  // Saved days live in localStorage (key fk_plans, newest first, 20 kept). Every access is
+  // wrapped: a private window or blocked storage must not break the planner.
+  function planPlansRead(){
+    try{
+      var a=JSON.parse(localStorage.getItem(PLANS_KEY)||'[]');
+      return Array.isArray(a)?a.filter(function(p){ return p&&Array.isArray(p.ids); }):[];
+    }catch(x){ return []; }
+  }
+  function planPlansWrite(a){
+    try{ localStorage.setItem(PLANS_KEY,JSON.stringify(a)); return true; }catch(x){ return false; }
+  }
+  function planPlansRefresh(sel){
+    var a=planPlansRead(), el=planEl('pplans');
+    el.innerHTML='<option value="">My plans ('+a.length+')</option>'+a.map(function(p,i){
+      return '<option value="'+i+'">'+esc(p.name||'Visit day')+' ('+p.ids.length+')</option>'; }).join('');
+    el.value=(sel==null)?'':String(sel);
+    planEl('pplansrow').style.display=a.length?'':'none';
+  }
+  function planDateText(){
+    var d=new Date();
+    return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear();
+  }
+  function planSave(){
+    var chk=planChecked();
+    if(!chk.length){ planMsg('Nothing to save yet.',true); return; }
+    var def='Visit day '+planDateText(), name=window.prompt('Name this visit day',def);
+    if(name===null) return;
+    name=String(name).trim()||def;
+    var a=planPlansRead();
+    a.unshift({name:name,savedAt:new Date().toISOString(),ids:chk.map(function(s){ return s.c._pid; }),
+      start:planStart?[+planStart[0].toFixed(6),+planStart[1].toFixed(6)]:null,routed:!!planRouted});
+    a=a.slice(0,PLANS_KEEP);
+    if(!planPlansWrite(a)){ planMsg('This browser would not save the plan. Use Copy link instead.',true); return; }
+    planPlansRefresh(0);
+    planMsg('Saved '+name+'.');
+  }
+  // Put a saved or shared plan on the list. Ids not on this map are skipped; returns how many.
+  function planLoad(p){
+    var seen={}, found=[], missing=0;
+    (p.ids||[]).forEach(function(id){
+      id=String(id); var c=planById[id];
+      if(seen[id]) return; seen[id]=1;
+      if(c) found.push({c:c,on:true}); else missing++;
+    });
+    planDrawOff();
+    if(planRect){ map.removeLayer(planRect); planRect=null; }
+    planUnroute();
+    planStops=found; planFound=found.length;
+    var st=p.start;
+    planSetStart((st&&st.length===2&&isFinite(st[0])&&isFinite(st[1]))?[+st[0],+st[1]]:null);
+    planEl('plan').open=true;
+    if(p.routed&&found.length){ planRouted=true; planRedrawRoute(); }
+    planRender();
+    return missing;
+  }
+  function planLoadSaved(i){
+    var p=planPlansRead()[i]; if(!p) return;
+    var miss=planLoad(p);
+    planZoom();
+    planMsg('Loaded '+(p.name||'Visit day')+', '+planStops.length+' stop'+(planStops.length===1?'':'s')+'.'+
+      (miss?' '+miss+' not on this map, skipped.':'')+(p.routed?'':' Order the stops to plan the route.'),!!miss);
+  }
+  function planDelete(){
+    var v=planEl('pplans').value;
+    if(v===''){ planMsg('Choose a plan in My plans first.',true); return; }
+    var a=planPlansRead(), p=a[Number(v)]; if(!p) return;
+    a.splice(Number(v),1);
+    if(!planPlansWrite(a)){ planMsg('This browser would not change the saved plans.',true); return; }
+    planPlansRefresh(null);
+    planMsg('Deleted '+(p.name||'Visit day')+'.');
+  }
+  function planShareUrl(){
+    var ids=planChecked().map(function(s){ return s.c._pid; });
+    if(!ids.length) return '';
+    var base=(location.origin&&location.origin!=='null')?location.origin:location.protocol+'//';
+    return base+location.pathname+'?plan='+ids.join(',')+
+      (planStart?'&start='+planStart[0].toFixed(6)+','+planStart[1].toFixed(6):'');
+  }
+  function planCopy(){
+    var u=planShareUrl();
+    if(!u){ planMsg('Nothing to share yet.',true); return; }
+    function byHand(){ planMsg('Copy this link: '+u); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      try{ navigator.clipboard.writeText(u).then(function(){ planMsg('Link copied. Whoever opens it gets these stops, ordered.'); },byHand); }
+      catch(x){ byHand(); }
+    }else byHand();
+  }
+  // ?plan=<ids>[&start=lat,lng] (a shared day): the stops, ordered, with the map zoomed to them.
+  function planFromLink(){
+    var q=new URLSearchParams(location.search), raw=(q.get('plan')||'').trim();
+    if(!raw) return;
+    var sp=(q.get('start')||'').split(','), start=null;
+    if(sp.length===2){
+      var la=parseFloat(sp[0]), ln=parseFloat(sp[1]);
+      if(isFinite(la)&&isFinite(ln)&&Math.abs(la)<=90&&Math.abs(ln)<=180) start=[la,ln];
+    }
+    var ids=raw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    var miss=planLoad({ids:ids,start:start,routed:false});
+    if(!planStops.length){ planMsg('None of the stops in this link are on the map.',true); return; }
+    planOrder();
+    planZoom();
+    planMsg('Shared visit day, '+planStops.length+' stop'+(planStops.length===1?'':'s')+', ordered.'+(miss?' '+miss+' not on this map, skipped.':''),!!miss);
+  }
+
+  // WhatsApp text: a title, the stops in route order, then the Google Maps link(s).
+  // If it runs past ~1,800 characters, the stop lines are cut after the 15th. The links are never cut,
+  // so a day of many approximate stops (long text links) can still pass that mark.
+  function planWaText(){
+    var chk=planChecked();
+    var head='Visit day '+planDateText()+', '+chk.length+' stop'+(chk.length===1?'':'s');
+    var lines=chk.map(function(s,i){
+      var c=s.c;
+      return (i+1)+'. '+c.n+(c.a?', '+c.a:'')+(c.fi?' (funded)':'')+(planPrecise(c)?'':' (approx.)');
+    });
+    var legs=planLegs();
+    var links=legs.map(function(g){ return legs.length>1?g.label+': '+g.url:g.url; });
+    function build(k){
+      var body=lines.slice(0,k);
+      if(k<lines.length) body.push('\\u2026and '+(lines.length-k)+' more');
+      return head+'\\n'+body.join('\\n')+'\\n\\n'+links.join('\\n');
+    }
+    var t=build(lines.length);
+    return t.length>WA_MAX ? build(Math.min(lines.length,WA_STOPS)) : t;
+  }
+  function planWaUrl(){ return 'https://wa.me/?text='+encodeURIComponent(planWaText()); }
+  function planWhatsapp(){
+    if(!planRouted||!planChecked().length){ planMsg('Order the stops first, then send.',true); return; }
+    window.open(planWaUrl(),'_blank','noopener');
   }
 
   // The box is drawn by hand with pointer events, which cover mouse, pen and touch
@@ -1392,6 +1656,12 @@ function __main(){
   planEl('porder').onclick=planOrder;
   planEl('ploc').onclick=planLocate;
   planEl('pcsv').onclick=planDownload;
+  planEl('pwa').onclick=planWhatsapp;
+  planEl('psave').onclick=planSave;
+  planEl('pcopy').onclick=planCopy;
+  planEl('pdel').onclick=planDelete;
+  planEl('pplans').onchange=function(){ if(this.value!=='') planLoadSaved(Number(this.value)); };
+  planEl('ponly').onchange=function(){ if(planRect) planFromBounds(planRect.getBounds()); };
   planEl('plist').onchange=function(e){
     var i=e.target.getAttribute('data-i'); if(i==null||!planStops[i]) return;
     planStops[i].on=e.target.checked;
@@ -1399,15 +1669,24 @@ function __main(){
     planRender();
   };
   planEl('plist').onclick=function(e){
-    var i=e.target.getAttribute&&e.target.getAttribute('data-i');
-    if(i==null||!e.target.classList.contains('pname')||!planStops[i]) return;
-    var c=planStops[i].c;
-    for(var j=0;j<markerIndex.length;j++){ if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; } }
-    map.setView([c.y,c.x],Math.min(17,map.getMaxZoom()));   // hidden by a filter since: show where it is
+    var t=e.target, g=function(a){ return t.getAttribute&&t.getAttribute(a); }, i;
+    if(g('data-add')!=null){ planAdd(g('data-add')); return; }
+    if(g('data-rm')!=null){ planRemove(Number(g('data-rm'))); return; }
+    if(g('data-mv')!=null){ planMove(Number(g('data-i')),Number(g('data-mv'))); return; }
+    if((i=g('data-near'))!=null){ if(planStops[i]){ planStops[i].near=!planStops[i].near; planRender(); } return; }
+    if(!t.classList||!t.classList.contains('pname')) return;
+    if(g('data-pid')!=null){ if(planById[g('data-pid')]) planShow(planById[g('data-pid')]); return; }
+    if(planStops[g('data-i')]) planShow(planStops[g('data-i')].c);
   };
+  window.__planAdd=planAdd;
+  planPlansRefresh(null);
   // In-browser checks only.
   window.__planner={draw:function(s,w,n,e){ planSetRect(L.latLngBounds([s,w],[n,e])); },order:planOrder,legs:planLegs,csv:planCsv,
-    download:planDownload,setStart:function(lat,lng){ planStart=[lat,lng]; },state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal}; }};
+    download:planDownload,setStart:function(lat,lng){ planSetStart([lat,lng]); },add:planAdd,remove:planRemove,move:planMove,
+    near:function(c){ var m={}; planStops.forEach(function(s){ m[s.c._pid]=1; }); return planNear(c,m); },
+    savePlan:planSave,plans:planPlansRead,loadSaved:planLoadSaved,del:planDelete,link:planShareUrl,fromLink:planFromLink,
+    view:function(){ return map.getBounds().toBBoxString()+" z"+map.getZoom(); },waText:planWaText,waUrl:planWaUrl,byId:function(id){ return planById[id]; },
+    state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal}; }};
 
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
@@ -1465,6 +1744,7 @@ function __main(){
     if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS,{animate:false}); lockZoom(); }
     else map.setView([25.05,55.35], 8, {animate:false});
     deepLink();
+    planFromLink();
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
