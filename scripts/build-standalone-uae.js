@@ -339,6 +339,9 @@ ${V('MarkerCluster.Default.css')}
   .pwarn{color:#FDB022}
   .rtn{width:18px;height:18px;border-radius:50%;background:#2970FF;border:1.5px solid #fff;color:#fff;font:600 10px/15px Montserrat,sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.5)}
   .plan-drawing,.plan-drawing .leaflet-interactive{cursor:crosshair!important}
+  .ptk{color:#D1D1D6}
+  .pattr{font-size:9.5px;margin-top:2px}
+  #porder:disabled{opacity:.55;cursor:default}
   .pchk{display:flex;align-items:center;gap:6px;font-size:11px;color:#A0A0AB;margin:2px 0 5px;cursor:pointer}
   .pchk input{accent-color:#2970FF;margin:0}
   .pfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 4px;min-height:26px}
@@ -399,6 +402,7 @@ ${V('MarkerCluster.Default.css')}
       <div class="plist" id="plist"></div>
       <div class="prow2" id="pact" style="display:none"><button class="pbtn pri" id="porder">Order stops</button><button class="pbtn" id="ploc">Start from my location</button></div>
       <div class="muted" id="ptotal" style="display:none"></div>
+      <div class="muted pattr" id="pattr" style="display:none">Road routing by OSRM, data &copy; OpenStreetMap contributors.</div>
       <div id="plinks" style="margin-top:6px"></div>
       <div class="prow2" id="pcsvrow" style="display:none;margin-top:4px"><button class="pbtn" id="pcsv">Download CSV</button><button class="pbtn" id="pwa" style="display:none">Send via WhatsApp</button></div>
       <div class="prow2" id="psaverow" style="display:none"><button class="pbtn" id="psave">Save</button><button class="pbtn" id="pcopy">Copy link</button></div>
@@ -1242,8 +1246,7 @@ function __main(){
     planEl('pcsvrow').style.display=chk.length?'':'none';
     planEl('pwa').style.display=(planRouted&&chk.length)?'':'none';
     planEl('psaverow').style.display=chk.length?'':'none';
-    planEl('ptotal').style.display=planRouted?'':'none';
-    if(planRouted) planEl('ptotal').textContent='Straight-line total: '+planKmTotal.toFixed(1)+' km. Roads will be longer.';
+    planTotalText();
     planLinks();
   }
 
@@ -1274,51 +1277,148 @@ function __main(){
     planFromBounds(b);
   }
 
-  function planUnroute(){
-    planLayer.clearLayers(); planLine=null; planRouted=false; planKmTotal=0;
+  // Road routing: the public OSRM demo server (free, no key, OpenStreetMap data). One table
+  // call gives the drive times between every pair of stops, which the ordering runs on; one
+  // route call gives the road line, distance and time. Either one failing falls back, quietly
+  // and without blocking: straight-line ordering, straight line drawn.
+  var OSRM_MS=7000;
+  var planOsrm='https://router.project-osrm.org';
+  var planMatrixCache={};      // sorted unique "lon,lat" list -> {idx,dur,dist}; one fetch per set of places
+  var planRoad=null;           // {sec,km,src:'route'|'matrix'} for the route as drawn, or null
+  var planGen=0, planRG=0, planRouting=false;   // order run, route-draw run, order in flight
+  function planLL(p){ return p[1].toFixed(6)+','+p[0].toFixed(6); }   // OSRM wants lon,lat
+  async function planFetchJson(url){
+    var ctl=new AbortController(), t=setTimeout(function(){ ctl.abort(); },OSRM_MS);
+    try{
+      var r=await fetch(url,{signal:ctl.signal});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var j=await r.json();
+      if(!j||j.code!=='Ok') throw new Error((j&&j.code)||'bad reply');
+      return j;
+    }finally{ clearTimeout(t); }
   }
-  // Nearest neighbour from the first node, then 2-opt on the open path until no
-  // reversal shortens it. The first node (your location, or the first ticked stop) stays put.
-  function planOrder(){
+  // Same place listed twice (two companies in one building) is sent once. Sorted, so the
+  // key does not change when the stops are re-ordered by hand.
+  function planUniq(pts){
+    var seen={}, out=[];
+    pts.forEach(function(p){ var k=planLL(p); if(!seen[k]){ seen[k]=1; out.push(k); } });
+    return out.sort();
+  }
+  function planMxFor(pts){ return planMatrixCache[planUniq(pts).join(';')]||null; }
+  async function planMatrix(pts){
+    var u=planUniq(pts), key=u.join(';'), hit=planMatrixCache[key];
+    if(hit) return hit;
+    var idx={}; u.forEach(function(k,i){ idx[k]=i; });
+    var mx;
+    if(u.length<2) mx={idx:idx,dur:[[0]],dist:[[0]]};
+    else{
+      var j=await planFetchJson(planOsrm+'/table/v1/driving/'+key+'?annotations=duration,distance');
+      var ok=!!(j.durations&&j.distances&&j.durations.length===u.length&&j.distances.length===u.length);
+      if(ok) j.durations.concat(j.distances).forEach(function(r){ r.forEach(function(v){ if(typeof v!=='number') ok=false; }); });
+      if(!ok) throw new Error('no road between some stops');
+      mx={idx:idx,dur:j.durations,dist:j.distances};
+    }
+    if(Object.keys(planMatrixCache).length>=30) planMatrixCache={};
+    planMatrixCache[key]=mx;
+    return mx;
+  }
+  // Total road distance and time over a path, from the matrix (asymmetric: leg a->b, not b->a).
+  function planSumLegs(mx,pts){
+    var sec=0, m=0, i;
+    for(i=1;i<pts.length;i++){
+      var a=mx.idx[planLL(pts[i-1])], b=mx.idx[planLL(pts[i])];
+      if(a==null||b==null) return null;
+      sec+=mx.dur[a][b]; m+=mx.dist[a][b];
+    }
+    return {sec:sec,km:m/1000,src:'matrix'};
+  }
+  function planMinText(sec){
+    var m=Math.max(1,Math.round(sec/60));
+    return m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');
+  }
+  function planRoadText(){ return planRoad?(planRoad.km.toFixed(1)+' km, '+planMinText(planRoad.sec)):''; }
+  function planTotalText(){
+    var el=planEl('ptotal'), at=planEl('pattr');
+    el.style.display=planRouted?'':'none';
+    at.style.display=(planRouted&&planRoad)?'':'none';
+    if(!planRouted) return;
+    var st=planKmTotal.toFixed(1);
+    el.innerHTML=planRoad
+      ? '<span class="ptk">About '+planRoad.km.toFixed(1)+' km, '+planMinText(planRoad.sec)+' driving</span> (straight line: '+st+' km)'
+      : 'Straight-line total: '+st+' km. Roads will be longer.';
+  }
+
+  function planUnroute(){
+    planLayer.clearLayers(); planLine=null; planRouted=false; planKmTotal=0; planRoad=null;
+    planGen++; planRG++; planRouting=false; planEl('porder').disabled=false;   // also cancels an order still in flight
+  }
+  // Nearest neighbour from node 0, then 2-opt on the open path until no reversal makes it
+  // cheaper. d(i,j) is the cost of going from node i to node j (drive seconds, or km).
+  // Node 0 (your location, or the first ticked stop) stays put. The matrix is not symmetric
+  // (one-way roads), so every candidate reversal is scored on the whole path, not on 4 edges.
+  function planOptimise(n,d){
+    var path=[0], left=[], i, j;
+    for(i=1;i<n;i++) left.push(i);
+    while(left.length){
+      var last=path[path.length-1], bi=0, bd=Infinity;
+      for(i=0;i<left.length;i++){ var x=d(last,left[i]); if(x<bd){ bd=x; bi=i; } }
+      path.push(left.splice(bi,1)[0]);
+    }
+    function cost(p){ var s=0, k; for(k=1;k<p.length;k++) s+=d(p[k-1],p[k]); return s; }
+    var best=cost(path), better=true, guard=0;
+    while(better&&guard++<60){
+      better=false;
+      for(i=1;i<n-1;i++){
+        for(j=i+1;j<n;j++){
+          var cand=path.slice(0,i).concat(path.slice(i,j+1).reverse(),path.slice(j+1)), c=cost(cand);
+          if(c<best-1e-9){ path=cand; best=c; better=true; }
+        }
+      }
+    }
+    return path;
+  }
+  // Order the ticked stops by drive time (OSRM), or by straight-line km if OSRM cannot be
+  // reached, then draw the route. Returns a promise that settles when it is all drawn.
+  async function planOrder(){
     var chk=planChecked();
     if(!chk.length){ planMsg('Tick at least one stop first.',true); return; }
     var nodes=chk.map(function(s){ return {p:[s.c.y,s.c.x],s:s}; });
     if(planStart) nodes.unshift({p:planStart,s:null});
-    var path=[nodes[0]], left=nodes.slice(1), i, j, k;
-    while(left.length){
-      var last=path[path.length-1], bi=0, bd=Infinity;
-      for(i=0;i<left.length;i++){ var d=planKm(last.p,left[i].p); if(d<bd){ bd=d; bi=i; } }
-      path.push(left.splice(bi,1)[0]);
+    nodes.forEach(function(x){ x.k=planLL(x.p); });
+    var my=++planGen, mx=null, big=nodes.length>2;   // with 2 nodes there is nothing to order
+    planRG++; planRouting=true; planEl('porder').disabled=true;
+    planMsg('Working out the road order...');
+    if(big){
+      try{ mx=await planMatrix(nodes.map(function(x){ return x.p; })); }catch(e){ mx=null; }
+      if(my!==planGen) return;     // the list changed while we waited
     }
-    var m=path.length, better=true, guard=0;
-    while(better && guard++<200){
-      better=false;
-      for(i=1;i<m-1;i++){
-        for(j=i+1;j<m;j++){
-          var after=(j<m-1);
-          var gain=planKm(path[i-1].p,path[i].p)+(after?planKm(path[j].p,path[j+1].p):0)
-                  -planKm(path[i-1].p,path[j].p)-(after?planKm(path[i].p,path[j+1].p):0);
-          if(gain>1e-9){
-            for(k=0;k<Math.floor((j-i+1)/2);k++){ var t=path[i+k]; path[i+k]=path[j-k]; path[j-k]=t; }
-            better=true;
-          }
-        }
-      }
-    }
+    var d=mx
+      ? function(a,b){ return mx.dur[mx.idx[nodes[a].k]][mx.idx[nodes[b].k]]; }
+      : function(a,b){ return planKm(nodes[a].p,nodes[b].p); };
+    var order=big?planOptimise(nodes.length,d):nodes.map(function(x,i){ return i; });
+    var ordered=order.map(function(i){ return nodes[i]; }).filter(function(x){ return x.s; }).map(function(x){ return x.s; });
     planUnroute();
-    var ordered=path.filter(function(x){ return x.s; }).map(function(x){ return x.s; });
+    my=planGen; planRouting=true; planEl('porder').disabled=true;
     planStops=ordered.concat(planStops.filter(function(s){ return !s.on; }));
     planRouted=true;
-    planRedrawRoute();
-    planMsg('');
+    var drawn=planRedrawRoute(big&&!mx);     // straight line now, the road line when it arrives
     planRender();
+    var ok=await drawn;
+    if(my!==planGen) return;
+    planRouting=false; planEl('porder').disabled=false;
+    if(big&&!mx) planMsg('Routing service unavailable, ordered by straight-line distance.',true);
+    else if(!ok) planMsg('Road line unavailable, showing straight lines between the stops.',true);
+    else planMsg('');
   }
-  // The one place the route is drawn: the line, the numbered markers and the km total,
-  // from the ticked stops in their current order (and the start, if set). Used after
-  // ordering and after a hand move; it never changes the order itself.
-  function planRedrawRoute(){
-    planLayer.clearLayers(); planLine=null; planKmTotal=0;
-    var chk=planChecked(), pts=chk.map(function(s){ return [s.c.y,s.c.x]; }), i;
+  // The one place the route is drawn: the line, the numbered markers and the totals, from
+  // the ticked stops in their current order (and the start, if set). Used after ordering
+  // and after a hand move; it never changes the order itself. The straight line goes up
+  // at once; the road geometry (one OSRM route call) replaces it when it arrives. Totals
+  // come from the cached matrix if there is one, then from the route. Resolves true when
+  // all it set out to draw is drawn (also when superseded, so the caller says nothing).
+  function planRedrawRoute(skipRoad){
+    planLayer.clearLayers(); planLine=null; planKmTotal=0; planRoad=null;
+    var rg=++planRG, chk=planChecked(), pts=chk.map(function(s){ return [s.c.y,s.c.x]; }), i;
     if(planStart) pts.unshift(planStart);
     for(i=1;i<pts.length;i++) planKmTotal+=planKm(pts[i-1],pts[i]);
     if(pts.length>1) planLine=L.polyline(pts,{color:'#2970FF',weight:3,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
@@ -1326,6 +1426,24 @@ function __main(){
       L.marker([s.c.y,s.c.x],{interactive:false,keyboard:false,
         icon:L.divIcon({className:'rtn',html:String(idx+1),iconSize:[18,18]})}).addTo(planLayer);
     });
+    var mx=pts.length>1?planMxFor(pts):null;
+    if(mx) planRoad=planSumLegs(mx,pts);
+    planTotalText();
+    if(pts.length<2||skipRoad) return Promise.resolve(true);
+    return planRoadLine(pts,rg);
+  }
+  async function planRoadLine(pts,rg){
+    var j;
+    try{ j=await planFetchJson(planOsrm+'/route/v1/driving/'+pts.map(planLL).join(';')+'?overview=full&geometries=geojson&steps=false'); }
+    catch(e){ return rg!==planRG; }
+    if(rg!==planRG) return true;
+    var r=j.routes&&j.routes[0];
+    if(!r||!r.geometry||!r.geometry.coordinates||r.geometry.coordinates.length<2) return false;
+    if(planLine) planLayer.removeLayer(planLine);
+    planLine=L.polyline(r.geometry.coordinates.map(function(c){ return [c[1],c[0]]; }),{color:'#2970FF',weight:4,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
+    planRoad={sec:r.duration,km:r.distance/1000,src:'route'};
+    planTotalText();
+    return true;
   }
   // Move a ticked stop one place up (-1) or down (+1) among the ticked ones.
   function planMove(i,dir){
@@ -1334,9 +1452,10 @@ function __main(){
     while(j>=0&&j<planStops.length&&!planStops[j].on) j+=dir;
     if(j<0||j>=planStops.length) return;
     planStops[i]=planStops[j]; planStops[j]=s;
-    planRedrawRoute(); planRender();
+    var drawn=planRedrawRoute(), rg=planRG; planRender();
     var b=planEl('plist').querySelector('[data-mv="'+dir+'"][data-i="'+j+'"]');
     if(b&&!b.disabled) b.focus();
+    drawn.then(function(ok){ if(!ok&&rg===planRG) planMsg('Road line unavailable, showing straight lines between the stops.',true); });
   }
 
   // Google Maps links. A stop is written as lat,lng only when we hold a real street
@@ -1418,14 +1537,14 @@ function __main(){
   function planLocate(){
     if(planStart){
       planSetStart(null);
-      if(planRouted) planOrder();
+      if(planRouted||planRouting) planOrder();
       return;
     }
     if(!navigator.geolocation){ planMsg('This browser cannot share your location. The route starts at the first stop.',true); return; }
     planMsg('Finding your location...');
     navigator.geolocation.getCurrentPosition(function(pos){
       planSetStart([pos.coords.latitude,pos.coords.longitude]);
-      if(planRouted) planOrder(); else planMsg('Starting from your location. Order the stops to plan the route.');
+      if(planRouted||planRouting) planOrder(); else planMsg('Starting from your location. Order the stops to plan the route.');
     },function(err){
       planMsg('Could not get your location ('+((err&&err.message)||'not allowed')+'). The route starts at the first stop.',true);
     },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
@@ -1449,7 +1568,7 @@ function __main(){
     for(var i=0;i<planStops.length;i++){
       if(planStops[i].c===c){ planMsg(c.n+' is already in the visit day.'); return; }
     }
-    var was=planRouted;
+    var was=planRouted||planRouting;
     planStops.push({c:c,on:true});
     if(was) planUnroute();
     planMsg('Added '+c.n+'.'+(was?' Order the stops again.':''));
@@ -1457,7 +1576,7 @@ function __main(){
   }
   function planRemove(i){
     var s=planStops[i]; if(!s) return;
-    var was=planRouted;
+    var was=planRouted||planRouting;
     planStops.splice(i,1);
     if(was) planUnroute();
     planMsg('Removed '+s.c.n+'.'+(was?' Order the stops again.':''));
@@ -1574,9 +1693,11 @@ function __main(){
     var ids=raw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
     var miss=planLoad({ids:ids,start:start,routed:false});
     if(!planStops.length){ planMsg('None of the stops in this link are on the map.',true); return; }
-    planOrder();
     planZoom();
-    planMsg('Shared visit day, '+planStops.length+' stop'+(planStops.length===1?'':'s')+', ordered.'+(miss?' '+miss+' not on this map, skipped.':''),!!miss);
+    return planOrder().then(function(){
+      var pm=planEl('pmsg'), w=pm.classList.contains('pwarn')?pm.textContent+' ':'';   // keep a routing warning
+      planMsg(w+'Shared visit day, '+planStops.length+' stop'+(planStops.length===1?'':'s')+', ordered.'+(miss?' '+miss+' not on this map, skipped.':''),!!miss||!!w);
+    });
   }
 
   // WhatsApp text: a title, the stops in route order, then the Google Maps link(s).
@@ -1584,7 +1705,7 @@ function __main(){
   // so a day of many approximate stops (long text links) can still pass that mark.
   function planWaText(){
     var chk=planChecked();
-    var head='Visit day '+planDateText()+', '+chk.length+' stop'+(chk.length===1?'':'s');
+    var head='Visit day '+planDateText()+', '+chk.length+' stop'+(chk.length===1?'':'s')+(planRoad?', about '+planRoadText()+' driving':'');
     var lines=chk.map(function(s,i){
       var c=s.c;
       return (i+1)+'. '+c.n+(c.a?', '+c.a:'')+(c.fi?' (funded)':'')+(planPrecise(c)?'':' (approx.)');
@@ -1665,7 +1786,7 @@ function __main(){
   planEl('plist').onchange=function(e){
     var i=e.target.getAttribute('data-i'); if(i==null||!planStops[i]) return;
     planStops[i].on=e.target.checked;
-    if(planRouted){ planUnroute(); planMsg('Stops changed. Order them again.'); }
+    if(planRouted||planRouting){ planUnroute(); planMsg('Stops changed. Order them again.'); }
     planRender();
   };
   planEl('plist').onclick=function(e){
@@ -1686,7 +1807,9 @@ function __main(){
     near:function(c){ var m={}; planStops.forEach(function(s){ m[s.c._pid]=1; }); return planNear(c,m); },
     savePlan:planSave,plans:planPlansRead,loadSaved:planLoadSaved,del:planDelete,link:planShareUrl,fromLink:planFromLink,
     view:function(){ return map.getBounds().toBBoxString()+" z"+map.getZoom(); },waText:planWaText,waUrl:planWaUrl,byId:function(id){ return planById[id]; },
-    state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal}; }};
+    osrmBase:function(v){ if(v!=null){ planOsrm=String(v); planMatrixCache={}; } return planOsrm; },
+    state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal,routing:planRouting,road:planRoad,
+      linePts:planLine?planLine.getLatLngs().length:0,matrices:Object.keys(planMatrixCache).length}; }};
 
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
