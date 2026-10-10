@@ -174,6 +174,7 @@
     border-left:3px solid #2970FF;line-height:1.5}
   .note b{color:#fff;font-weight:500}
   .note .x{float:right;cursor:pointer;color:#70707B;margin-left:8px;font-weight:600}
+  .note.deepnote{top:12px;bottom:auto;left:50%;transform:translateX(-50%);border-left-color:#F79009;max-width:460px}
 
   .leaflet-popup-content-wrapper{border-radius:1em!important;background:#18181B!important;color:#A0A0AB!important;border:1px solid #3F3F46;box-shadow:0 8px 30px rgba(0,0,0,.5)!important}
   .leaflet-popup-tip{background:#18181B!important}
@@ -227,6 +228,7 @@
     .stat .num{font-size:16px}
     .panel{top:108px;right:8px;width:180px}
     .note{display:none}
+    .note.deepnote{max-width:calc(100% - 24px)}
   }
 </style>
 </head>
@@ -284,6 +286,7 @@
 </div>
 
 <div class="note" id="note"></div>
+<div class="note deepnote" id="deepnote" style="display:none"></div>
 
 <dialog class="info" id="dlg">
   <div class="ih" id="dlgh"></div>
@@ -953,19 +956,52 @@ function __main(){
       return '<div class="hit" data-i="'+i+'">'+esc(x.c.n)+' <i>'+esc(STAGE[x.c.l])+'</i></div>';}).join('')
       || '<div class="hit"><i>No pinned business matches</i></div>';
     Array.prototype.forEach.call(box.querySelectorAll('.hit[data-i]'),function(el){
-      el.onclick=function(){
-        var h=hits[Number(el.getAttribute('data-i'))];
-        // Never past the layer maximum, and never an animated fly on a map whose
-        // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
-        var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
-        if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
-        if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
-        // Ungrouped: the pin may be culled out of view, in which case openPopup
-        // would fire on a marker that is not on the map and do nothing. reveal()
-        // flies to it, re-culls so it exists, then opens.
-        else crmPlain.reveal(h.m,function(){ h.m.openPopup(); });
-      };});
+      el.onclick=function(){ goTo(hits[Number(el.getAttribute('data-i'))]); };});
   };
+  // Fly to a markerIndex entry and open its popup. Used by the search box and by ?company=.
+  function goTo(h){
+    // Never past the layer maximum, and never an animated fly on a map whose
+    // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
+    var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
+    if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
+    if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
+    // Ungrouped: the pin may be culled out of view, in which case openPopup
+    // would fire on a marker that is not on the map and do nothing. reveal()
+    // flies to it, re-culls so it exists, then opens.
+    else crmPlain.reveal(h.m,function(){ h.m.openPopup(); });
+  }
+
+  // Deep link from HubSpot: ?company=<hubspot company id> opens that company's pin.
+  function deepLink(){
+    var deepId=(new URLSearchParams(location.search).get('company')||'').trim();
+    if(!deepId) return;
+    var c=null;
+    for(var k=0;k<DATA.companies.length;k++){
+      var x=DATA.companies[k];
+      if(!x.ao && String(x.i)===deepId){ c=x; break; }
+    }
+    if(!c){
+      var dn=document.getElementById('deepnote');
+      dn.innerHTML='<span class="x" onclick="this.parentNode.style.display=\'none\'">&times;</span>'+
+        '<b>HubSpot company '+esc(deepId)+' is not on this map.</b> Likely reasons: its record names a country '+
+        'other than the UAE, it has no location on record, or it was not in the CRM snapshot of '+esc(DATA.pulled)+'.';
+      dn.style.display='block';
+      return;
+    }
+    // Switch on every filter that would hide this pin, then redraw so it exists.
+    var ch=false;
+    function need(o,key){ if(o && !o[key]){ o[key]=true; ch=true; } }
+    need(on,c.l); need(catOn,c.c); need(emOn,c.e||'Unknown');
+    need(precOn,c.h==='geocoded'?'exact':(c.h||'emirate'));
+    need(hsOwnOn,c.o||'__none');
+    if(ownOn && !allOn(ownOn)){
+      (c.co?c.co.split(', '):['__none']).forEach(function(k){ need(ownOn,k); });
+    }
+    if(ch){ renderLegend(); renderCats(); renderEms(); renderPrec(); renderHsOwn(); renderOwn(); redraw(); }
+    for(var j=0;j<markerIndex.length;j++){
+      if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; }
+    }
+  }
 
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
@@ -1017,8 +1053,12 @@ function __main(){
     // reads the container size, so it only runs when the container has one;
     // a hidden tab gets the fixed country view instead and locks on resize.
     var sz=map.getSize();
-    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS); lockZoom(); }
-    else map.setView([25.05,55.35], 8);
+    // No animation here: an animated fit fires its own moveend a moment later,
+    // which reveal() in deepLink() would take for the arrival at the pin and
+    // open the popup on a marker the country-zoom cull had dropped.
+    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS,{animate:false}); lockZoom(); }
+    else map.setView([25.05,55.35], 8, {animate:false});
+    deepLink();
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
