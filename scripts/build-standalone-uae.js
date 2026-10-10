@@ -310,6 +310,36 @@ ${V('MarkerCluster.Default.css')}
   .if{padding:0 18px 15px;text-align:right}
   .ibtn{font:inherit;font-size:12px;padding:6px 15px;border-radius:99px;background:#2970FF;color:#fff;border:0;cursor:pointer}
 
+  /* Plan a visit day */
+  details.plan{margin-top:1rem}
+  details.plan>summary{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px}
+  details.plan>summary::-webkit-details-marker{display:none}
+  details.plan>summary:before{content:'\\25B8';font-size:10px;transition:transform .15s}
+  details.plan[open]>summary:before{transform:rotate(90deg)}
+  details.plan>summary:hover{color:#A0A0AB}
+  .plan-body{margin-top:7px}
+  .prow2{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+  .pbtn{font:inherit;font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#D1D1D6;cursor:pointer;text-decoration:none;display:inline-block}
+  .pbtn:hover{border-color:#2970FF;color:#fff}
+  .pbtn.pri{background:#2970FF;border-color:#2970FF;color:#fff}
+  .pbtn.pri:hover{background:#528BFF}
+  .pbtn.on{border-color:#F79009;color:#FDB022}
+  .pbtn.block{display:block;text-align:center;margin-bottom:4px}
+  .plist{max-height:230px;overflow-y:auto;margin:5px 0;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
+  .pstop{display:flex;align-items:flex-start;gap:6px;padding:4px 2px;border-bottom:1px solid #26272B}
+  .pstop input{margin:2px 0 0;accent-color:#2970FF;flex-shrink:0}
+  .pstop.off .pname,.pstop.off .pno{opacity:.4}
+  .pno{flex-shrink:0;min-width:16px;text-align:right;font-variant-numeric:tabular-nums;color:#70707B;font-size:11px;line-height:1.5}
+  .pbody{min-width:0;flex:1}
+  .pname{display:block;font-size:11.5px;color:#D1D1D6;cursor:pointer;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pname:hover{color:#fff;text-decoration:underline}
+  .ptags{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;align-items:center;font-size:10px;color:#70707B}
+  .pb2{display:inline-block;font-size:9.5px;font-weight:500;padding:1px 7px;border-radius:99px;color:#fff;line-height:1.5}
+  .pb2.amb{background:transparent;border:1px solid #F79009;color:#FDB022;padding:0 6px}
+  .pwarn{color:#FDB022}
+  .rtn{width:18px;height:18px;border-radius:50%;background:#2970FF;border:1.5px solid #fff;color:#fff;font:600 10px/15px Montserrat,sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .plan-drawing,.plan-drawing .leaflet-interactive{cursor:crosshair!important}
+
   @media(max-width:820px){
     .header{height:auto;padding:8px 12px;flex-direction:column;align-items:flex-start;gap:6px}
     #map{top:96px}
@@ -343,6 +373,20 @@ ${V('MarkerCluster.Default.css')}
   <h4>Find a business</h4>
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
+
+  <details class="plan" id="plan">
+    <summary>Plan a visit day</summary>
+    <div class="plan-body">
+      <div class="prow2"><button class="pbtn pri" id="pdraw">Draw an area</button><button class="pbtn" id="pclear">Clear</button></div>
+      <div class="muted" id="pmsg" style="margin-top:0">Switch on the layers you want in the legend, then drag a box over the area.</div>
+      <div class="plist" id="plist"></div>
+      <div class="prow2" id="pact" style="display:none"><button class="pbtn pri" id="porder">Order stops</button><button class="pbtn" id="ploc">Start from my location</button></div>
+      <div class="muted" id="ptotal" style="display:none"></div>
+      <div id="plinks" style="margin-top:6px"></div>
+      <div class="prow2" id="pcsvrow" style="display:none;margin-top:4px"><button class="pbtn" id="pcsv">Download CSV</button></div>
+      <div class="muted">Approximate stops are placed inside their area, not at the building &mdash; confirm the address before driving.</div>
+    </div>
+  </details>
 
   <h4>Base map</h4>
   <div class="bmrow" id="bms"></div>
@@ -1080,6 +1124,290 @@ function __main(){
       if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; }
     }
   }
+
+  // ---- Plan a visit day -------------------------------------------------------
+  // Drag a box over the map, get the pins inside it as a stop list, put them in a
+  // sensible driving order, then hand the route to Google Maps or download it as a CSV.
+  // Free and browser-only: straight-line distances, no routing service. The stops are
+  // kept as company objects, not markers, because redraw() rebuilds every marker -
+  // a marker is looked up in markerIndex only when a row is clicked.
+  var PLAN_MAX=30;     // stops listed from one box
+  var LEG_MAX=11;      // a Google Maps link takes an origin, a destination and 9 waypoints
+  var planRank={closed_won:0,in_process:1,crm:2,closed_lost:3};
+  var planShort={closed_won:'Won',in_process:'In process',closed_lost:'Lost',crm:'CRM'};
+  var planStops=[];    // [{c:company, on:boolean}] in display / route order
+  var planFound=0;     // pins inside the box, before the cap
+  var planRouted=false, planKmTotal=0;
+  var planRect=null, planTmp=null, planLine=null, planStart=null, planStartMk=null;
+  var planDrawing=false, planDrag=null;
+  var planRenderer=L.svg({padding:.5});   // own layer, so redraw() and the pin canvas never repaint over the route
+  var planLayer=L.layerGroup().addTo(map);
+
+  function planEl(id){ return document.getElementById(id); }
+  function planMsg(t,warn){ var el=planEl('pmsg'); el.textContent=t||''; el.className='muted'+(warn?' pwarn':''); }
+  function planPrecise(c){ return c.h==='exact'||c.h==='geocoded'; }
+  function planApprox(c){ return c.h==='area'||c.h==='emirate'||c.h==='uae'; }
+  function planChecked(){ return planStops.filter(function(s){ return s.on; }); }
+  function planKm(a,b){
+    var r=Math.PI/180, dl=(b[0]-a[0])*r, dn=(b[1]-a[1])*r;
+    var h=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)*Math.sin(dn/2);
+    return 12742*Math.asin(Math.sqrt(h));
+  }
+
+  function planRender(){
+    var box=planEl('plist'), chk=planChecked(), n=0;
+    box.innerHTML=planStops.map(function(s,i){
+      var c=s.c, color=(c.l==='closed_lost'&&c.t==='risk_rejected')?'#8e24aa':BY_KEY[c.l].color;
+      var no=(planRouted&&s.on)?(++n):'';
+      return '<div class="pstop'+(s.on?'':' off')+'">'+
+        '<input type="checkbox" data-i="'+i+'"'+(s.on?' checked':'')+'>'+
+        '<span class="pno">'+no+'</span>'+
+        '<div class="pbody"><span class="pname" data-i="'+i+'" title="'+esc(c.n)+'">'+esc(c.n)+'</span>'+
+        '<div class="ptags"><span class="pb2" style="background:'+color+'">'+
+          ((c.l==='closed_lost'&&c.t==='risk_rejected')?'Risk':planShort[c.l])+'</span>'+
+          (c.fi?'<span class="pb2" style="background:#0b8043">Funded</span>':'')+
+          (planApprox(c)?'<span class="pb2 amb">approximate</span>':'')+
+          (c.o?'<span>'+esc(c.o)+'</span>':'')+
+        '</div></div></div>';
+    }).join('');
+    var hasAny=planStops.length>0;
+    planEl('pact').style.display=hasAny?'':'none';
+    planEl('pcsvrow').style.display=chk.length?'':'none';
+    planEl('ptotal').style.display=planRouted?'':'none';
+    if(planRouted) planEl('ptotal').textContent='Straight-line total: '+planKmTotal.toFixed(1)+' km. Roads will be longer.';
+    planLinks();
+  }
+
+  // The stops inside a box, from the pins currently shown (so layer and filter
+  // choices count). Closed won first, then in process, CRM, closed lost.
+  function planFromBounds(b){
+    var s=b.getSouth(), n=b.getNorth(), w=b.getWest(), e=b.getEast(), hit=[];
+    markerIndex.forEach(function(x){
+      var c=x.c; if(c.y>=s&&c.y<=n&&c.x>=w&&c.x<=e) hit.push(c);
+    });
+    hit.sort(function(a,b2){ return (planRank[a.l]!=null?planRank[a.l]:9)-(planRank[b2.l]!=null?planRank[b2.l]:9); });
+    planFound=hit.length;
+    planStops=hit.slice(0,PLAN_MAX).map(function(c){ return {c:c,on:true}; });
+    planUnroute();
+    if(!planFound) planMsg('No pins in that box with the layers you have on. Switch on more layers in the legend, or draw a bigger area.');
+    else if(planFound>PLAN_MAX) planMsg('Showing '+PLAN_MAX+' of '+fmt(planFound)+', draw a smaller area.');
+    else planMsg(planFound+' pin'+(planFound===1?'':'s')+' in the box. Untick any you will skip, then order them.');
+    planRender();
+  }
+  function planSetRect(b){
+    if(planRect) map.removeLayer(planRect);
+    planRect=L.rectangle(b,{color:'#2970FF',weight:2,dashArray:'6 4',fillColor:'#2970FF',fillOpacity:.1,interactive:false,renderer:planRenderer}).addTo(map);
+    planFromBounds(b);
+  }
+
+  function planUnroute(){
+    planLayer.clearLayers(); planLine=null; planRouted=false; planKmTotal=0;
+  }
+  // Nearest neighbour from the first node, then 2-opt on the open path until no
+  // reversal shortens it. The first node (your location, or the first ticked stop) stays put.
+  function planOrder(){
+    var chk=planChecked();
+    if(!chk.length){ planMsg('Tick at least one stop first.',true); return; }
+    var nodes=chk.map(function(s){ return {p:[s.c.y,s.c.x],s:s}; });
+    if(planStart) nodes.unshift({p:planStart,s:null});
+    var path=[nodes[0]], left=nodes.slice(1), i, j, k;
+    while(left.length){
+      var last=path[path.length-1], bi=0, bd=Infinity;
+      for(i=0;i<left.length;i++){ var d=planKm(last.p,left[i].p); if(d<bd){ bd=d; bi=i; } }
+      path.push(left.splice(bi,1)[0]);
+    }
+    var m=path.length, better=true, guard=0;
+    while(better && guard++<200){
+      better=false;
+      for(i=1;i<m-1;i++){
+        for(j=i+1;j<m;j++){
+          var after=(j<m-1);
+          var gain=planKm(path[i-1].p,path[i].p)+(after?planKm(path[j].p,path[j+1].p):0)
+                  -planKm(path[i-1].p,path[j].p)-(after?planKm(path[i].p,path[j+1].p):0);
+          if(gain>1e-9){
+            for(k=0;k<Math.floor((j-i+1)/2);k++){ var t=path[i+k]; path[i+k]=path[j-k]; path[j-k]=t; }
+            better=true;
+          }
+        }
+      }
+    }
+    planUnroute();
+    var ordered=path.filter(function(x){ return x.s; }).map(function(x){ return x.s; });
+    planStops=ordered.concat(planStops.filter(function(s){ return !s.on; }));
+    planRouted=true;
+    var pts=path.map(function(x){ return x.p; }), km=0;
+    for(i=1;i<pts.length;i++) km+=planKm(pts[i-1],pts[i]);
+    planKmTotal=km;
+    if(pts.length>1) planLine=L.polyline(pts,{color:'#2970FF',weight:3,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
+    ordered.forEach(function(s,idx){
+      L.marker([s.c.y,s.c.x],{interactive:false,keyboard:false,
+        icon:L.divIcon({className:'rtn',html:String(idx+1),iconSize:[18,18]})}).addTo(planLayer);
+    });
+    planMsg('');
+    planRender();
+  }
+
+  // Google Maps links. A stop is written as lat,lng only when we hold a real street
+  // address for it; every other pin is scattered inside its area, so those go in as
+  // text (name, area, emirate) and Google Maps finds the business itself.
+  function planPoint(c){
+    if(planPrecise(c)) return c.y.toFixed(6)+','+c.x.toFixed(6);
+    return [c.n,c.a,(c.e&&c.e!=='UAE')?c.e:null,'UAE'].filter(Boolean).join(', ');
+  }
+  function planLegUrl(items){
+    var u='https://www.google.com/maps/dir/?api=1';
+    if(items.length>1) u+='&origin='+encodeURIComponent(items[0]);
+    u+='&destination='+encodeURIComponent(items[items.length-1]);
+    if(items.length>2) u+='&waypoints='+items.slice(1,-1).map(function(x){ return encodeURIComponent(x); }).join('%7C');
+    return u+'&travelmode=driving';
+  }
+  // [{label, url}] - one link up to 11 stops, then chained legs that share their join stop.
+  function planLegs(){
+    if(!planRouted) return [];
+    var seq=[];
+    if(planStart) seq.push({t:planStart[0].toFixed(6)+','+planStart[1].toFixed(6),n:0});
+    planChecked().forEach(function(s,i){ seq.push({t:planPoint(s.c),n:i+1}); });
+    if(!seq.length) return [];
+    var legs=[];
+    if(seq.length<=LEG_MAX) legs.push({label:'Open in Google Maps',items:seq});
+    else for(var a=0;a<seq.length-1;a+=LEG_MAX-1){
+      var it=seq.slice(a,a+LEG_MAX), lo=it[0].n, hi=it[it.length-1].n;
+      legs.push({label:'Leg '+(legs.length+1)+' ('+(lo===0?'start, ':'')+'stops '+Math.max(1,lo)+'-'+hi+')',items:it});
+    }
+    return legs.map(function(g){ return {label:g.label,url:planLegUrl(g.items.map(function(x){ return x.t; }))}; });
+  }
+  function planLinks(){
+    var legs=planLegs();
+    planEl('plinks').innerHTML=legs.map(function(g){
+      return '<a class="pbtn pri block" target="_blank" rel="noopener" href="'+esc(g.url)+'">'+esc(g.label)+' &rarr;</a>';
+    }).join('');
+  }
+
+  // CSV of the ticked stops, in route order once ordered. Coordinates are written only
+  // for real street addresses, like the Google links; the precision column says which is which.
+  function planCell(v){
+    v=String(v==null?'':v);
+    if(/^[=+\\-@]/.test(v) && isNaN(Number(v))) v="'"+v;   // a name must not run as a spreadsheet formula
+    return /[",\\r\\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }
+  function planCsv(){
+    var chk=planChecked(); if(!chk.length) return '';
+    var rows=[['order','name','stage','funded','precision','address','area','emirate','owner','hubspot_url','lat','lng']];
+    chk.forEach(function(s,i){
+      var c=s.c, pin=planPrecise(c);
+      rows.push([i+1,c.n,STAGE[c.l]+((c.l==='closed_lost'&&c.t==='risk_rejected')?' (Risk)':''),c.fi?'yes':'no',c.h||'',
+        c.ga||'',c.a||'',c.e||'',c.o||'',c.ao?'':HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i)),
+        pin?c.y.toFixed(6):'',pin?c.x.toFixed(6):'']);
+    });
+    return rows.map(function(r){ return r.map(planCell).join(','); }).join('\\r\\n');
+  }
+  function planDownload(){
+    var csv=planCsv(); if(!csv) return;
+    var d=new Date(), p2=function(n){ return (n<10?'0':'')+n; };
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download='visit-day-'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+  }
+
+  function planLocate(){
+    var btn=planEl('ploc');
+    if(planStart){
+      planStart=null; if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
+      btn.textContent='Start from my location'; btn.classList.remove('on');
+      if(planRouted) planOrder();
+      return;
+    }
+    if(!navigator.geolocation){ planMsg('This browser cannot share your location. The route starts at the first stop.',true); return; }
+    planMsg('Finding your location...');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      planStart=[pos.coords.latitude,pos.coords.longitude];
+      planStartMk=L.circleMarker(planStart,{radius:7,color:'#fff',weight:2,fillColor:'#2970FF',fillOpacity:1,interactive:false,renderer:planRenderer}).addTo(map);
+      btn.textContent='Don\\'t start from my location'; btn.classList.add('on');
+      if(planRouted) planOrder(); else planMsg('Starting from your location. Order the stops to plan the route.');
+    },function(err){
+      planMsg('Could not get your location ('+((err&&err.message)||'not allowed')+'). The route starts at the first stop.',true);
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+  }
+
+  function planClear(){
+    planDrawOff();
+    if(planRect){ map.removeLayer(planRect); planRect=null; }
+    planStops=[]; planFound=0; planUnroute();
+    planStart=null; if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
+    planEl('ploc').textContent='Start from my location'; planEl('ploc').classList.remove('on');
+    planMsg('Switch on the layers you want in the legend, then drag a box over the area.');
+    planRender();
+  }
+
+  // The box is drawn by hand with pointer events, which cover mouse, pen and touch
+  // alike. While it is on, map dragging is off so the drag draws instead of panning.
+  function planDrawOn(){
+    planDrawing=true; map.dragging.disable();
+    var ct=map.getContainer(); L.DomUtil.addClass(ct,'plan-drawing'); ct.style.touchAction='none';
+    planEl('pdraw').textContent='Cancel drawing'; planEl('pdraw').classList.add('on');
+    planMsg('Press on the map and drag to draw the box.');
+  }
+  function planDrawOff(){
+    if(planTmp){ map.removeLayer(planTmp); planTmp=null; }
+    planDrag=null;
+    if(!planDrawing) return;
+    planDrawing=false; map.dragging.enable();
+    var ct=map.getContainer(); L.DomUtil.removeClass(ct,'plan-drawing'); ct.style.touchAction='';
+    planEl('pdraw').textContent='Draw an area'; planEl('pdraw').classList.remove('on');
+  }
+  (function(){
+    var ct=map.getContainer();
+    ct.addEventListener('pointerdown',function(e){
+      if(!planDrawing||(e.pointerType==='mouse'&&e.button!==0)) return;
+      if(e.target.closest && e.target.closest('.leaflet-control')) return;
+      e.preventDefault();
+      try{ ct.setPointerCapture(e.pointerId); }catch(x){}
+      planDrag={id:e.pointerId,a:map.mouseEventToLatLng(e),pt:map.mouseEventToContainerPoint(e),b:null};
+    });
+    ct.addEventListener('pointermove',function(e){
+      if(!planDrag||e.pointerId!==planDrag.id) return;
+      planDrag.b=map.mouseEventToLatLng(e);
+      var bb=L.latLngBounds(planDrag.a,planDrag.b);
+      if(planTmp) planTmp.setBounds(bb);
+      else planTmp=L.rectangle(bb,{color:'#2970FF',weight:2,dashArray:'6 4',fillOpacity:.06,interactive:false,renderer:planRenderer}).addTo(map);
+    });
+    function up(e,cancel){
+      if(!planDrag||e.pointerId!==planDrag.id) return;
+      var d=planDrag, moved=map.mouseEventToContainerPoint(e).distanceTo(d.pt);
+      if(planTmp){ map.removeLayer(planTmp); planTmp=null; }
+      planDrag=null;
+      if(cancel||moved<8) return;    // a stray click: stay in draw mode
+      var bb=L.latLngBounds(d.a,map.mouseEventToLatLng(e));
+      planDrawOff();
+      planSetRect(bb);
+    }
+    ct.addEventListener('pointerup',function(e){ up(e,false); });
+    ct.addEventListener('pointercancel',function(e){ up(e,true); });
+  })();
+
+  planEl('pdraw').onclick=function(){ if(planDrawing){ planDrawOff(); planMsg(''); } else planDrawOn(); };
+  planEl('pclear').onclick=planClear;
+  planEl('porder').onclick=planOrder;
+  planEl('ploc').onclick=planLocate;
+  planEl('pcsv').onclick=planDownload;
+  planEl('plist').onchange=function(e){
+    var i=e.target.getAttribute('data-i'); if(i==null||!planStops[i]) return;
+    planStops[i].on=e.target.checked;
+    if(planRouted){ planUnroute(); planMsg('Stops changed. Order them again.'); }
+    planRender();
+  };
+  planEl('plist').onclick=function(e){
+    var i=e.target.getAttribute&&e.target.getAttribute('data-i');
+    if(i==null||!e.target.classList.contains('pname')||!planStops[i]) return;
+    var c=planStops[i].c;
+    for(var j=0;j<markerIndex.length;j++){ if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; } }
+    map.setView([c.y,c.x],Math.min(17,map.getMaxZoom()));   // hidden by a filter since: show where it is
+  };
+  // In-browser checks only.
+  window.__planner={draw:function(s,w,n,e){ planSetRect(L.latLngBounds([s,w],[n,e])); },order:planOrder,legs:planLegs,csv:planCsv,
+    download:planDownload,setStart:function(lat,lng){ planStart=[lat,lng]; },state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal}; }};
 
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
