@@ -112,6 +112,43 @@
   .stat .lbl{font-size:10.5px;color:#A0A0AB;margin-top:1px}
   .stat .amt{font-size:10.5px;color:#A0A0AB;margin-top:3px;font-variant-numeric:tabular-nums}
 
+  /* Scoreboard */
+  details.score{margin-top:1rem}
+  details.score>summary{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px}
+  details.score>summary::-webkit-details-marker{display:none}
+  details.score>summary:before{content:'\25B8';font-size:10px;transition:transform .15s}
+  details.score[open]>summary:before{transform:rotate(90deg)}
+  details.score>summary:hover{color:#A0A0AB}
+  .score-body{margin-top:7px}
+  .scpills{display:flex;flex-wrap:wrap;gap:4px}
+  .scp{font:inherit;font-size:10.5px;padding:3px 8px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;cursor:pointer}
+  .scp:hover{border-color:#2970FF;color:#fff}
+  .scp.on{background:#2970FF;border-color:#2970FF;color:#fff}
+  .scsum{font-size:11.5px;color:#D1D1D6;margin:8px 0 2px;line-height:1.4}
+  .sct{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;margin-top:4px}
+  .sct th:nth-child(1){width:21px}
+  .sct th:nth-child(3){width:25px}
+  .sct th:nth-child(4){width:35px}
+  .sct th:nth-child(5){width:50px}
+  .sct td:nth-child(5){font-size:10px}
+  .sct th{font-size:9.5px;font-weight:500;color:#70707B;text-align:right;padding:0 0 3px 4px;border-bottom:1px solid #26272B}
+  .sct th.sn{text-align:left}
+  .sct td{padding:4px 0 4px 3px;border-bottom:1px solid #26272B;color:#D1D1D6;font-variant-numeric:tabular-nums;text-align:right;vertical-align:top;white-space:nowrap}
+  .sct td.sn{text-align:left;white-space:normal;word-break:break-word}
+  .sct tr.pick{cursor:pointer}
+  .sct tr.pick:hover td{background:#1F1F23}
+  .sct tr.sel td{background:rgba(41,112,255,.16)}
+  .sct tr.sel td:first-child{box-shadow:inset 2px 0 #2970FF}
+  .sct tr.none td{color:#70707B}
+  .rk{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:50%;text-align:center;font-size:10px;font-weight:600;color:#70707B}
+  .rk.g,.rk.s,.rk.b{color:#050505}
+  .rk.g{background:#FDB022}
+  .rk.s{background:#C0C0C0}
+  .rk.b{background:#CD7F32}
+  .scb{display:inline-block;font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top;padding:0 6px;border-radius:99px;border:1px solid #3F3F46;color:#A0A0AB;margin:2px 3px 0 0;line-height:1.6;cursor:help;white-space:nowrap}
+  .scb.pio{border-color:#F79009;color:#FDB022}
+  .scb.stk{border-color:#2970FF;color:#84ADFF}
+
   .panel{position:absolute;top:64px;right:12px;z-index:1000;background:#18181B;border:1px solid #3F3F46;border-radius:1em;
     color:#A0A0AB;padding:.75rem;width:242px;font-size:12px;
     max-height:calc(100% - 80px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
@@ -302,6 +339,16 @@
   <h4>Find a business</h4>
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
+
+  <details class="score" id="score">
+    <summary>Scoreboard</summary>
+    <div class="score-body">
+      <div class="scpills" id="scpills"></div>
+      <div class="scsum" id="scsum"></div>
+      <div id="sctab"></div>
+      <div class="muted">From the admin app: closed-by and disbursement dates. New = first disbursement in the period; repeat = a later disbursement. HubSpot owners are not used here.</div>
+    </div>
+  </details>
 
   <details class="plan" id="plan">
     <summary>Plan a visit day</summary>
@@ -1752,6 +1799,121 @@ function __main(){
 
   var disN=DATA.companies.filter(function(c){return c.hs;}).length;
   if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';
+  // Scoreboard. Everything comes from the admin app: closed-by (co) and financing
+  // history (fi = [count, first, latest, ongoing, lastDue, approx]). HubSpot owners are not used.
+  var scorePeriod='quarter';
+  var SCORE_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function scoreKey(y,m){ return y+'-'+(m<9?'0':'')+(m+1); }   // m is 0-11
+  function scoreRange(p){
+    var d=new Date(), y=d.getFullYear(), m=d.getMonth(), q=Math.floor(m/3);
+    if(p==='month') return {from:scoreKey(y,m)+'-01',label:SCORE_MONTHS[m]+' '+y};
+    if(p==='quarter') return {from:scoreKey(y,q*3)+'-01',label:'Q'+(q+1)+' '+y};
+    if(p==='year') return {from:y+'-01-01',label:String(y)};
+    return {from:'',label:'All time'};
+  }
+  function scoreClients(){
+    if(!DATA._scoreC) DATA._scoreC=DATA.companies.filter(function(c){ return c.fi&&c.fi[1]; });
+    return DATA._scoreC;
+  }
+  // New = first disbursed in the period; repeat = latest in the period, first before it.
+  // For all time there is no "before", so repeat means financed more than once.
+  function scoreCalc(p){
+    var r=scoreRange(p), from=r.from, rows={}, tot={n:0,rp:0,v:0};
+    scoreClients().forEach(function(c){
+      var f=c.fi, isNew=f[1]>=from, rep=from?(f[2]>=from&&f[1]<from):f[0]>1;
+      if(!isNew&&!rep) return;
+      var v=isNew?(c.m||0):0;
+      if(isNew) tot.n++; if(rep) tot.rp++; tot.v+=v;
+      (c.co?c.co.split(', '):['']).forEach(function(k){
+        var o=rows[k]||(rows[k]={name:k,n:0,rp:0,v:0});
+        if(isNew) o.n++; if(rep) o.rp++; o.v+=v;
+      });
+    });
+    var none=rows['']; delete rows[''];
+    var list=Object.keys(rows).map(function(k){ return rows[k]; }).sort(function(a,b){
+      return (b.n-a.n)||(b.v-a.v)||(b.rp-a.rp)||(a.name<b.name?-1:1);
+    });
+    return {r:r,tot:tot,rows:list,none:none};
+  }
+  // Badges, all-time except the streak: pioneer areas, new-client month streak, top area.
+  function scoreBadges(){
+    if(DATA._scoreB) return DATA._scoreB;
+    var first={}, areas={}, months={}, anyThis=false, d=new Date(), y=d.getFullYear(), m=d.getMonth();
+    var B={pio:{},top:{},streak:{}};
+    scoreClients().forEach(function(c){
+      var ar=c.a||c.e, cs=c.co?c.co.split(', '):[], mk=c.fi[1].slice(0,7);
+      if(mk===scoreKey(y,m)) anyThis=true;
+      if(ar&&(!first[ar]||c.fi[1]<first[ar].d)) first[ar]={d:c.fi[1],cs:cs};
+      cs.forEach(function(k){
+        if(ar){ (areas[k]||(areas[k]={}))[ar]=(areas[k][ar]||0)+1; }
+        (months[k]||(months[k]={}))[mk]=1;
+      });
+    });
+    Object.keys(first).forEach(function(ar){ first[ar].cs.forEach(function(k){ B.pio[k]=(B.pio[k]||0)+1; }); });
+    Object.keys(areas).forEach(function(k){
+      var best=null; Object.keys(areas[k]).sort().forEach(function(ar){ if(!best||areas[k][ar]>areas[k][best]) best=ar; });
+      if(best) B.top[k]={a:best,n:areas[k][best]};
+    });
+    if(!anyThis){ m--; if(m<0){ m=11; y--; } }
+    Object.keys(months).forEach(function(k){
+      var n=0, yy=y, mm=m;
+      while(months[k][scoreKey(yy,mm)]){ n++; mm--; if(mm<0){ mm=11; yy--; } }
+      B.streak[k]=n;
+    });
+    return DATA._scoreB=B;
+  }
+  function scoreChips(k){
+    var B=scoreBadges(), h='';
+    function chip(cls,t,tip){ h+='<span class="scb '+cls+'" title="'+esc(tip)+'">'+esc(t)+'</span>'; }
+    if(B.pio[k]) chip('pio','Pioneer \u00d7'+B.pio[k],'Pioneer: has the earliest first disbursement of all time in '+B.pio[k]+(B.pio[k]===1?' area':' areas')+' (area, or emirate when there is no area).');
+    if(B.streak[k]>=2) chip('stk','Streak '+B.streak[k],'Streak: at least one new client in each of the last '+B.streak[k]+' calendar months in a row.');
+    if(B.top[k]) chip('','Top area: '+B.top[k].a,'Top area: where this closer has most funded clients ('+B.top[k].n+' in '+B.top[k].a+').');
+    return h;
+  }
+  // The closer the owner filter is narrowed to, or null when it is not narrowed to exactly one.
+  function scoreSelected(){
+    if(!ownOn||allOn(ownOn)) return null;
+    var t=Object.keys(ownOn).filter(function(k){ return ownOn[k]; });
+    return t.length===1?t[0]:null;
+  }
+  // Reuses the "Closed by" filter: only this closer ticked, or everyone again on a second click.
+  function scorePick(k){
+    if(!ownOn) renderOwn();
+    if(!ownOn) return;
+    var undo=(scoreSelected()===k);
+    Object.keys(ownOn).forEach(function(x){ ownOn[x]=undo||x===k; });
+    if(!undo) ownOn[k]=true;
+    renderOwn(); clearTimeout(redrawT); redrawT=null; redraw(); renderScore();
+  }
+  function renderScore(){
+    var el=document.getElementById('score'); if(!el) return;
+    if(!scoreClients().length){ el.style.display='none'; return; }
+    var P=[['month','This month'],['quarter','This quarter'],['year','This year'],['all','All time']];
+    var pills=document.getElementById('scpills');
+    pills.innerHTML=P.map(function(p){ return '<button type="button" class="scp'+(p[0]===scorePeriod?' on':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>'; }).join('');
+    Array.prototype.forEach.call(pills.querySelectorAll('.scp'),function(b){
+      b.onclick=function(){ scorePeriod=b.getAttribute('data-p'); renderScore(); };
+    });
+    var s=scoreCalc(scorePeriod), t=s.tot, sel=scoreSelected(), shown=s.rows.slice(0,10);
+    document.getElementById('scsum').innerHTML='<b>'+esc(s.r.label)+'</b>: '+fmt(t.n)+' new client'+(t.n===1?'':'s')+', '+fmt(t.rp)+' repeat, '+(t.v?esc(aed(t.v)):'no deal value');
+    var h='<table class="sct"><tr><th></th><th class="sn" title="A client with two closers (shared) counts once for each.">Closer</th><th>New</th><th>Repeat</th><th>Value</th></tr>';
+    shown.forEach(function(o,i){
+      var med=i<3?' '+['g','s','b'][i]:'';
+      h+='<tr class="pick'+(sel===o.name?' sel':'')+'" data-i="'+i+'" title="'+esc('Show only the funded pins closed by '+o.name+'. A client with two closers (shared) counts once for each.')+'">'+
+        '<td><span class="rk'+med+'">'+(i+1)+'</span></td><td class="sn">'+esc(o.name)+'<br>'+scoreChips(o.name)+'</td>'+
+        '<td>'+fmt(o.n)+'</td><td>'+fmt(o.rp)+'</td><td>'+(o.v?esc(aed(o.v)):'&mdash;')+'</td></tr>';
+    });
+    if(s.none) h+='<tr class="none" title="Funded clients with no closer in the admin app."><td></td><td class="sn">Not recorded</td><td>'+fmt(s.none.n)+'</td><td>'+fmt(s.none.rp)+'</td><td>'+(s.none.v?esc(aed(s.none.v)):'&mdash;')+'</td></tr>';
+    h+='</table>';
+    if(s.rows.length>10) h+='<div class="muted" style="margin-top:4px">and '+fmt(s.rows.length-10)+' more</div>';
+    if(!s.rows.length&&!s.none) h='<div class="muted">No disbursements in this period.</div>';
+    var tab=document.getElementById('sctab'); tab.innerHTML=h;
+    Array.prototype.forEach.call(tab.querySelectorAll('tr.pick'),function(tr){
+      tr.onclick=function(){ scorePick(shown[Number(tr.getAttribute('data-i'))].name); };
+    });
+  }
+  renderScore();
+
   function renderBook(){
     var b=DATA.stats.book; if(!b||!b.rows||!b.rows.length) return;
     var h='<table style="width:100%;font-size:11.5px;border-collapse:collapse">';
