@@ -2063,6 +2063,49 @@ function __main(){
   }catch(e){ fail(e); }
 })();
 </script>
+<!-- Ask the map: demo-only entry point for the AI visit planner (not wired to any model yet) -->
+<style>
+  #askbtn{position:fixed;right:14px;bottom:30px;z-index:1200;width:52px;height:52px;border-radius:50%;border:0;cursor:pointer;
+    background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;box-shadow:0 6px 20px rgba(76,29,149,.45);display:flex;align-items:center;justify-content:center}
+  #askbtn:hover{transform:scale(1.06)}
+  #askbtn svg{width:24px;height:24px}
+  #askpanel{position:fixed;right:14px;bottom:92px;z-index:1200;width:340px;max-width:calc(100vw - 28px);background:#fff;border-radius:16px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#18181B;display:none;overflow:hidden}
+  #askpanel.on{display:block}
+  #askpanel .ask-ah{padding:12px 14px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;display:flex;justify-content:space-between;align-items:center}
+  #askpanel .ask-ah b{font-size:14px}
+  #askpanel .ask-ah span{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:9px;letter-spacing:.05em;text-transform:uppercase}
+  #askpanel .ask-ab{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#F8F8FA}
+  #askpanel .ask-mu{align-self:flex-end;background:#7c3aed;color:#fff;padding:8px 11px;border-radius:12px 12px 2px 12px;max-width:85%}
+  #askpanel .ask-ma{align-self:flex-start;background:#fff;border:1px solid #E4E4E7;padding:8px 11px;border-radius:12px 12px 12px 2px;max-width:90%}
+  #askpanel .ask-ma ol{margin:4px 0 6px 18px;padding:0}
+  #askpanel .ask-ma .ask-go{display:inline-block;margin-top:2px;background:#18181B;color:#fff;padding:5px 10px;border-radius:8px;font-weight:600;opacity:.55}
+  #askpanel .ask-af{display:flex;gap:6px;padding:10px;border-top:1px solid #E4E4E7}
+  #askpanel .ask-af input{flex:1;border:1px solid #E4E4E7;border-radius:10px;padding:8px 10px;font:inherit;background:#FAFAFA}
+  #askpanel .ask-af button{border:0;border-radius:10px;background:#E4E4E7;padding:0 10px;cursor:not-allowed}
+  #askpanel .ask-note{font-size:11px;color:#70707B;padding:0 14px 10px}
+</style>
+<button id="askbtn" title="Ask the map (preview)" aria-label="Ask the map">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M12 8l1 2.2 2.2 1-2.2 1L12 14.4l-1-2.2-2.2-1 2.2-1z" fill="currentColor"/></svg>
+</button>
+<div id="askpanel" role="dialog" aria-label="Ask the map">
+  <div class="ask-ah"><b>Ask the map</b><span>Preview</span></div>
+  <div class="ask-ab">
+    <div class="ask-mu">I'm in Al Quoz. Plan my day: Filli Cafe, Spinneys and two lost deals nearby.</div>
+    <div class="ask-ma">Here's your visit day, 4 stops:
+      <ol><li>Spinneys, Al Quoz</li><li>Filli Cafe, Al Barsha 1</li><li>Lost deal, Al Quoz Industrial 3</li><li>Lost deal, Al Quoz Industrial 4</li></ol>
+      About 18 km and 50 min driving.<br><span class="ask-go">Open in Google Maps</span></div>
+  </div>
+  <div class="ask-af"><input disabled placeholder="Where are you, and who do you want to visit?"><button disabled title="Voice">&#127908;</button></div>
+  <div class="ask-note">Coming soon: type or say your plan and the map builds the route.</div>
+</div>
+<script>
+(function(){
+  var b=document.getElementById('askbtn'), p=document.getElementById('askpanel');
+  b.addEventListener('click',function(){ p.classList.toggle('on'); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') p.classList.remove('on'); });
+})();
+</script>
 </body>
 </html>`;
 
