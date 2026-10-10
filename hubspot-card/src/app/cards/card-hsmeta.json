@@ -1,0 +1,10 @@
+{
+  "uid": "coverage_map_card",
+  "type": "card",
+  "config": {
+    "name": "Coverage map",
+    "location": "crm.record.sidebar",
+    "entrypoint": "/app/cards/CoverageMapCard.tsx",
+    "objectTypes": ["companies"]
+  }
+}

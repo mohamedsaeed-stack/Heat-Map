@@ -1,0 +1,23 @@
+{
+  "uid": "flapkap_coverage_map_app",
+  "type": "app",
+  "config": {
+    "name": "FlapKap coverage map",
+    "description": "Opens a company on the FlapKap UAE coverage map.",
+    "distribution": "private",
+    "auth": {
+      "type": "static",
+      "requiredScopes": ["crm.objects.companies.read"],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": [],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "mohamed.saeed@flapkap.com"
+    }
+  }
+}

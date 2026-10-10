@@ -5,3 +5,7 @@ node_modules/
 dist/
 page/vendor/
 data/map-page.json
+hubspot-card/node_modules/
+hubspot-card/src/app/extensions/node_modules/
+hubspot-card/hubspot.config.yml
+hubspot-card/.hsaccount
