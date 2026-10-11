@@ -115,3 +115,10 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - Skipped on purpose: multi-branch lists, look-alike names (e.g. "Ryno Cars" for CAR CASH DEALS AUCTIONS, "Taaleem" for Al Taaleem Almethalia, "Middle East Infra Contracting" for Middle East Road Marking), and generic names. About 90 funded pins remain at "UAE only".
 - Two admin-only duplicates (Duncan & Ross, Flora Jewellery) now sit on the same spot as their HubSpot record and were merged by the duplicate check.
 - Source file: raw/gmaps-results.jsonl, applied by scripts/apply-gmaps.js through raw/gmaps-overrides.json.
+
+## Branch lookup, non-Dubai sample (11 Oct 2026)
+
+- Sample: 1,000 grey CRM companies outside Dubai (Abu Dhabi 450, Sharjah 250, Ajman 100, RAK 100, Fujairah 50, UAQ 50), searched with the map centred on each company's emirate.
+- Matched: 737 (74%). 94 have 2+ branches, 874 branches in total. Skipped: 256 no confident match, 7 no results.
+- Every branch carries its Google listing id (cid); the link opens that exact listing. 581 of 874 branches have a branch name from the listing or the nearest area.
+- 165 of 737 (22%) sit in a different emirate than HubSpot says: mostly Sharjah and Ajman swapped (71), Sharjah companies found in Dubai (33), Abu Dhabi companies found in Dubai (15). The Sharjah-Ajman border cases may be our area lookup; the rest point to a wrong or outdated emirate in HubSpot.

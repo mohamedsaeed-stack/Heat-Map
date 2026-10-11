@@ -9,7 +9,7 @@ const queue = JSON.parse(fs.readFileSync(path.join(ROOT, process.env.QUEUE || 'r
 const prog = path.join(ROOT, process.env.PROG || 'raw/branch-progress.json');
 const from = +(process.argv[2] ?? (fs.existsSync(prog) ? JSON.parse(fs.readFileSync(prog, 'utf8')).nextIndex : 0));
 const to = Math.min(+(process.argv[3] ?? queue.length), queue.length);
-const CAP = +(process.argv[4] ?? 8);
+const CAP = +process.argv[4] || 8;
 const PB = '!4m9!1m3!1d60000!2d55.27!3d25.2!2m0!3m2!1i1024!2i768!4f13.1!7i20!10b1';
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const inUAE = (lat, lng) => lat >= 22 && lat <= 26.5 && lng >= 51 && lng <= 56.5;
@@ -23,12 +23,23 @@ function extract(data, cap) {
       const v = a[k];
       if (Array.isArray(v) && v.length === 4 && v[0] == null && v[1] == null && typeof v[2] === 'number' && typeof v[3] === 'number' && inUAE(v[2], v[3])) {
         // name: first non-id, non-URL string after the coord in the parent
-        let name = null;
+        let name = null, fid = null;
         for (let j = k + 1; j < a.length && j < k + 10; j++) {
           const s = a[j];
-          if (typeof s === 'string' && !/^0x|^https?:|^\/|^[A-Za-z0-9_-]{20,}$/.test(s) && s.trim()) { name = s; break; }
+          if (typeof s !== 'string') continue;
+          if (/^0x[0-9a-f]+:0x[0-9a-f]+$/i.test(s)) { if (!fid) fid = s; continue; }
+          if (!name && !/^0x|^https?:|^\/|^[A-Za-z0-9_-]{20,}$/.test(s) && s.trim()) name = s;
         }
-        if (name) { const key = name + '|' + v[2].toFixed(5) + '|' + v[3].toFixed(5); if (!seen.has(key)) { seen.add(key); out.push({ name, lat: v[2], lng: v[3] }); } }
+        if (name) {
+          const key = name + '|' + v[2].toFixed(5) + '|' + v[3].toFixed(5);
+          if (!seen.has(key)) {
+            seen.add(key);
+            const row = { name, lat: v[2], lng: v[3] };
+            // the listing's own id "0x..:0xCID"; https://www.google.com/maps?cid=<decimal CID> opens exactly this listing
+            if (fid) { row.fid = fid; try { row.cid = BigInt(fid.split(':')[1]).toString(); } catch (e) {} }
+            out.push(row);
+          }
+        }
       }
       walk(v);
     }
@@ -36,8 +47,12 @@ function extract(data, cap) {
   return out.slice(0, cap);
 }
 
-async function one(q) {
-  const url = 'https://www.google.com/search?tbm=map&authuser=0&hl=en&gl=ae&q=' + encodeURIComponent(q) + '&pb=' + PB;
+// search viewport per emirate (span m, lng, lat); Dubai is the default
+const VIEW = { 'Abu Dhabi': [150000, 54.6, 24.35], Sharjah: [60000, 55.45, 25.33], Ajman: [40000, 55.5, 25.4],
+  'Ras Al Khaimah': [60000, 55.95, 25.75], 'Umm Al Quwain': [40000, 55.6, 25.55], Fujairah: [80000, 56.3, 25.2] };
+const pbFor = e => { const v = VIEW[e]; return v ? PB.replace('!1d60000!2d55.27!3d25.2', '!1d' + v[0] + '!2d' + v[1] + '!3d' + v[2]) : PB; };
+async function one(q, emirate) {
+  const url = 'https://www.google.com/search?tbm=map&authuser=0&hl=en&gl=ae&q=' + encodeURIComponent(q) + '&pb=' + pbFor(emirate);
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 10000);
   try {
     const r = await fetch(url, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' }, signal: ctl.signal });
@@ -51,12 +66,12 @@ async function one(q) {
 }
 
 (async () => {
-  if (process.argv[2] === 'test') { const q = process.argv[3] || 'Filli Cafe Dubai'; console.log(JSON.stringify(await one(q), null, 1)); return; }
+  if (process.argv[2] === 'test') { const q = process.argv[3] || 'Filli Cafe Dubai'; console.log(JSON.stringify(await one(q, process.argv[4]), null, 1)); return; }
   console.log('crawl', from, '->', to, 'cap', CAP);
   let i = from, batchRows = [], errs = 0, zero = 0;
   while (i < to) {
     const slice = queue.slice(i, Math.min(i + 5, to));
-    const res = await Promise.all(slice.map(x => one(x.q || (x.n + ' UAE'))));
+    const res = await Promise.all(slice.map(x => one(x.q || (x.n + ' UAE'), x.e)));
     res.forEach((r, k) => { const x = slice[k]; const row = { i: x.i, n: x.n, q: x.q, e: r.e }; if (r.err) { row.err = r.err; errs++; } if (!r.e.length) zero++; batchRows.push(row); });
     i += slice.length;
     if (batchRows.length >= 25 || i >= to) {

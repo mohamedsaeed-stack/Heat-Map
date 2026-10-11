@@ -124,6 +124,7 @@ function normPlace(p) {
     lng: loc.longitude != null ? +loc.longitude : (p.lng != null ? +p.lng : NaN),
     types: p.types || [],
     status: p.businessStatus || null,
+    cid: p.cid || null,
   };
 }
 
@@ -159,7 +160,7 @@ function acceptBranches(company, places) {
     // company does not have ("Hive Board Game Cafe" -> "board game") mark a different business
     const head = brandTokens(String(p.name).split(/\s+-\s+|,|\||–/)[0]);
     const extra = head.join('') === ct.join('') ? '' : head.filter(w => !hasWord(w, ct)).join(' ');
-    const c = { placeId: p.placeId, name: p.name, address: p.address, lat: hasCoords ? p.lat : null, lng: hasCoords ? p.lng : null, score, extra };
+    const c = { placeId: p.placeId, cid: p.cid, name: p.name, address: p.address, lat: hasCoords ? p.lat : null, lng: hasCoords ? p.lng : null, score, extra };
     if (!hasCoords) c.needsGeocode = true;
     cand.push(c);
   }
