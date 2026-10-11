@@ -71,9 +71,10 @@ test('duplicates by placeId and within 30 m are removed', () => {
   assert.ok(r.rejected.some(x => x.why.startsWith('within 30 m')));
 });
 
-test('branches are capped at 12', () => {
-  const places = Array.from({ length: 20 }, (_, i) => P('p' + i, 'Zest Restaurant', 25 + i * 0.01, 55.27));
-  assert.strictEqual(acceptBranches({ n: 'Zest' }, places).branches.length, 12);
+test('every branch is kept (no 12 cap); the same listing twice counts once', () => {
+  const places = Array.from({ length: 20 }, (_, i) => P('p' + i, 'Zest Restaurant', 24.5 + i * 0.05, 55.27));
+  places.push(P('p3', 'Zest Restaurant', 24.65, 55.27)); // same listing id again, from a second search
+  assert.strictEqual(acceptBranches({ n: 'Zest' }, places).branches.length, 20);
 });
 
 test('pickHq: address overlap, single branch, unknown', () => {

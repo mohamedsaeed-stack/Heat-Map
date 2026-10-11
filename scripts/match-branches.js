@@ -9,9 +9,10 @@ const { acceptBranches, pickHq, cleanName, deriveEmirateArea } = require('./lib/
 
 const ROOT = path.join(__dirname, '..');
 const MAP = [path.join(ROOT, 'data/map-uae.json'), 'C:/Users/Mohamed/Documents/heatmap/data/map-uae.json'].find(fs.existsSync);
-const input = path.resolve(process.argv[2] || path.join(ROOT, 'raw/gmaps-branches-raw.jsonl'));
-const fallback = path.join(ROOT, 'raw/gmaps-branches.jsonl');
-const file = fs.existsSync(input) ? input : fallback;
+// one or more crawl files; rows for the same company (e.g. one search per emirate) are merged
+const files = (process.argv.length > 2 ? process.argv.slice(2) : [path.join(ROOT, 'raw/gmaps-branches-raw.jsonl')]).map(f => path.resolve(f))
+  .flatMap(f => fs.statSync(f).isDirectory() ? fs.readdirSync(f).filter(x => x.endsWith('.jsonl')).map(x => path.join(f, x)) : [f]);
+const file = files.join(', ');
 
 const ALL = JSON.parse(fs.readFileSync(MAP, 'utf8')).companies;
 const byId = new Map(ALL.map(c => [String(c.i), c]));
@@ -43,7 +44,14 @@ function branchLabel(gname, lat, lng) {
   return na ? na.a : null;
 }
 const OUT = process.env.OUT || 'raw/branches-';
-const lines = fs.readFileSync(file, 'utf8').split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
+const merged = new Map();
+for (const f of files) for (const l of fs.readFileSync(f, 'utf8').split('\n')) {
+  if (!l.trim()) continue;
+  const r = JSON.parse(l), k = String(r.i), cur = merged.get(k);
+  const e = r.entries || r.branches || r.e || [];
+  if (cur) cur.e.push(...e); else merged.set(k, { i: r.i, n: r.n, query: r.q || r.query, e: e.slice() });
+}
+const lines = [...merged.values()];
 
 const overrides = {}, skipped = [], seenNames = new Set();
 const counts = { companies: 0, multi: 0, single: 0, 'no entries': 0, 'weak match': 0, 'not UAE': 0, 'needs geocode only': 0, duplicate: 0 };
@@ -84,7 +92,7 @@ for (const row of lines) {
 
 fs.writeFileSync(path.join(ROOT, OUT + 'overrides.json'), JSON.stringify(overrides));
 fs.writeFileSync(path.join(ROOT, OUT + 'skipped.jsonl'), skipped.map(s => JSON.stringify(s)).join('\n') + (skipped.length ? '\n' : ''));
-console.log('input', path.basename(file), '| lines', lines.length);
+console.log('inputs', files.length, '| companies in crawl', lines.length);
 console.log('companies', counts.companies, '| with 2+', counts.multi, '| with 1', counts.single);
 console.log('skipped:', ['no entries', 'weak match', 'not UAE', 'needs geocode only', 'duplicate'].map(k => k + ' ' + counts[k]).join(', '));
 console.log('top chains:');

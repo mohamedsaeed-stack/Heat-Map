@@ -106,18 +106,18 @@ function brandGate(ct, pt) {
   if (ct.join('') === pt.join('')) return true;
   if (!hasWord(ct[0], pt)) return false;
   const hits = ct.filter(w => hasWord(w, pt)).length;
-  return hits >= Math.min(ct.length, 2);
+  return hits >= Math.min(ct.length, Math.max(2, Math.ceil(ct.length * 2 / 3)));
 }
 
 const UAE_ADDR = /united arab emirates|uae|dubai|abu dhabi|sharjah|ajman|umm al quwain|ras al khaimah|fujairah/i;
 
-const MAX_BRANCHES = 12, MIN_SCORE = 0.5, MIN_SCORE_SINGLE = 0.34, DEDUPE_M = 30;
+const MAX_BRANCHES = 150, MIN_SCORE = 0.5, MIN_SCORE_SINGLE = 0.34, DEDUPE_M = 30;
 
 // Normalise one Places API (New) result into the shape used here.
 function normPlace(p) {
   const loc = p.location || {};
   return {
-    placeId: p.id || p.placeId || null,
+    placeId: p.id || p.placeId || p.cid || null,
     name: (p.displayName && p.displayName.text) || (typeof p.displayName === 'string' ? p.displayName : p.name) || '',
     address: p.formattedAddress || p.address || '',
     lat: loc.latitude != null ? +loc.latitude : (p.lat != null ? +p.lat : NaN),
@@ -166,8 +166,8 @@ function acceptBranches(company, places) {
   }
   // An ambiguous name ("Hive", "Green Land") pulls in many unrelated businesses that merely contain
   // it: when the candidates carry 3+ different sets of extra brand words, keep only the exact ones.
-  const sigs = new Set(cand.map(c => c.extra));
-  if (sigs.size >= 3) {
+  const sigs = new Set(cand.map(c => c.extra).filter(Boolean));
+  if (sigs.size >= 2) {
     for (let i = cand.length - 1; i >= 0; i--) if (cand[i].extra) {
       const c = cand.splice(i, 1)[0];
       rejected.push({ placeId: c.placeId, name: c.name, address: c.address, score: c.score, why: 'other brand words: ' + c.extra });
@@ -180,7 +180,7 @@ function acceptBranches(company, places) {
   for (const c of cand) {
     const near = c.needsGeocode ? null : branches.find(b => !b.needsGeocode && distM(b.lat, b.lng, c.lat, c.lng) < DEDUPE_M);
     if (near) { rejected.push({ placeId: c.placeId, name: c.name, address: c.address, score: c.score, why: 'within 30 m of ' + near.placeId }); continue; }
-    if (branches.length >= MAX_BRANCHES) { rejected.push({ placeId: c.placeId, name: c.name, address: c.address, score: c.score, why: 'over the 12-branch cap' }); continue; }
+    if (branches.length >= MAX_BRANCHES) { rejected.push({ placeId: c.placeId, name: c.name, address: c.address, score: c.score, why: 'over the branch cap' }); continue; }
     branches.push(c);
   }
   return { branches, rejected, reason: branches.length ? 'ok' : 'no result matched the brand' };

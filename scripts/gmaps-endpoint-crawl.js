@@ -48,7 +48,7 @@ function extract(data, cap) {
 }
 
 // search viewport per emirate (span m, lng, lat); Dubai is the default
-const VIEW = { 'Abu Dhabi': [150000, 54.6, 24.35], Sharjah: [60000, 55.45, 25.33], Ajman: [40000, 55.5, 25.4],
+const VIEW = { UAE: [400000, 54.8, 24.6], Dubai: [60000, 55.27, 25.2], 'Abu Dhabi': [150000, 54.6, 24.35], Sharjah: [60000, 55.45, 25.33], Ajman: [40000, 55.5, 25.4],
   'Ras Al Khaimah': [60000, 55.95, 25.75], 'Umm Al Quwain': [40000, 55.6, 25.55], Fujairah: [80000, 56.3, 25.2] };
 const pbFor = e => { const v = VIEW[e]; return v ? PB.replace('!1d60000!2d55.27!3d25.2', '!1d' + v[0] + '!2d' + v[1] + '!3d' + v[2]) : PB; };
 async function one(q, emirate) {

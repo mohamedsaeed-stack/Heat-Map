@@ -122,3 +122,11 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - Matched: 737 (74%). 94 have 2+ branches, 874 branches in total. Skipped: 256 no confident match, 7 no results.
 - Every branch carries its Google listing id (cid); the link opens that exact listing. 581 of 874 branches have a branch name from the listing or the nearest area.
 - 165 of 737 (22%) sit in a different emirate than HubSpot says: mostly Sharjah and Ajman swapped (71), Sharjah companies found in Dubai (33), Abu Dhabi companies found in Dubai (15). The Sharjah-Ajman border cases may be our area lookup; the rest point to a wrong or outdated emirate in HubSpot.
+
+## Branch lookup, all non-Dubai and no-emirate CRM companies (11 Oct 2026)
+
+- Searched 17,310 companies (coloured, every non-Dubai grey company, and 7,595 with no emirate in HubSpot); chains with 5+ results re-searched once per emirate (614 chains, 4,298 searches).
+- Placed from Google: coloured 2,167 of 3,149; non-Dubai grey 4,432 of 6,657; no-emirate 3,513 of 7,635. 14,996 branch pins, 12,215 with their exact Google listing id, 12,220 with a branch name.
+- No-emirate companies: Google now tells us where 3,513 of them actually are; HubSpot can be filled from this.
+- Spot check of random chains: about 10 in 12 correct. Wrong ones are one-word or category-like names (e.g. "Fatma", "Haval Grill" matched car showrooms).
+- Dubai grey CRM companies (27,473) not searched yet.
