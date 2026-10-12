@@ -164,7 +164,11 @@ const BASEMAPS_JS = SERVER ? `[
     {k:'satellite',label:'Satellite',max:20,nat:18,
      url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
      ref:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-     attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
+     attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'},
+    {k:'game',label:'Game mode',max:20,nat:16,game:true,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+     ref:'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'}
   ]` : `[
     {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
      attr:'&copy; OpenStreetMap contributors'},
@@ -449,6 +453,11 @@ ${V('MarkerCluster.Default.css')}
     </div>
   </details>
 
+  <details class="score" id="game">
+    <summary>Mad Monday &middot; preview</summary>
+    <div class="score-body" id="gamebody"></div>
+  </details>
+
   <details class="plan" id="plan">
     <summary>Plan a visit day</summary>
     <div class="plan-body">
@@ -654,6 +663,8 @@ function __main(){
     curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
+    // Game mode (12 Oct 2026): the dark basemap plus the Mad Monday turf and panel.
+    if(window.__game) window.__game.mode(!!b.game);
   }
   // Render the switcher from BASEMAPS rather than hard-coding buttons: the standalone
   // build ships one basemap and the server build three, and a hard-coded row would
@@ -2032,6 +2043,93 @@ function __main(){
     });
   }
   renderScore();
+
+  // ---- Mad Monday preview (12 Oct 2026). Turf: every hex (~550 m) that holds a funded
+  // client takes the colour of the closer with most funded clients in it (admin app
+  // closed-by). Area Dominator = the closer with most funded clients in the area, all
+  // time. Visits and streaks are logged nowhere yet, so that part is a placeholder and
+  // says so; no sample numbers are shown.
+  var gameOn=false, gameLayer=L.layerGroup(), gameHexCache=null, gameColor={};
+  var GAME_COL=['#2970FF','#F04438','#12B76A','#F79009','#7A5AF8','#06AED4','#EE46BC','#EAAA08','#4E5BA6','#FF692E'];
+  var HEX_R=550;   // metres
+  function gameClosers(){
+    if(gameColor._done) return gameColor;
+    var n={}; DATA.companies.forEach(function(c){ if(c.l!=='closed_won'||!c.co) return; c.co.split(', ').forEach(function(k){ n[k]=(n[k]||0)+1; }); });
+    Object.keys(n).sort(function(a,b){ return (n[b]-n[a])||(a<b?-1:1); }).forEach(function(k,i){ gameColor[k]=GAME_COL[i%GAME_COL.length]; });
+    gameColor._done=true; return gameColor;
+  }
+  function gameHexOf(c){
+    var ky=111320, kx=111320*Math.cos(c.y*Math.PI/180), x=c.x*kx, y=c.y*ky;
+    var fq=(Math.sqrt(3)/3*x-y/3)/HEX_R, fr=(2/3*y)/HEX_R, fs=-fq-fr;
+    var q=Math.round(fq), r=Math.round(fr), s=Math.round(fs), dq=Math.abs(q-fq), dr=Math.abs(r-fr), ds=Math.abs(s-fs);
+    if(dq>dr&&dq>ds) q=-r-s; else if(dr>ds) r=-q-s;
+    return {q:q,r:r,kx:kx,ky:ky};
+  }
+  function gameHexes(){
+    if(gameHexCache) return gameHexCache;
+    var H={}; gameClosers();
+    DATA.companies.forEach(function(c){
+      if(c.l!=='closed_won'||c.y==null) return;
+      var h=gameHexOf(c), key=h.q+','+h.r, o=H[key]||(H[key]={q:h.q,r:h.r,kx:h.kx,ky:h.ky,n:0,by:{},names:[]});
+      o.n++; if(o.names.length<4) o.names.push(c.n);
+      (c.co?c.co.split(', '):['Not recorded']).forEach(function(k){ o.by[k]=(o.by[k]||0)+1; });
+    });
+    Object.keys(H).forEach(function(k){ var o=H[k], best=null; Object.keys(o.by).forEach(function(x){ if(x!=='Not recorded'&&(!best||o.by[x]>o.by[best])) best=x; }); o.top=best; });
+    return gameHexCache=H;
+  }
+  function gameDraw(){
+    gameLayer.clearLayers(); if(!gameOn) return;
+    var H=gameHexes();   // a few hundred polygons at most: all drawn, only hexes with a closer are painted
+    Object.keys(H).forEach(function(k){
+      var o=H[k]; if(!o.top) return;
+      var cx=HEX_R*Math.sqrt(3)*(o.q+o.r/2), cy=HEX_R*1.5*o.r;
+      var pts=[]; for(var i=0;i<6;i++){ var a=Math.PI/180*(60*i-30); pts.push([(cy+HEX_R*Math.sin(a))/o.ky,(cx+HEX_R*Math.cos(a))/o.kx]); }
+      var col=o.top?gameColor[o.top]:'#70707B';
+      L.polygon(pts,{color:col,weight:1.5,opacity:.9,fillColor:col,fillOpacity:.32,renderer:planRenderer})
+        .bindTooltip((o.top?esc(o.top)+' &middot; ':'')+o.n+' funded client'+(o.n===1?'':'s')+'<br><span style="color:#A0A0AB">'+o.names.map(esc).join(', ')+'</span>',{sticky:true,className:'lbl'})
+        .addTo(gameLayer);
+    });
+  }
+  function gameAreas(){
+    var A={};
+    DATA.companies.forEach(function(c){
+      if(c.l!=='closed_won'||!c.a) return;
+      var o=A[c.a]||(A[c.a]={a:c.a,e:c.e,n:0,by:{}}); o.n++;
+      (c.co?c.co.split(', '):[]).forEach(function(k){ o.by[k]=(o.by[k]||0)+1; });
+    });
+    return Object.keys(A).map(function(k){
+      var o=A[k], best=null; Object.keys(o.by).forEach(function(x){ if(!best||o.by[x]>o.by[best]) best=x; });
+      o.top=best; o.topN=best?o.by[best]:0; return o;
+    }).sort(function(a,b){ return b.n-a.n; });
+  }
+  function gameRow(sw,round,left,right){
+    return '<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;padding:2px 0"><span><span style="display:inline-block;width:9px;height:9px;border-radius:'+(round?'50%':'2px')+';background:'+sw+';margin-right:6px"></span>'+left+'</span><span style="white-space:nowrap">'+right+'</span></div>';
+  }
+  function renderGame(){
+    gameClosers();
+    var won=0, withCo=0; DATA.companies.forEach(function(c){ if(c.l==='closed_won'){ won++; if(c.co) withCo++; } });
+    var h='<label style="display:flex;gap:6px;align-items:center;cursor:pointer;font-size:12px"><input type="checkbox" id="gameon"'+(gameOn?' checked':'')+'> Paint the turf on the map</label>';
+    h+='<div class="muted" style="margin-top:4px">Each hex (about 550 m) takes the colour of the closer with most funded clients in it. '+fmt(withCo)+' of '+fmt(won)+' funded clients have a closer recorded in the admin app; the rest are not painted.</div>';
+    h+='<div class="muted" style="margin:8px 0 2px"><b>Area Dominators</b> &middot; most funded clients in the area, all time</div>';
+    gameAreas().slice(0,8).forEach(function(o){ h+=gameRow(o.top?gameColor[o.top]:'#70707B',false,esc(o.a),esc(o.top||'—')+' <span class="muted">'+o.topN+'/'+o.n+'</span>'); });
+    var s=scoreCalc('month');
+    h+='<div class="muted" style="margin:8px 0 2px"><b>'+esc(s.r.label)+'</b> &middot; new clients by closer</div>';
+    var newRows=s.rows.filter(function(o){ return o.n>0; });
+    if(!newRows.length) h+='<div class="muted">No new clients yet this month.</div>';
+    newRows.slice(0,5).forEach(function(o,i){ h+=gameRow(gameColor[o.name]||'#70707B',true,(i+1)+'. '+esc(o.name),String(o.n)); });
+    h+='<div class="muted" style="margin:8px 0 2px"><b>Mad Monday</b> &middot; visits and streaks</div>';
+    h+='<div class="muted">Nothing is logged yet. Once the pilot starts, each rep\\'s Monday visits, streak and closes appear here and the turf updates with every close.</div>';
+    document.getElementById('gamebody').innerHTML=h;
+    document.getElementById('gameon').onchange=function(){
+      gameOn=this.checked; if(gameOn) gameLayer.addTo(map); else map.removeLayer(gameLayer); gameDraw();
+    };
+  }
+  map.on('moveend',function(){ if(gameOn) gameDraw(); });
+  renderGame();
+  function gameSet(v){ gameOn=!!v; document.getElementById('gameon').checked=gameOn; if(gameOn) gameLayer.addTo(map); else map.removeLayer(gameLayer); gameDraw(); }
+  window.__game={on:gameSet,hexes:gameHexes,areas:gameAreas,layer:gameLayer,
+    mode:function(v){ gameSet(v); document.getElementById('game').open=!!v; if(v) document.getElementById('panel').classList.remove('hidden'); }};
+  if(curBase==='game') window.__game.mode(true);
 
   function renderBook(){
     var b=DATA.stats.book; if(!b||!b.rows||!b.rows.length) return;
