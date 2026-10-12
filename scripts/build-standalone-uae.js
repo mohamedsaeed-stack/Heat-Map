@@ -14,6 +14,24 @@
 const fs = require('fs');
 const path = require('path');
 
+// Two targets from one generator, so the hosted map and the file people double-click
+// can never drift apart in features:
+//
+//   node scripts/build-standalone-uae.js            -> dist/flapkap-uae-map.html
+//     One file, opens offline, data inlined, tiles base64-embedded. For an artifact
+//     viewer or an email attachment, where external images are blocked.
+//
+//   node scripts/build-standalone-uae.js --server   -> page/index.html + data/map-page.json
+//     For Railway. The data is fetched over HTTP (the server gzips it) instead of
+//     inlined, and tiles come from Esri at run time instead of being embedded. A
+//     real server has no content-security policy stopping them, and embedding tiles
+//     means bulk-downloading them, which is what got the office IP blocked by
+//     OpenStreetMap on 8 Oct 2026.
+//
+// Everything between those two points - every layer, filter, popup and statistic -
+// is shared, which is the whole reason this is one script and not two.
+const SERVER = process.argv.includes('--server');
+
 const ROOT = path.join(__dirname, '..');
 const V = f => fs.readFileSync(path.join(ROOT, 'page', 'vendor', f), 'utf8');
 const zlib = require('zlib');
@@ -89,6 +107,15 @@ for (const c of pinned) {
   for (const k of ['lc', 'ad', 'af', 'd']) if (!c[k]) { delete c[k]; dropped++; }
 }
 
+// Exact Google Maps listing ids from the branch crawl (12 Oct 2026): the popup link
+// opens that listing instead of a name search, which could land on a namesake.
+// Pins are not moved here; that needs the data rebuild.
+let withCid = 0;
+try {
+  const CIDS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'gmaps-cids.json'), 'utf8'));
+  for (const c of pinned) { const g = CIDS[String(c.i)]; if (g) { c.g = g; withCid++; } }
+} catch (e) {}
+
 const payload = {
   pulled: map.stats.pulled,
   companies: pinned,
@@ -98,6 +125,50 @@ const payload = {
   categories: map.stats.categories,
   target: map.stats.targetCategories,
 };
+
+// The standalone file carries its own tiles and so offers one basemap at z15. The
+// server build has no such limit, so it gets all three Esri layers - and none from
+// tile.openstreetmap.org, whose usage policy forbids this kind of load and which
+// now returns 403 to the office network.
+// The standalone file has to carry Leaflet inside it - it is opened from disk with no
+// network assumed. The server build loads it from cdnjs instead: the browser caches it
+// across visits, the page stays small, and page/vendor/*.js is not in the repo anyway
+// (only the CSS is), so inlining would make the server build impossible to run here.
+const LEAFLET_JS = SERVER
+  ? `<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.min.js"></script>`
+  : `<script>${V('leaflet.min.js')}</script>
+<script>${V('leaflet.markercluster.min.js')}</script>`;
+
+// max is how far the user may zoom; nat is the deepest zoom the provider actually HAS
+// tiles for. Leaflet upscales between the two, so going deeper gives a softer image
+// instead of blank grey.
+//
+// nat values measured against Dubai Marina on 8 Oct 2026, not taken from Esri's docs:
+// past its real depth every service returns HTTP 200 with an identical 2,521-byte
+// blank JPEG, which looks like a working tile to any status-code check. Light Gray
+// stops at 16, World Street Map at 17, World Imagery at 18. They were all set to 19,
+// which is why zooming in went grey.
+//
+// Streets is World Street Map, not Light Gray Canvas: Light Gray is a backdrop with
+// almost no labels, so zooming into a street showed no street name. Satellite gets a
+// transparent labels layer on top for the same reason - imagery alone cannot tell you
+// which road you are looking at.
+const BASEMAPS_JS = SERVER ? `[
+    {k:'streets',label:'Streets',max:20,nat:17,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'detailed',label:'Detailed',max:20,nat:16,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, HERE, Garmin &middot; data &copy; OpenStreetMap contributors'},
+    {k:'satellite',label:'Satellite',max:20,nat:18,
+     url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+     ref:'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+     attr:'Esri, Maxar, Earthstar Geographics &middot; data &copy; OpenStreetMap contributors'}
+  ]` : `[
+    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
+     attr:'&copy; OpenStreetMap contributors'},
+  ]`;
 
 const html = `<!DOCTYPE html>
 <html lang="en">
@@ -140,6 +211,43 @@ ${V('MarkerCluster.Default.css')}
   .stat .lbl{font-size:10.5px;color:#A0A0AB;margin-top:1px}
   .stat .amt{font-size:10.5px;color:#A0A0AB;margin-top:3px;font-variant-numeric:tabular-nums}
 
+  /* Scoreboard */
+  details.score{margin-top:1rem}
+  details.score>summary{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px}
+  details.score>summary::-webkit-details-marker{display:none}
+  details.score>summary:before{content:'\\25B8';font-size:10px;transition:transform .15s}
+  details.score[open]>summary:before{transform:rotate(90deg)}
+  details.score>summary:hover{color:#A0A0AB}
+  .score-body{margin-top:7px}
+  .scpills{display:flex;flex-wrap:wrap;gap:4px}
+  .scp{font:inherit;font-size:10.5px;padding:3px 8px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#A0A0AB;cursor:pointer}
+  .scp:hover{border-color:#2970FF;color:#fff}
+  .scp.on{background:#2970FF;border-color:#2970FF;color:#fff}
+  .scsum{font-size:11.5px;color:#D1D1D6;margin:8px 0 2px;line-height:1.4}
+  .sct{width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;margin-top:4px}
+  .sct th:nth-child(1){width:21px}
+  .sct th:nth-child(3){width:25px}
+  .sct th:nth-child(4){width:35px}
+  .sct th:nth-child(5){width:50px}
+  .sct td:nth-child(5){font-size:10px}
+  .sct th{font-size:9.5px;font-weight:500;color:#70707B;text-align:right;padding:0 0 3px 4px;border-bottom:1px solid #26272B}
+  .sct th.sn{text-align:left}
+  .sct td{padding:4px 0 4px 3px;border-bottom:1px solid #26272B;color:#D1D1D6;font-variant-numeric:tabular-nums;text-align:right;vertical-align:top;white-space:nowrap}
+  .sct td.sn{text-align:left;white-space:normal;word-break:break-word}
+  .sct tr.pick{cursor:pointer}
+  .sct tr.pick:hover td{background:#1F1F23}
+  .sct tr.sel td{background:rgba(41,112,255,.16)}
+  .sct tr.sel td:first-child{box-shadow:inset 2px 0 #2970FF}
+  .sct tr.none td{color:#70707B}
+  .rk{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:50%;text-align:center;font-size:10px;font-weight:600;color:#70707B}
+  .rk.g,.rk.s,.rk.b{color:#050505}
+  .rk.g{background:#FDB022}
+  .rk.s{background:#C0C0C0}
+  .rk.b{background:#CD7F32}
+  .scb{display:inline-block;font-size:9px;max-width:100%;overflow:hidden;text-overflow:ellipsis;vertical-align:top;padding:0 6px;border-radius:99px;border:1px solid #3F3F46;color:#A0A0AB;margin:2px 3px 0 0;line-height:1.6;cursor:help;white-space:nowrap}
+  .scb.pio{border-color:#F79009;color:#FDB022}
+  .scb.stk{border-color:#2970FF;color:#84ADFF}
+
   .panel{position:absolute;top:64px;right:12px;z-index:1000;background:#18181B;border:1px solid #3F3F46;border-radius:1em;
     color:#A0A0AB;padding:.75rem;width:242px;font-size:12px;
     max-height:calc(100% - 80px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
@@ -151,6 +259,7 @@ ${V('MarkerCluster.Default.css')}
   .ptog.closed{right:0;border-right:1px solid #3F3F46;border-radius:8px 0 0 8px}
   .ptog:hover{color:#2970FF}
   .panel h4:not(:first-child){margin-top:1rem}
+  .bmrow{display:flex;gap:4px}
   .bmrow{display:flex;gap:4px}
   .bm{flex:1;font:inherit;font-size:11px;padding:5px 4px;border:1px solid #3F3F46;background:transparent;
     border-radius:99px;cursor:pointer;color:#A0A0AB}
@@ -201,6 +310,7 @@ ${V('MarkerCluster.Default.css')}
     border-left:3px solid #2970FF;line-height:1.5}
   .note b{color:#fff;font-weight:500}
   .note .x{float:right;cursor:pointer;color:#70707B;margin-left:8px;font-weight:600}
+  .note.deepnote{top:12px;bottom:auto;left:50%;transform:translateX(-50%);border-left-color:#F79009;max-width:460px}
 
   .leaflet-popup-content-wrapper{border-radius:1em!important;background:#18181B!important;color:#A0A0AB!important;border:1px solid #3F3F46;box-shadow:0 8px 30px rgba(0,0,0,.5)!important}
   .leaflet-popup-tip{background:#18181B!important}
@@ -246,6 +356,55 @@ ${V('MarkerCluster.Default.css')}
   .if{padding:0 18px 15px;text-align:right}
   .ibtn{font:inherit;font-size:12px;padding:6px 15px;border-radius:99px;background:#2970FF;color:#fff;border:0;cursor:pointer}
 
+  /* Plan a visit day */
+  details.plan{margin-top:1rem}
+  details.plan>summary{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:#70707B;font-weight:500;cursor:pointer;list-style:none;display:flex;align-items:center;gap:5px}
+  details.plan>summary::-webkit-details-marker{display:none}
+  details.plan>summary:before{content:'\\25B8';font-size:10px;transition:transform .15s}
+  details.plan[open]>summary:before{transform:rotate(90deg)}
+  details.plan>summary:hover{color:#A0A0AB}
+  .plan-body{margin-top:7px}
+  .prow2{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px}
+  .pbtn{font:inherit;font-size:11px;padding:5px 11px;border-radius:99px;border:1px solid #3F3F46;background:transparent;color:#D1D1D6;cursor:pointer;text-decoration:none;display:inline-block}
+  .pbtn:hover{border-color:#2970FF;color:#fff}
+  .pbtn.pri{background:#2970FF;border-color:#2970FF;color:#fff}
+  .pbtn.pri:hover{background:#528BFF}
+  .pbtn.on{border-color:#F79009;color:#FDB022}
+  .pbtn.block{display:block;text-align:center;margin-bottom:4px}
+  .plist{max-height:230px;overflow-y:auto;margin:5px 0;scrollbar-width:thin;scrollbar-color:#3F3F46 #18181B}
+  .pstop{display:flex;align-items:flex-start;gap:6px;padding:4px 2px;border-bottom:1px solid #26272B}
+  .pstop input{margin:2px 0 0;accent-color:#2970FF;flex-shrink:0}
+  .pstop.off .pname,.pstop.off .pno{opacity:.4}
+  .pno{flex-shrink:0;min-width:16px;text-align:right;font-variant-numeric:tabular-nums;color:#70707B;font-size:11px;line-height:1.5}
+  .pbody{min-width:0;flex:1}
+  .pname{display:block;font-size:11.5px;color:#D1D1D6;cursor:pointer;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pname:hover{color:#fff;text-decoration:underline}
+  .ptags{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px;align-items:center;font-size:10px;color:#70707B}
+  .pb2{display:inline-block;font-size:9.5px;font-weight:500;padding:1px 7px;border-radius:99px;color:#fff;line-height:1.5}
+  .pb2.amb{background:transparent;border:1px solid #F79009;color:#FDB022;padding:0 6px}
+  .pwarn{color:#FDB022}
+  .rtn{width:18px;height:18px;border-radius:50%;background:#2970FF;border:1.5px solid #fff;color:#fff;font:600 10px/15px Montserrat,sans-serif;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+  .plan-drawing,.plan-drawing .leaflet-interactive{cursor:crosshair!important}
+  .ptk{color:#D1D1D6}
+  .pattr{font-size:9.5px;margin-top:2px}
+  #porder:disabled{opacity:.55;cursor:default}
+  .pchk{display:flex;align-items:center;gap:6px;font-size:11px;color:#A0A0AB;margin:2px 0 5px;cursor:pointer}
+  .pchk input{accent-color:#2970FF;margin:0}
+  .pfoot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 4px;min-height:26px}
+  .pctl{display:flex;gap:3px;flex-shrink:0;margin-left:auto}
+  .pmv{font:inherit;font-size:10px;width:26px;height:26px;padding:0;border-radius:6px;border:1px solid #3F3F46;background:transparent;color:#D1D1D6;cursor:pointer;line-height:1}
+  .pmv:hover:not(:disabled){border-color:#2970FF;color:#fff}
+  .pmv:disabled{opacity:.25;cursor:default}
+  .pmv.x{font-size:14px}
+  .pnear{margin-top:2px;font-size:10px;color:#70707B}
+  .pnear a{color:#70707B;cursor:pointer;text-decoration:underline dotted}
+  .pnear a:hover{color:#A0A0AB}
+  .pnrows{margin:3px 0 2px;padding-left:6px;border-left:2px solid #26272B}
+  .pnrow{display:flex;align-items:center;gap:6px;padding:1px 0}
+  .pnrow .pname{font-size:11px;color:#A0A0AB;flex:1;min-width:0}
+  .pnrow .pdist{font-size:10px;color:#70707B;flex-shrink:0}
+  .pplans{font:inherit;font-size:11px;padding:5px 8px;border-radius:99px;border:1px solid #3F3F46;background:#18181B;color:#D1D1D6;max-width:100%;min-width:0;flex:1}
+
   @media(max-width:820px){
     .header{height:auto;padding:8px 12px;flex-direction:column;align-items:flex-start;gap:6px}
     #map{top:96px}
@@ -254,6 +413,7 @@ ${V('MarkerCluster.Default.css')}
     .stat .num{font-size:16px}
     .panel{top:108px;right:8px;width:180px}
     .note{display:none}
+    .note.deepnote{max-width:calc(100% - 24px)}
   }
 </style>
 </head>
@@ -279,9 +439,41 @@ ${V('MarkerCluster.Default.css')}
   <input class="searchbox" id="q" placeholder="Type a name&hellip;" autocomplete="off">
   <div class="hits" id="hits"></div>
 
+  <details class="score" id="score">
+    <summary>Scoreboard</summary>
+    <div class="score-body">
+      <div class="scpills" id="scpills"></div>
+      <div class="scsum" id="scsum"></div>
+      <div id="sctab"></div>
+      <div class="muted">From the admin app: closed-by and disbursement dates. New = first disbursement in the period; repeat = a later disbursement. HubSpot owners are not used here.</div>
+    </div>
+  </details>
+
+  <details class="plan" id="plan">
+    <summary>Plan a visit day</summary>
+    <div class="plan-body">
+      <div class="prow2"><button class="pbtn pri" id="pdraw">Draw an area</button><button class="pbtn" id="pclear">Clear</button></div>
+      <label class="pchk"><input type="checkbox" id="ponly" checked> Only exact pins (buildings)</label>
+      <div class="muted" id="pmsg" style="margin-top:0">Switch on the layers you want in the legend, then drag a box over the area.</div>
+      <div class="plist" id="plist"></div>
+      <div class="prow2" id="pact" style="display:none"><button class="pbtn pri" id="porder">Order stops</button><button class="pbtn" id="ploc">Start from my location</button></div>
+      <div class="muted" id="ptotal" style="display:none"></div>
+      <div class="muted pattr" id="pattr" style="display:none">Road routing by OSRM, data &copy; OpenStreetMap contributors.</div>
+      <div id="plinks" style="margin-top:6px"></div>
+      <div class="prow2" id="pcsvrow" style="display:none;margin-top:4px"><button class="pbtn" id="pcsv">Download CSV</button><button class="pbtn" id="pwa" style="display:none">Send via WhatsApp</button></div>
+      <div class="prow2" id="psaverow" style="display:none"><button class="pbtn" id="psave">Save</button><button class="pbtn" id="pcopy">Copy link</button></div>
+      <div class="prow2" id="pplansrow" style="display:none;align-items:center"><select class="pplans" id="pplans" aria-label="My plans"></select><button class="pbtn" id="pdel">Delete</button></div>
+      <div class="muted">Approximate stops are placed inside their area, not at the building &mdash; confirm the address before driving.</div>
+    </div>
+  </details>
+
+  <h4>Base map</h4>
+  <div class="bmrow" id="bms"></div>
+
   <h4>Display</h4>
   <label class="row"><input type="checkbox" id="heat"> Size pins by deal value</label>
   <label class="row"><input type="checkbox" id="cluster"> Group nearby pins</label>
+  <div class="muted" id="drawnote" style="display:none;margin-top:4px"></div>
 
   <h4>Emirate</h4>
   <div class="msel" id="ems"></div>
@@ -307,6 +499,7 @@ ${V('MarkerCluster.Default.css')}
 </div>
 
 <div class="note" id="note"></div>
+<div class="note deepnote" id="deepnote" style="display:none"></div>
 
 <dialog class="info" id="dlg">
   <div class="ih" id="dlgh"></div>
@@ -314,14 +507,17 @@ ${V('MarkerCluster.Default.css')}
   <div class="if"><button class="ibtn" id="dlgx">Close</button></div>
 </dialog>
 
-<script>${V('leaflet.min.js')}</script>
-<script>${V('leaflet.markercluster.min.js')}</script>
+${LEAFLET_JS}
 <script>
 // The pin data travels gzipped and base64-encoded (5.2 MB -> 1.6 MB, measured
 // 23 Sep 2026) and is unpacked on open by the browser's built-in
 // DecompressionStream - no library, identical output. Every current browser has
 // it; an old one gets a plain message instead of a blank map.
-var DATA_GZ = "${zlib.gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }).toString('base64')}";
+var DATA_GZ = ${SERVER ? 'null' : `"${zlib.gzipSync(Buffer.from(JSON.stringify(payload)), { level: 9 }).toString('base64')}"`};
+// Server build only: the same payload lives in data/map-page.json instead of in this
+// file. serve.js gzips it on the way out, so the wire cost matches the inlined build
+// while the page itself stays small enough to read and diff.
+var DATA_URL = ${SERVER ? '"data/map-page.json"' : 'null'};
 var DATA = null;
 // Expand the dictionary-encoded fields back to their real values, so every
 // other line below sees the same shape the Dubai build produced.
@@ -334,7 +530,7 @@ function __expand(){
     if(c.af===undefined)c.af=0; if(c.d===undefined)c.d=0;
   }
 }</script>
-<script>var TILES = ${JSON.stringify(TILES)};</script>
+<script>var TILES = ${SERVER ? '{}' : JSON.stringify(TILES)};</script>
 <script>
 function __main(){
   var LAYERS = ${JSON.stringify(LAYERS)};
@@ -350,17 +546,16 @@ function __main(){
   // front-end, no login needed.
   var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
   var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
-  var BASEMAPS = [
-    {k:'streets',label:'Streets',url:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',max:15,
-     attr:'&copy; OpenStreetMap contributors'},
-  ];   // Streets only, since 23 Sep 2026: the online base maps needed a network the viewers do not always have.
+  var BASEMAPS = ${BASEMAPS_JS};
+  var EMBEDDED = ${SERVER ? 'false' : 'true'};
 
   // Google Maps, by name: a text search for the company name plus the area and
   // emirate we know. Tested 6 Oct 2026 on a 20-pin sample across every tier:
   // this form opened the right listing every time. A search pinned to our own
   // coordinates did not (it snapped to a different florist when our geocode
   // was off), so coordinates are never passed. No API key, no cost.
-  function gmapsUrl(name,area,emirate){
+  function gmapsUrl(name,area,emirate,cid){
+    if(cid) return 'https://www.google.com/maps?cid='+cid;   // the exact listing, when the crawl found it
     if(!name) return null;   // a nameless record would search for the district alone
     var q=[name, area, (emirate && emirate!=='UAE') ? emirate : null, 'UAE'].filter(Boolean).join(', ');
     return 'https://www.google.com/maps/search/?api=1&amp;hl=en&amp;query='+encodeURIComponent(q);
@@ -386,6 +581,12 @@ function __main(){
   // there is only ever "zoom in". Re-computed when the window is resized.
   var UAE_BOUNDS=L.latLngBounds([22.6,51.4],[26.5,56.6]);
   map.setMaxBounds(UAE_BOUNDS.pad(0.03));
+  // Zooming out past the country shows oceans and neighbouring states with no pins on
+  // them, which reads as the map breaking. The floor is the zoom at which the UAE just
+  // fills the window, recomputed on resize. The fixed 6 is a backstop for the case
+  // lockZoom cannot run - a container with no size yet - where leaving minZoom at
+  // Leaflet's default 0 let the map zoom out to the whole world.
+  map.setMinZoom(6);
   function lockZoom(){ var sz=map.getSize(); if(sz.x>0&&sz.y>0){ var z=map.getBoundsZoom(UAE_BOUNDS); if(isFinite(z)) map.setMinZoom(z); } }
   map.on('resize',lockZoom);
   L.control.scale({imperial:false}).addTo(map);
@@ -423,17 +624,49 @@ function __main(){
       return L.TileLayer.prototype.getTileUrl.call(this, c);
     }
   });
-  var tileLayer=null,curBase=null;
+  var tileLayer=null,refLayer=null,curBase=null;
   function setBase(k){
     if(curBase===k) return;
     if(tileLayer) map.removeLayer(tileLayer);
+    if(refLayer){ map.removeLayer(refLayer); refLayer=null; }
     var b=BASEMAPS.filter(function(x){return x.k===k;})[0];
-    tileLayer=(b.k==='streets'?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
-                              :L.tileLayer(b.url,{maxZoom:b.max,attribution:b.attr})).addTo(map);
-    tileLayer.bringToBack(); curBase=k;
+    // maxNativeZoom 13 is the sharpest embedded tile; upscaling beyond that is still
+    // a map. The server build fetches real tiles at every zoom, so it must NOT cap.
+    tileLayer=((EMBEDDED&&b.k==='streets')
+                 ?new EmbeddedTiles(b.url,{maxZoom:b.max,maxNativeZoom:13,attribution:b.attr})
+                 // updateWhenZooming:false was tried for smoothness on 8 Oct and
+                 // reverted the same day: suppressing tile updates mid-zoom is exactly
+                 // what made zooming out flash grey gaps. keepBuffer alone is safe.
+                 :L.tileLayer(b.url,{maxZoom:b.max,maxNativeZoom:b.nat||b.max,
+                                     keepBuffer:3,attribution:b.attr})).addTo(map);
+    // The map's ceiling must match THIS basemap, not the deepest of all of them. With
+    // the map at 21 and a layer capped at 20, Leaflet hides the layer above 20 and the
+    // map goes grey - which is what "it still goes grey when I zoom all the way in"
+    // was. All three are 20 now, so the two can never disagree again.
+    map.setMaxZoom(b.max);
+    tileLayer.bringToBack();
+    // Place names and roads over the imagery, so a satellite view can still be read.
+    if(b.ref){
+      refLayer=L.tileLayer(b.ref,{maxZoom:b.max,maxNativeZoom:b.nat,
+                                  keepBuffer:3,opacity:.9,pane:'overlayPane'}).addTo(map);
+      refLayer.bringToBack(); tileLayer.bringToBack();
+    }
+    curBase=k;
     Array.prototype.forEach.call(document.querySelectorAll('.bm'),function(el){
       el.className='bm'+(el.getAttribute('data-k')===k?' on':'');});
   }
+  // Render the switcher from BASEMAPS rather than hard-coding buttons: the standalone
+  // build ships one basemap and the server build three, and a hard-coded row would
+  // show dead buttons in whichever build has fewer.
+  (function(){
+    var host=document.getElementById('bms');
+    if(!host) return;
+    if(BASEMAPS.length<2){ var h=host.previousElementSibling; if(h&&h.tagName==='H4') h.style.display='none'; host.style.display='none'; return; }
+    host.innerHTML=BASEMAPS.map(function(b){
+      return '<button class="bm" data-k="'+b.k+'">'+b.label+'</button>'; }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('.bm'),function(el){
+      el.onclick=function(){ setBase(el.getAttribute('data-k')); };});
+  })();
   setBase('streets');
 
   var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
@@ -465,10 +698,70 @@ function __main(){
   // bubbles until you zoom right in, which reads as a chart, not a map. Canvas
   // rendering handles 3,000+ circle markers without it. Clustering stays as an
   // opt-in for the 18,000-point universe layer, where raw dots do become a mess.
-  var crmPlain=L.layerGroup();
+  // Ungrouped mode draws every matching pin, and with 38,000 of them a plain
+  // L.layerGroup hands all 38,000 to the canvas renderer on every pan and zoom -
+  // which is exactly the drag the smaller Dubai page did not have. This group keeps
+  // the full set in memory but only ever puts the ones inside the viewport (plus a
+  // 30% margin, so a short pan has pins ready) on the map. Clustering already culls
+  // this way internally; this gives the ungrouped view the same treatment without
+  // changing how it looks.
+  var CullingGroup=L.LayerGroup.extend({
+    initialize:function(){ L.LayerGroup.prototype.initialize.call(this); this._all=[]; },
+    addLayer:function(m){ this._all.push(m); return this; },
+    clearLayers:function(){ this._all=[]; return L.LayerGroup.prototype.clearLayers.call(this); },
+    // Call once after a draw loop has finished adding; moveend handles the rest.
+    commit:function(){ this._cull(); return this; },
+    onAdd:function(mp){ L.LayerGroup.prototype.onAdd.call(this,mp); mp.on('moveend',this._cull,this); this._cull(); },
+    onRemove:function(mp){ mp.off('moveend',this._cull,this); L.LayerGroup.prototype.onRemove.call(this,mp); },
+    _cull:function(){
+      if(!this._map) return;
+      var z=this._map.getZoom();
+      // Culling by viewport does nothing at country zoom, where every pin IS in the
+      // viewport - which is exactly where the map felt heaviest. Below z11 the draw is
+      // capped as well. _all arrives priority-sorted (closed won, in process, closed
+      // lost, then CRM), so a cap drops the least important pins first, and the count
+      // it drops is printed on screen rather than left for someone to notice.
+      var budget = z<9 ? 4000 : (z<11 ? 9000 : (z<13 ? 20000 : Infinity));
+      var b=this._map.getBounds().pad(0.2), all=this._all, drawn=0, inView=0;
+      L.LayerGroup.prototype.clearLayers.call(this);
+      for(var i=0;i<all.length;i++){
+        if(!b.contains(all[i].getLatLng())) continue;
+        inView++;
+        if(drawn>=budget) continue;
+        L.LayerGroup.prototype.addLayer.call(this,all[i]); drawn++;
+      }
+      this._drawn=drawn; this._inView=inView;
+      if(typeof onCull==='function') onCull();
+    },
+    // The search panel jumps to a pin that may be culled out of view. Fly first,
+    // re-cull, then open - otherwise openPopup fires on a marker that is not on
+    // the map and nothing happens.
+    reveal:function(m,cb){
+      var self=this;
+      this._map.once('moveend',function(){ self._cull(); cb(); });
+      this._map.setView(m.getLatLng(), Math.max(this._map.getZoom(),15));
+    }
+  });
+  // Tell the viewer whenever the low-zoom cap is actually biting. Silence would make a
+  // thinned map look like the whole picture, which is the one thing this map must not do.
+  function onCull(){
+    var el=document.getElementById('drawnote');
+    if(!el) return;
+    var hidden=0;
+    [crmPlain,uniPlain].forEach(function(g){
+      if(g && g._map && typeof g._inView==='number') hidden += (g._inView - g._drawn);
+    });
+    if(hidden>0){
+      el.textContent='Drawing the '+( (crmPlain._drawn||0) + (uniPlain._drawn||0) ).toLocaleString()+
+        ' most important pins here; '+hidden.toLocaleString()+' more are in view. Zoom in, or tick '+
+        '"Group nearby pins", to see every one.';
+      el.style.display='';
+    } else el.style.display='none';
+  }
+  var crmPlain=new CullingGroup();
   var crmCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:42,showCoverageOnHover:false,
     disableClusteringAtZoom:16,iconCreateFunction:clusterIcon('rgba(26,115,232,.86)')});
-  var uniPlain=L.layerGroup();
+  var uniPlain=new CullingGroup();
   var uniCluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:60,showCoverageOnHover:false,
     disableClusteringAtZoom:17,iconCreateFunction:clusterIcon('rgba(0,150,148,.80)')});
   var clusterOn=false;
@@ -511,13 +804,14 @@ function __main(){
       : 'No usable location on record.';
     if(c.rt) loc += '<br><span class="muted">Placed via: '+esc(c.rt)+'</span>';
     if(c.cf) loc += '<div class="pnote" style="border-top-color:#FDB022;color:#FDB022"><b>Record disagrees with itself.</b> The CRM city says <b>'+esc(c.e||'the UAE')+'</b> but the ZIP code or state on the same record points abroad, so the street address was not used. Fix the record in HubSpot and the pin sharpens on the next refresh.</div>';
-    var gm=gmapsUrl(c.n,c.a,c.e);
+    var gm=gmapsUrl(c.n,c.a,c.e,c.g);
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
+      '<div class="pid"><a href="#" onclick="window.__planAdd(\\''+c._pid+'\\');return false;">+ Add to visit day</a></div>'+
       '<div class="pid">'+
         [ c.ao ? null : '<a href="'+HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i))+'" target="_blank" rel="noopener">Open in HubSpot &rarr;</a>',
           (c.aid && ADMIN_CLIENT_URL) ? '<a href="'+ADMIN_CLIENT_URL.replace('{id}',encodeURIComponent(c.aid))+'" target="_blank" rel="noopener">Open in the admin app &rarr;</a>' : null,
@@ -585,6 +879,7 @@ function __main(){
       markerIndex.push({c:c,m:m});
     });
     if(!map.hasLayer(target)) map.addLayer(target);
+    if(target.commit) target.commit();   // ungrouped: render only what is in view
     return shown;
   }
 
@@ -607,6 +902,7 @@ function __main(){
       utarget.addLayer(m);
     });
     if(!map.hasLayer(utarget)) map.addLayer(utarget);
+    if(utarget.commit) utarget.commit();
   }
 
   function renderLegend(){
@@ -777,7 +1073,7 @@ function __main(){
 
     closed_won:{h:'Closed won',b:function(){var s=DATA.stats.crm;return ''+
       '<dl><dt>What it counts</dt><dd>Businesses that have actually been funded.</dd>'+
-      '<dt>Formula</dt><dd><code>admin.financingStatus = REFINANCING\\n  OR HubSpot stage = Money Disbursed\\n  OR HubSpot lifecyclestage = customer</code></dd>'+
+      '<dt>Formula</dt><dd><code>admin app: at least one approved disbursement\\n  OR HubSpot stage = Money Disbursed\\n  OR HubSpot lifecyclestage = customer</code></dd>'+
       '<dt>Why this way</dt><dd>You said the admin app is more reliable than HubSpot for won and lost, so it overrides the deal stage. '+fmt(s.adminOverrode||0)+' companies were reclassified by it.</dd>'+
       '<dt>Funded clients on the map</dt><dd>The admin app holds <b>'+fmt((DATA.stats.fundedScope||{}).total||372)+'</b> funded clients; <b>'+fmt((DATA.stats.fundedScope||{}).foreign||0)+'</b> are Egyptian merchants and outside a UAE map, leaving <b>'+fmt((DATA.stats.fundedScope||{}).uae||372)+'</b>. <b>'+fmt(DATA.stats.fundedOnMap||0)+'</b> pins carry the funded flag: '+fmt(DATA.stats.adminOnlyFunded||0)+' exist only in the admin app &mdash; HubSpot has no record of them &mdash; and are placed by their registered address or the emirate their trade licence was issued in (DET-Dubai, EDD-Sharjah, ADDED&hellip;); the rest reached the map through a CRM company matched by name. Admin-only pins carry no deal value, so the AED figure covers only the '+fmt(((DATA.stats.money||{}).wonN||0)-((DATA.stats.money||{}).wonNoValue||0))+' funded clients that have a HubSpot deal.</dd>'+
       '<dt>What would make it wrong</dt><dd>Funded means at least one approved invoice with a disbursed amount in the admin app, counted from the invoice list on 9 Oct 2026. Financing dates use the disbursement date, or the invoice creation date where that is missing (marked approx.). The financing count is one per client per calendar day.</dd></dl>';}},
@@ -863,16 +1159,714 @@ function __main(){
       return '<div class="hit" data-i="'+i+'">'+esc(x.c.n)+' <i>'+esc(STAGE[x.c.l])+'</i></div>';}).join('')
       || '<div class="hit"><i>No pinned business matches</i></div>';
     Array.prototype.forEach.call(box.querySelectorAll('.hit[data-i]'),function(el){
-      el.onclick=function(){
-        var h=hits[Number(el.getAttribute('data-i'))];
-        // Never past the layer maximum, and never an animated fly on a map whose
-        // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
-        var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
-        if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
-        if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
-        else h.m.openPopup();
-      };});
+      el.onclick=function(){ goTo(hits[Number(el.getAttribute('data-i'))]); };});
   };
+  // Fly to a markerIndex entry and open its popup. Used by the search box and by ?company=.
+  function goTo(h){
+    // Never past the layer maximum, and never an animated fly on a map whose
+    // container has no size yet (a hidden tab) - both make Leaflet throw NaN.
+    var z=Math.min(17,map.getMaxZoom()), sz=map.getSize();
+    if(sz.x>0&&sz.y>0) map.flyTo([h.c.y,h.c.x],z,{duration:.7}); else map.setView([h.c.y,h.c.x],z,{animate:false});
+    if(clusterOn) crmCluster.zoomToShowLayer(h.m,function(){ h.m.openPopup(); });
+    // Ungrouped: the pin may be culled out of view, in which case openPopup
+    // would fire on a marker that is not on the map and do nothing. reveal()
+    // flies to it, re-culls so it exists, then opens.
+    else crmPlain.reveal(h.m,function(){ h.m.openPopup(); });
+  }
+
+  // Deep link from HubSpot: ?company=<hubspot company id> opens that company's pin.
+  function deepLink(){
+    var deepId=(new URLSearchParams(location.search).get('company')||'').trim();
+    if(!deepId) return;
+    var c=null;
+    for(var k=0;k<DATA.companies.length;k++){
+      var x=DATA.companies[k];
+      if(!x.ao && String(x.i)===deepId){ c=x; break; }
+    }
+    if(!c){
+      var dn=document.getElementById('deepnote');
+      dn.innerHTML='<span class="x" onclick="this.parentNode.style.display=\\'none\\'">&times;</span>'+
+        '<b>HubSpot company '+esc(deepId)+' is not on this map.</b> Likely reasons: its record names a country '+
+        'other than the UAE, it has no location on record, or it was not in the CRM snapshot of '+esc(DATA.pulled)+'.';
+      dn.style.display='block';
+      return;
+    }
+    // Switch on every filter that would hide this pin, then redraw so it exists.
+    var ch=false;
+    function need(o,key){ if(o && !o[key]){ o[key]=true; ch=true; } }
+    need(on,c.l); need(catOn,c.c); need(emOn,c.e||'Unknown');
+    need(precOn,c.h==='geocoded'?'exact':(c.h||'emirate'));
+    need(hsOwnOn,c.o||'__none');
+    if(ownOn && !allOn(ownOn)){
+      (c.co?c.co.split(', '):['__none']).forEach(function(k){ need(ownOn,k); });
+    }
+    if(ch){ renderLegend(); renderCats(); renderEms(); renderPrec(); renderHsOwn(); renderOwn(); redraw(); }
+    for(var j=0;j<markerIndex.length;j++){
+      if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; }
+    }
+  }
+
+  // ---- Plan a visit day -------------------------------------------------------
+  // Drag a box over the map, get the pins inside it as a stop list, put them in a
+  // sensible driving order, then hand the route to Google Maps or download it as a CSV.
+  // Free and browser-only: straight-line distances, no routing service. The stops are
+  // kept as company objects, not markers, because redraw() rebuilds every marker -
+  // a marker is looked up in markerIndex only when a row is clicked.
+  var PLAN_MAX=30;     // stops listed from one box
+  var LEG_MAX=11;      // a Google Maps link takes an origin, a destination and 9 waypoints
+  var planRank={closed_won:0,in_process:1,crm:2,closed_lost:3};
+  var planShort={closed_won:'Won',in_process:'In process',closed_lost:'Lost',crm:'CRM'};
+  var planStops=[];    // [{c:company, on:boolean}] in display / route order
+  var planFound=0;     // pins inside the box, before the cap
+  var planRouted=false, planKmTotal=0;
+  var planRect=null, planTmp=null, planLine=null, planStart=null, planStartMk=null;
+  var planDrawing=false, planDrag=null;
+  var planRenderer=L.svg({padding:.5});   // own layer, so redraw() and the pin canvas never repaint over the route
+  var planLayer=L.layerGroup().addTo(map);
+  var NEAR_M=300, NEAR_MAX=5, WA_MAX=1800, WA_STOPS=15, PLANS_KEEP=20, PLANS_KEY='fk_plans';
+  // A stop's id: the HubSpot id, or 'a'+admin id for an admin-only pin (it has no
+  // HubSpot id). Both survive a data refresh, so saved plans and shared links keep
+  // pointing at the same company; a positional index would not. Set once on every
+  // company, before the first pin is drawn, so popupFor can read it.
+  var planById={};
+  DATA.companies.forEach(function(c,i){
+    c._pid=(c.ao||c.i==null)?'a'+(c.aid!=null?c.aid:'x'+i):String(c.i);
+    planById[c._pid]=c;
+  });
+
+  function planEl(id){ return document.getElementById(id); }
+  function planMsg(t,warn){ var el=planEl('pmsg'); el.textContent=t||''; el.className='muted'+(warn?' pwarn':''); }
+  function planPrecise(c){ return c.h==='exact'||c.h==='geocoded'; }
+  function planApprox(c){ return c.h==='area'||c.h==='emirate'||c.h==='uae'; }
+  function planChecked(){ return planStops.filter(function(s){ return s.on; }); }
+  function planKm(a,b){
+    var r=Math.PI/180, dl=(b[0]-a[0])*r, dn=(b[1]-a[1])*r;
+    var h=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dn/2)*Math.sin(dn/2);
+    return 12742*Math.asin(Math.sqrt(h));
+  }
+
+  // Pins within NEAR_M of a stop that could be added to the day: exact or geocoded only,
+  // not already a stop, not the stop itself. Every pin on the map, whatever the filters say.
+  // Nearest first; a tie (same building) goes to the better stage. Pool built on first use.
+  var planPool=null;
+  function planNear(c,inPlan){
+    if(!planPool) planPool=DATA.companies.filter(planPrecise);
+    var dl=NEAR_M/111320, dn=dl/Math.max(.2,Math.cos(c.y*Math.PI/180)), out=[];
+    for(var i=0;i<planPool.length;i++){
+      var o=planPool[i];
+      if(o===c||inPlan[o._pid]||Math.abs(o.y-c.y)>dl||Math.abs(o.x-c.x)>dn) continue;
+      var d=planKm([c.y,c.x],[o.y,o.x])*1000;
+      if(d<=NEAR_M) out.push({c:o,m:d});
+    }
+    out.sort(function(a,b){
+      return (Math.round(a.m)-Math.round(b.m))||((planRank[a.c.l]!=null?planRank[a.c.l]:9)-(planRank[b.c.l]!=null?planRank[b.c.l]:9));
+    });
+    return out;
+  }
+
+  function planRender(){
+    var box=planEl('plist'), chk=planChecked(), n=0, inPlan={};
+    planStops.forEach(function(s){ inPlan[s.c._pid]=1; });
+    box.innerHTML=planStops.map(function(s,i){
+      var c=s.c, color=(c.l==='closed_lost'&&c.t==='risk_rejected')?'#8e24aa':BY_KEY[c.l].color;
+      var no=(planRouted&&s.on)?(++n):'';
+      var near=planPrecise(c)?planNear(c,inPlan):[], nr='', rows='';
+      if(!planPrecise(c)) nr='';   // an approximate pin sits at a scattered point, so "nearby" would mean nothing
+      else if(!near.length) nr='<div class="pnear">no exact pins within '+NEAR_M+' m</div>';
+      else{
+        nr='<div class="pnear"><a data-near="'+i+'">'+near.length+' nearby'+(s.near?' &#9652;':' &#9662;')+'</a></div>';
+        if(s.near){
+          rows='<div class="pnrows">'+near.slice(0,NEAR_MAX).map(function(x){
+            return '<div class="pnrow"><span class="pname" data-pid="'+esc(x.c._pid)+'" title="'+esc(x.c.n)+'">'+esc(x.c.n)+'</span>'+
+              '<span class="pdist">'+planShort[x.c.l]+' &middot; '+Math.round(x.m)+' m</span>'+
+              '<button class="pmv" data-add="'+esc(x.c._pid)+'" title="Add to the visit day" aria-label="Add '+esc(x.c.n)+'">+</button></div>';
+          }).join('')+(near.length>NEAR_MAX?'<div class="pnear">nearest '+NEAR_MAX+' of '+near.length+'</div>':'')+'</div>';
+        }
+      }
+      return '<div class="pstop'+(s.on?'':' off')+'">'+
+        '<input type="checkbox" data-i="'+i+'"'+(s.on?' checked':'')+'>'+
+        '<span class="pno">'+no+'</span>'+
+        '<div class="pbody"><span class="pname" data-i="'+i+'" title="'+esc(c.n)+'">'+esc(c.n)+'</span>'+
+        '<div class="ptags"><span class="pb2" style="background:'+color+'">'+
+          ((c.l==='closed_lost'&&c.t==='risk_rejected')?'Risk':planShort[c.l])+'</span>'+
+          (c.fi?'<span class="pb2" style="background:#0b8043">Funded</span>':'')+
+          (planApprox(c)?'<span class="pb2 amb">approximate</span>':'')+
+          (c.o?'<span>'+esc(c.o)+'</span>':'')+
+        '</div><div class="pfoot">'+nr+'<div class="pctl">'+
+          ((planRouted&&s.on)?'<button class="pmv" data-mv="-1" data-i="'+i+'" title="Move up"'+(no===1?' disabled':'')+'>&#9650;</button>'+
+            '<button class="pmv" data-mv="1" data-i="'+i+'" title="Move down"'+(no===chk.length?' disabled':'')+'>&#9660;</button>':'')+
+          '<button class="pmv x" data-rm="'+i+'" title="Remove from the visit day" aria-label="Remove '+esc(c.n)+'">&times;</button>'+
+        '</div></div>'+rows+'</div></div>';
+    }).join('');
+    var hasAny=planStops.length>0;
+    planEl('pact').style.display=hasAny?'':'none';
+    planEl('pcsvrow').style.display=chk.length?'':'none';
+    planEl('pwa').style.display=(planRouted&&chk.length)?'':'none';
+    planEl('psaverow').style.display=chk.length?'':'none';
+    planTotalText();
+    planLinks();
+  }
+
+  // The stops inside a box, from the pins currently shown (so layer and filter
+  // choices count). Closed won first, then in process, CRM, closed lost.
+  // With "Only exact pins" on (the default) the approximate ones are left out and counted.
+  function planFromBounds(b){
+    var s=b.getSouth(), n=b.getNorth(), w=b.getWest(), e=b.getEast(), hit=[], total=0, only=planEl('ponly').checked;
+    markerIndex.forEach(function(x){
+      var c=x.c; if(!(c.y>=s&&c.y<=n&&c.x>=w&&c.x<=e)) return;
+      total++;
+      if(!only||planPrecise(c)) hit.push(c);
+    });
+    hit.sort(function(a,b2){ return (planRank[a.l]!=null?planRank[a.l]:9)-(planRank[b2.l]!=null?planRank[b2.l]:9); });
+    var left=total-hit.length, tail=left?', '+fmt(left)+' approximate left out':'';
+    planFound=hit.length;
+    planStops=hit.slice(0,PLAN_MAX).map(function(c){ return {c:c,on:true}; });
+    planUnroute();
+    if(!total) planMsg('No pins in that box with the layers you have on. Switch on more layers in the legend, or draw a bigger area.');
+    else if(!planFound) planMsg(fmt(total)+' pin'+(total===1?'':'s')+' in the box'+tail+'. Untick "Only exact pins" to include them.');
+    else if(planFound>PLAN_MAX) planMsg('Showing '+PLAN_MAX+' of '+fmt(planFound)+(only?' exact':'')+' pins'+tail+', draw a smaller area.');
+    else planMsg(fmt(total)+' pin'+(total===1?'':'s')+' in the box'+tail+'. Untick any you will skip, then order them.');
+    planRender();
+  }
+  function planSetRect(b){
+    if(planRect) map.removeLayer(planRect);
+    planRect=L.rectangle(b,{color:'#2970FF',weight:2,dashArray:'6 4',fillColor:'#2970FF',fillOpacity:.1,interactive:false,renderer:planRenderer}).addTo(map);
+    planFromBounds(b);
+  }
+
+  // Road routing: the public OSRM demo server (free, no key, OpenStreetMap data). One table
+  // call gives the drive times between every pair of stops, which the ordering runs on; one
+  // route call gives the road line, distance and time. Either one failing falls back, quietly
+  // and without blocking: straight-line ordering, straight line drawn.
+  var OSRM_MS=7000;
+  var planOsrm='https://router.project-osrm.org';
+  var planMatrixCache={};      // sorted unique "lon,lat" list -> {idx,dur,dist}; one fetch per set of places
+  var planRoad=null;           // {sec,km,src:'route'|'matrix'} for the route as drawn, or null
+  var planGen=0, planRG=0, planRouting=false;   // order run, route-draw run, order in flight
+  function planLL(p){ return p[1].toFixed(6)+','+p[0].toFixed(6); }   // OSRM wants lon,lat
+  async function planFetchJson(url){
+    var ctl=new AbortController(), t=setTimeout(function(){ ctl.abort(); },OSRM_MS);
+    try{
+      var r=await fetch(url,{signal:ctl.signal});
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      var j=await r.json();
+      if(!j||j.code!=='Ok') throw new Error((j&&j.code)||'bad reply');
+      return j;
+    }finally{ clearTimeout(t); }
+  }
+  // Same place listed twice (two companies in one building) is sent once. Sorted, so the
+  // key does not change when the stops are re-ordered by hand.
+  function planUniq(pts){
+    var seen={}, out=[];
+    pts.forEach(function(p){ var k=planLL(p); if(!seen[k]){ seen[k]=1; out.push(k); } });
+    return out.sort();
+  }
+  function planMxFor(pts){ return planMatrixCache[planUniq(pts).join(';')]||null; }
+  async function planMatrix(pts){
+    var u=planUniq(pts), key=u.join(';'), hit=planMatrixCache[key];
+    if(hit) return hit;
+    var idx={}; u.forEach(function(k,i){ idx[k]=i; });
+    var mx;
+    if(u.length<2) mx={idx:idx,dur:[[0]],dist:[[0]]};
+    else{
+      var j=await planFetchJson(planOsrm+'/table/v1/driving/'+key+'?annotations=duration,distance');
+      var ok=!!(j.durations&&j.distances&&j.durations.length===u.length&&j.distances.length===u.length);
+      if(ok) j.durations.concat(j.distances).forEach(function(r){ r.forEach(function(v){ if(typeof v!=='number') ok=false; }); });
+      if(!ok) throw new Error('no road between some stops');
+      mx={idx:idx,dur:j.durations,dist:j.distances};
+    }
+    if(Object.keys(planMatrixCache).length>=30) planMatrixCache={};
+    planMatrixCache[key]=mx;
+    return mx;
+  }
+  // Total road distance and time over a path, from the matrix (asymmetric: leg a->b, not b->a).
+  function planSumLegs(mx,pts){
+    var sec=0, m=0, i;
+    for(i=1;i<pts.length;i++){
+      var a=mx.idx[planLL(pts[i-1])], b=mx.idx[planLL(pts[i])];
+      if(a==null||b==null) return null;
+      sec+=mx.dur[a][b]; m+=mx.dist[a][b];
+    }
+    return {sec:sec,km:m/1000,src:'matrix'};
+  }
+  function planMinText(sec){
+    var m=Math.max(1,Math.round(sec/60));
+    return m<60?m+' min':Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');
+  }
+  function planRoadText(){ return planRoad?(planRoad.km.toFixed(1)+' km, '+planMinText(planRoad.sec)):''; }
+  function planTotalText(){
+    var el=planEl('ptotal'), at=planEl('pattr');
+    el.style.display=planRouted?'':'none';
+    at.style.display=(planRouted&&planRoad)?'':'none';
+    if(!planRouted) return;
+    var st=planKmTotal.toFixed(1);
+    el.innerHTML=planRoad
+      ? '<span class="ptk">About '+planRoad.km.toFixed(1)+' km, '+planMinText(planRoad.sec)+' driving</span> (straight line: '+st+' km)'
+      : 'Straight-line total: '+st+' km. Roads will be longer.';
+  }
+
+  function planUnroute(){
+    planLayer.clearLayers(); planLine=null; planRouted=false; planKmTotal=0; planRoad=null;
+    planGen++; planRG++; planRouting=false; planEl('porder').disabled=false;   // also cancels an order still in flight
+  }
+  // Nearest neighbour from node 0, then 2-opt on the open path until no reversal makes it
+  // cheaper. d(i,j) is the cost of going from node i to node j (drive seconds, or km).
+  // Node 0 (your location, or the first ticked stop) stays put. The matrix is not symmetric
+  // (one-way roads), so every candidate reversal is scored on the whole path, not on 4 edges.
+  function planOptimise(n,d){
+    var path=[0], left=[], i, j;
+    for(i=1;i<n;i++) left.push(i);
+    while(left.length){
+      var last=path[path.length-1], bi=0, bd=Infinity;
+      for(i=0;i<left.length;i++){ var x=d(last,left[i]); if(x<bd){ bd=x; bi=i; } }
+      path.push(left.splice(bi,1)[0]);
+    }
+    function cost(p){ var s=0, k; for(k=1;k<p.length;k++) s+=d(p[k-1],p[k]); return s; }
+    var best=cost(path), better=true, guard=0;
+    while(better&&guard++<60){
+      better=false;
+      for(i=1;i<n-1;i++){
+        for(j=i+1;j<n;j++){
+          var cand=path.slice(0,i).concat(path.slice(i,j+1).reverse(),path.slice(j+1)), c=cost(cand);
+          if(c<best-1e-9){ path=cand; best=c; better=true; }
+        }
+      }
+    }
+    return path;
+  }
+  // Order the ticked stops by drive time (OSRM), or by straight-line km if OSRM cannot be
+  // reached, then draw the route. Returns a promise that settles when it is all drawn.
+  async function planOrder(){
+    var chk=planChecked();
+    if(!chk.length){ planMsg('Tick at least one stop first.',true); return; }
+    var nodes=chk.map(function(s){ return {p:[s.c.y,s.c.x],s:s}; });
+    if(planStart) nodes.unshift({p:planStart,s:null});
+    nodes.forEach(function(x){ x.k=planLL(x.p); });
+    var my=++planGen, mx=null, big=nodes.length>2;   // with 2 nodes there is nothing to order
+    planRG++; planRouting=true; planEl('porder').disabled=true;
+    planMsg('Working out the road order...');
+    if(big){
+      try{ mx=await planMatrix(nodes.map(function(x){ return x.p; })); }catch(e){ mx=null; }
+      if(my!==planGen) return;     // the list changed while we waited
+    }
+    var d=mx
+      ? function(a,b){ return mx.dur[mx.idx[nodes[a].k]][mx.idx[nodes[b].k]]; }
+      : function(a,b){ return planKm(nodes[a].p,nodes[b].p); };
+    var order=big?planOptimise(nodes.length,d):nodes.map(function(x,i){ return i; });
+    var ordered=order.map(function(i){ return nodes[i]; }).filter(function(x){ return x.s; }).map(function(x){ return x.s; });
+    planUnroute();
+    my=planGen; planRouting=true; planEl('porder').disabled=true;
+    planStops=ordered.concat(planStops.filter(function(s){ return !s.on; }));
+    planRouted=true;
+    var drawn=planRedrawRoute(big&&!mx);     // straight line now, the road line when it arrives
+    planRender();
+    var ok=await drawn;
+    if(my!==planGen) return;
+    planRouting=false; planEl('porder').disabled=false;
+    if(big&&!mx) planMsg('Routing service unavailable, ordered by straight-line distance.',true);
+    else if(!ok) planMsg('Road line unavailable, showing straight lines between the stops.',true);
+    else planMsg('');
+  }
+  // The one place the route is drawn: the line, the numbered markers and the totals, from
+  // the ticked stops in their current order (and the start, if set). Used after ordering
+  // and after a hand move; it never changes the order itself. The straight line goes up
+  // at once; the road geometry (one OSRM route call) replaces it when it arrives. Totals
+  // come from the cached matrix if there is one, then from the route. Resolves true when
+  // all it set out to draw is drawn (also when superseded, so the caller says nothing).
+  function planRedrawRoute(skipRoad){
+    planLayer.clearLayers(); planLine=null; planKmTotal=0; planRoad=null;
+    var rg=++planRG, chk=planChecked(), pts=chk.map(function(s){ return [s.c.y,s.c.x]; }), i;
+    if(planStart) pts.unshift(planStart);
+    for(i=1;i<pts.length;i++) planKmTotal+=planKm(pts[i-1],pts[i]);
+    if(pts.length>1) planLine=L.polyline(pts,{color:'#2970FF',weight:3,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
+    chk.forEach(function(s,idx){
+      L.marker([s.c.y,s.c.x],{interactive:false,keyboard:false,
+        icon:L.divIcon({className:'rtn',html:String(idx+1),iconSize:[18,18]})}).addTo(planLayer);
+    });
+    var mx=pts.length>1?planMxFor(pts):null;
+    if(mx) planRoad=planSumLegs(mx,pts);
+    planTotalText();
+    if(pts.length<2||skipRoad) return Promise.resolve(true);
+    return planRoadLine(pts,rg);
+  }
+  async function planRoadLine(pts,rg){
+    var j;
+    try{ j=await planFetchJson(planOsrm+'/route/v1/driving/'+pts.map(planLL).join(';')+'?overview=full&geometries=geojson&steps=false'); }
+    catch(e){ return rg!==planRG; }
+    if(rg!==planRG) return true;
+    var r=j.routes&&j.routes[0];
+    if(!r||!r.geometry||!r.geometry.coordinates||r.geometry.coordinates.length<2) return false;
+    if(planLine) planLayer.removeLayer(planLine);
+    planLine=L.polyline(r.geometry.coordinates.map(function(c){ return [c[1],c[0]]; }),{color:'#2970FF',weight:4,opacity:.85,renderer:planRenderer,interactive:false}).addTo(planLayer);
+    planRoad={sec:r.duration,km:r.distance/1000,src:'route'};
+    planTotalText();
+    return true;
+  }
+  // Move a ticked stop one place up (-1) or down (+1) among the ticked ones.
+  function planMove(i,dir){
+    var s=planStops[i]; if(!s||!s.on||!planRouted) return;
+    var j=i+dir;
+    while(j>=0&&j<planStops.length&&!planStops[j].on) j+=dir;
+    if(j<0||j>=planStops.length) return;
+    planStops[i]=planStops[j]; planStops[j]=s;
+    var drawn=planRedrawRoute(), rg=planRG; planRender();
+    var b=planEl('plist').querySelector('[data-mv="'+dir+'"][data-i="'+j+'"]');
+    if(b&&!b.disabled) b.focus();
+    drawn.then(function(ok){ if(!ok&&rg===planRG) planMsg('Road line unavailable, showing straight lines between the stops.',true); });
+  }
+
+  // Google Maps links. A stop is written as lat,lng only when we hold a real street
+  // address for it; every other pin is scattered inside its area, so those go in as
+  // text (name, area, emirate) and Google Maps finds the business itself.
+  function planPoint(c){
+    if(planPrecise(c)) return c.y.toFixed(6)+','+c.x.toFixed(6);
+    return [c.n,c.a,(c.e&&c.e!=='UAE')?c.e:null,'UAE'].filter(Boolean).join(', ');
+  }
+  function planLegUrl(items){
+    var u='https://www.google.com/maps/dir/?api=1';
+    if(items.length>1) u+='&origin='+encodeURIComponent(items[0]);
+    u+='&destination='+encodeURIComponent(items[items.length-1]);
+    if(items.length>2) u+='&waypoints='+items.slice(1,-1).map(function(x){ return encodeURIComponent(x); }).join('%7C');
+    return u+'&travelmode=driving';
+  }
+  // [{label, url}] - one link up to 11 stops, then chained legs that share their join stop.
+  function planLegs(){
+    if(!planRouted) return [];
+    var seq=[];
+    if(planStart) seq.push({t:planStart[0].toFixed(6)+','+planStart[1].toFixed(6),n:0});
+    planChecked().forEach(function(s,i){ seq.push({t:planPoint(s.c),n:i+1}); });
+    if(!seq.length) return [];
+    var legs=[];
+    if(seq.length<=LEG_MAX) legs.push({label:'Open in Google Maps',items:seq});
+    else for(var a=0;a<seq.length-1;a+=LEG_MAX-1){
+      var it=seq.slice(a,a+LEG_MAX), lo=it[0].n, hi=it[it.length-1].n;
+      legs.push({label:'Leg '+(legs.length+1)+' ('+(lo===0?'start, ':'')+'stops '+Math.max(1,lo)+'-'+hi+')',items:it});
+    }
+    return legs.map(function(g){ return {label:g.label,url:planLegUrl(g.items.map(function(x){ return x.t; }))}; });
+  }
+  function planLinks(){
+    var legs=planLegs();
+    planEl('plinks').innerHTML=legs.map(function(g){
+      return '<a class="pbtn pri block" target="_blank" rel="noopener" href="'+esc(g.url)+'">'+esc(g.label)+' &rarr;</a>';
+    }).join('');
+  }
+
+  // CSV of the ticked stops, in route order once ordered. Coordinates are written only
+  // for real street addresses, like the Google links; the precision column says which is which.
+  function planCell(v){
+    v=String(v==null?'':v);
+    if(/^[=+\\-@]/.test(v) && isNaN(Number(v))) v="'"+v;   // a name must not run as a spreadsheet formula
+    return /[",\\r\\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  }
+  function planCsv(){
+    var chk=planChecked(); if(!chk.length) return '';
+    var rows=[['order','name','stage','funded','precision','address','area','emirate','owner','hubspot_url','lat','lng']];
+    chk.forEach(function(s,i){
+      var c=s.c, pin=planPrecise(c);
+      rows.push([i+1,c.n,STAGE[c.l]+((c.l==='closed_lost'&&c.t==='risk_rejected')?' (Risk)':''),c.fi?'yes':'no',c.h||'',
+        c.ga||'',c.a||'',c.e||'',c.o||'',c.ao?'':HUBSPOT_URL.replace('{id}',encodeURIComponent(c.i)),
+        pin?c.y.toFixed(6):'',pin?c.x.toFixed(6):'']);
+    });
+    return rows.map(function(r){ return r.map(planCell).join(','); }).join('\\r\\n');
+  }
+  function planDownload(){
+    var csv=planCsv(); if(!csv) return;
+    var d=new Date(), p2=function(n){ return (n<10?'0':'')+n; };
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob(['\\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+    a.download='visit-day-'+d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())+'.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(a.href); },3000);
+  }
+
+  // Set or drop the start point (your location, or the one in a shared link), with its dot and button label.
+  function planSetStart(ll){
+    planStart=ll||null;
+    if(planStartMk){ map.removeLayer(planStartMk); planStartMk=null; }
+    var btn=planEl('ploc');
+    if(planStart){
+      planStartMk=L.circleMarker(planStart,{radius:7,color:'#fff',weight:2,fillColor:'#2970FF',fillOpacity:1,interactive:false,renderer:planRenderer}).addTo(map);
+      btn.textContent='Don\\'t start from my location'; btn.classList.add('on');
+    }else{
+      btn.textContent='Start from my location'; btn.classList.remove('on');
+    }
+  }
+  function planLocate(){
+    if(planStart){
+      planSetStart(null);
+      if(planRouted||planRouting) planOrder();
+      return;
+    }
+    if(!navigator.geolocation){ planMsg('This browser cannot share your location. The route starts at the first stop.',true); return; }
+    planMsg('Finding your location...');
+    navigator.geolocation.getCurrentPosition(function(pos){
+      planSetStart([pos.coords.latitude,pos.coords.longitude]);
+      if(planRouted||planRouting) planOrder(); else planMsg('Starting from your location. Order the stops to plan the route.');
+    },function(err){
+      planMsg('Could not get your location ('+((err&&err.message)||'not allowed')+'). The route starts at the first stop.',true);
+    },{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+  }
+
+  function planClear(){
+    planDrawOff();
+    if(planRect){ map.removeLayer(planRect); planRect=null; }
+    planStops=[]; planFound=0; planUnroute();
+    planSetStart(null);
+    planMsg('Switch on the layers you want in the legend, then drag a box over the area.');
+    planRender();
+  }
+
+  // Add or drop a stop by hand. A stop is found by id: the HubSpot id, or 'a'+index for
+  // an admin-only pin. Changing the list un-routes it, like ticking a box does.
+  function planAdd(id){
+    var c=planById[String(id)];
+    if(!c){ planMsg('That pin is not on this map.',true); return; }
+    planEl('plan').open=true;
+    for(var i=0;i<planStops.length;i++){
+      if(planStops[i].c===c){ planMsg(c.n+' is already in the visit day.'); return; }
+    }
+    var was=planRouted||planRouting;
+    planStops.push({c:c,on:true});
+    if(was) planUnroute();
+    planMsg('Added '+c.n+'.'+(was?' Order the stops again.':''));
+    planRender();
+  }
+  function planRemove(i){
+    var s=planStops[i]; if(!s) return;
+    var was=planRouted||planRouting;
+    planStops.splice(i,1);
+    if(was) planUnroute();
+    planMsg('Removed '+s.c.n+'.'+(was?' Order the stops again.':''));
+    planRender();
+  }
+  // Fly to a company's pin and open it; if a filter hides it now, just centre on where it is.
+  function planShow(c){
+    for(var j=0;j<markerIndex.length;j++){ if(markerIndex[j].c===c){ goTo(markerIndex[j]); return; } }
+    map.setView([c.y,c.x],Math.min(17,map.getMaxZoom()));
+  }
+  function planZoom(){
+    var pts=planStops.map(function(s){ return [s.c.y,s.c.x]; }), sz=map.getSize();
+    if(planStart) pts.push(planStart);
+    if(!pts.length||!(sz.x>0&&sz.y>0)) return;
+    map.fitBounds(L.latLngBounds(pts),{padding:[40,40],maxZoom:16,animate:false});
+  }
+
+  // Saved days live in localStorage (key fk_plans, newest first, 20 kept). Every access is
+  // wrapped: a private window or blocked storage must not break the planner.
+  function planPlansRead(){
+    try{
+      var a=JSON.parse(localStorage.getItem(PLANS_KEY)||'[]');
+      return Array.isArray(a)?a.filter(function(p){ return p&&Array.isArray(p.ids); }):[];
+    }catch(x){ return []; }
+  }
+  function planPlansWrite(a){
+    try{ localStorage.setItem(PLANS_KEY,JSON.stringify(a)); return true; }catch(x){ return false; }
+  }
+  function planPlansRefresh(sel){
+    var a=planPlansRead(), el=planEl('pplans');
+    el.innerHTML='<option value="">My plans ('+a.length+')</option>'+a.map(function(p,i){
+      return '<option value="'+i+'">'+esc(p.name||'Visit day')+' ('+p.ids.length+')</option>'; }).join('');
+    el.value=(sel==null)?'':String(sel);
+    planEl('pplansrow').style.display=a.length?'':'none';
+  }
+  function planDateText(){
+    var d=new Date();
+    return d.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+' '+d.getFullYear();
+  }
+  function planSave(){
+    var chk=planChecked();
+    if(!chk.length){ planMsg('Nothing to save yet.',true); return; }
+    var def='Visit day '+planDateText(), name=window.prompt('Name this visit day',def);
+    if(name===null) return;
+    name=String(name).trim()||def;
+    var a=planPlansRead();
+    a.unshift({name:name,savedAt:new Date().toISOString(),ids:chk.map(function(s){ return s.c._pid; }),
+      start:planStart?[+planStart[0].toFixed(6),+planStart[1].toFixed(6)]:null,routed:!!planRouted});
+    a=a.slice(0,PLANS_KEEP);
+    if(!planPlansWrite(a)){ planMsg('This browser would not save the plan. Use Copy link instead.',true); return; }
+    planPlansRefresh(0);
+    planMsg('Saved '+name+'.');
+  }
+  // Put a saved or shared plan on the list. Ids not on this map are skipped; returns how many.
+  function planLoad(p){
+    var seen={}, found=[], missing=0;
+    (p.ids||[]).forEach(function(id){
+      id=String(id); var c=planById[id];
+      if(seen[id]) return; seen[id]=1;
+      if(c) found.push({c:c,on:true}); else missing++;
+    });
+    planDrawOff();
+    if(planRect){ map.removeLayer(planRect); planRect=null; }
+    planUnroute();
+    planStops=found; planFound=found.length;
+    var st=p.start;
+    planSetStart((st&&st.length===2&&isFinite(st[0])&&isFinite(st[1]))?[+st[0],+st[1]]:null);
+    planEl('plan').open=true;
+    if(p.routed&&found.length){ planRouted=true; planRedrawRoute(); }
+    planRender();
+    return missing;
+  }
+  function planLoadSaved(i){
+    var p=planPlansRead()[i]; if(!p) return;
+    var miss=planLoad(p);
+    planZoom();
+    planMsg('Loaded '+(p.name||'Visit day')+', '+planStops.length+' stop'+(planStops.length===1?'':'s')+'.'+
+      (miss?' '+miss+' not on this map, skipped.':'')+(p.routed?'':' Order the stops to plan the route.'),!!miss);
+  }
+  function planDelete(){
+    var v=planEl('pplans').value;
+    if(v===''){ planMsg('Choose a plan in My plans first.',true); return; }
+    var a=planPlansRead(), p=a[Number(v)]; if(!p) return;
+    a.splice(Number(v),1);
+    if(!planPlansWrite(a)){ planMsg('This browser would not change the saved plans.',true); return; }
+    planPlansRefresh(null);
+    planMsg('Deleted '+(p.name||'Visit day')+'.');
+  }
+  function planShareUrl(){
+    var ids=planChecked().map(function(s){ return s.c._pid; });
+    if(!ids.length) return '';
+    var base=(location.origin&&location.origin!=='null')?location.origin:location.protocol+'//';
+    return base+location.pathname+'?plan='+ids.join(',')+
+      (planStart?'&start='+planStart[0].toFixed(6)+','+planStart[1].toFixed(6):'');
+  }
+  function planCopy(){
+    var u=planShareUrl();
+    if(!u){ planMsg('Nothing to share yet.',true); return; }
+    function byHand(){ planMsg('Copy this link: '+u); }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      try{ navigator.clipboard.writeText(u).then(function(){ planMsg('Link copied. Whoever opens it gets these stops, ordered.'); },byHand); }
+      catch(x){ byHand(); }
+    }else byHand();
+  }
+  // ?plan=<ids>[&start=lat,lng] (a shared day): the stops, ordered, with the map zoomed to them.
+  function planFromLink(){
+    var q=new URLSearchParams(location.search), raw=(q.get('plan')||'').trim();
+    if(!raw) return;
+    var sp=(q.get('start')||'').split(','), start=null;
+    if(sp.length===2){
+      var la=parseFloat(sp[0]), ln=parseFloat(sp[1]);
+      if(isFinite(la)&&isFinite(ln)&&Math.abs(la)<=90&&Math.abs(ln)<=180) start=[la,ln];
+    }
+    var ids=raw.split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+    var miss=planLoad({ids:ids,start:start,routed:false});
+    if(!planStops.length){ planMsg('None of the stops in this link are on the map.',true); return; }
+    planZoom();
+    return planOrder().then(function(){
+      var pm=planEl('pmsg'), w=pm.classList.contains('pwarn')?pm.textContent+' ':'';   // keep a routing warning
+      planMsg(w+'Shared visit day, '+planStops.length+' stop'+(planStops.length===1?'':'s')+', ordered.'+(miss?' '+miss+' not on this map, skipped.':''),!!miss||!!w);
+    });
+  }
+
+  // WhatsApp text: a title, the stops in route order, then the Google Maps link(s).
+  // If it runs past ~1,800 characters, the stop lines are cut after the 15th. The links are never cut,
+  // so a day of many approximate stops (long text links) can still pass that mark.
+  function planWaText(){
+    var chk=planChecked();
+    var head='Visit day '+planDateText()+', '+chk.length+' stop'+(chk.length===1?'':'s')+(planRoad?', about '+planRoadText()+' driving':'');
+    var lines=chk.map(function(s,i){
+      var c=s.c;
+      return (i+1)+'. '+c.n+(c.a?', '+c.a:'')+(c.fi?' (funded)':'')+(planPrecise(c)?'':' (approx.)');
+    });
+    var legs=planLegs();
+    var links=legs.map(function(g){ return legs.length>1?g.label+': '+g.url:g.url; });
+    function build(k){
+      var body=lines.slice(0,k);
+      if(k<lines.length) body.push('\\u2026and '+(lines.length-k)+' more');
+      return head+'\\n'+body.join('\\n')+'\\n\\n'+links.join('\\n');
+    }
+    var t=build(lines.length);
+    return t.length>WA_MAX ? build(Math.min(lines.length,WA_STOPS)) : t;
+  }
+  function planWaUrl(){ return 'https://wa.me/?text='+encodeURIComponent(planWaText()); }
+  function planWhatsapp(){
+    if(!planRouted||!planChecked().length){ planMsg('Order the stops first, then send.',true); return; }
+    window.open(planWaUrl(),'_blank','noopener');
+  }
+
+  // The box is drawn by hand with pointer events, which cover mouse, pen and touch
+  // alike. While it is on, map dragging is off so the drag draws instead of panning.
+  function planDrawOn(){
+    planDrawing=true; map.dragging.disable();
+    var ct=map.getContainer(); L.DomUtil.addClass(ct,'plan-drawing'); ct.style.touchAction='none';
+    planEl('pdraw').textContent='Cancel drawing'; planEl('pdraw').classList.add('on');
+    planMsg('Press on the map and drag to draw the box.');
+  }
+  function planDrawOff(){
+    if(planTmp){ map.removeLayer(planTmp); planTmp=null; }
+    planDrag=null;
+    if(!planDrawing) return;
+    planDrawing=false; map.dragging.enable();
+    var ct=map.getContainer(); L.DomUtil.removeClass(ct,'plan-drawing'); ct.style.touchAction='';
+    planEl('pdraw').textContent='Draw an area'; planEl('pdraw').classList.remove('on');
+  }
+  (function(){
+    var ct=map.getContainer();
+    ct.addEventListener('pointerdown',function(e){
+      if(!planDrawing||(e.pointerType==='mouse'&&e.button!==0)) return;
+      if(e.target.closest && e.target.closest('.leaflet-control')) return;
+      e.preventDefault();
+      try{ ct.setPointerCapture(e.pointerId); }catch(x){}
+      planDrag={id:e.pointerId,a:map.mouseEventToLatLng(e),pt:map.mouseEventToContainerPoint(e),b:null};
+    });
+    ct.addEventListener('pointermove',function(e){
+      if(!planDrag||e.pointerId!==planDrag.id) return;
+      planDrag.b=map.mouseEventToLatLng(e);
+      var bb=L.latLngBounds(planDrag.a,planDrag.b);
+      if(planTmp) planTmp.setBounds(bb);
+      else planTmp=L.rectangle(bb,{color:'#2970FF',weight:2,dashArray:'6 4',fillOpacity:.06,interactive:false,renderer:planRenderer}).addTo(map);
+    });
+    function up(e,cancel){
+      if(!planDrag||e.pointerId!==planDrag.id) return;
+      var d=planDrag, moved=map.mouseEventToContainerPoint(e).distanceTo(d.pt);
+      if(planTmp){ map.removeLayer(planTmp); planTmp=null; }
+      planDrag=null;
+      if(cancel||moved<8) return;    // a stray click: stay in draw mode
+      var bb=L.latLngBounds(d.a,map.mouseEventToLatLng(e));
+      planDrawOff();
+      planSetRect(bb);
+    }
+    ct.addEventListener('pointerup',function(e){ up(e,false); });
+    ct.addEventListener('pointercancel',function(e){ up(e,true); });
+  })();
+
+  planEl('pdraw').onclick=function(){ if(planDrawing){ planDrawOff(); planMsg(''); } else planDrawOn(); };
+  planEl('pclear').onclick=planClear;
+  planEl('porder').onclick=planOrder;
+  planEl('ploc').onclick=planLocate;
+  planEl('pcsv').onclick=planDownload;
+  planEl('pwa').onclick=planWhatsapp;
+  planEl('psave').onclick=planSave;
+  planEl('pcopy').onclick=planCopy;
+  planEl('pdel').onclick=planDelete;
+  planEl('pplans').onchange=function(){ if(this.value!=='') planLoadSaved(Number(this.value)); };
+  planEl('ponly').onchange=function(){ if(planRect) planFromBounds(planRect.getBounds()); };
+  planEl('plist').onchange=function(e){
+    var i=e.target.getAttribute('data-i'); if(i==null||!planStops[i]) return;
+    planStops[i].on=e.target.checked;
+    if(planRouted||planRouting){ planUnroute(); planMsg('Stops changed. Order them again.'); }
+    planRender();
+  };
+  planEl('plist').onclick=function(e){
+    var t=e.target, g=function(a){ return t.getAttribute&&t.getAttribute(a); }, i;
+    if(g('data-add')!=null){ planAdd(g('data-add')); return; }
+    if(g('data-rm')!=null){ planRemove(Number(g('data-rm'))); return; }
+    if(g('data-mv')!=null){ planMove(Number(g('data-i')),Number(g('data-mv'))); return; }
+    if((i=g('data-near'))!=null){ if(planStops[i]){ planStops[i].near=!planStops[i].near; planRender(); } return; }
+    if(!t.classList||!t.classList.contains('pname')) return;
+    if(g('data-pid')!=null){ if(planById[g('data-pid')]) planShow(planById[g('data-pid')]); return; }
+    if(planStops[g('data-i')]) planShow(planStops[g('data-i')].c);
+  };
+  window.__planAdd=planAdd;
+  planPlansRefresh(null);
+  // In-browser checks only.
+  window.__planner={draw:function(s,w,n,e){ planSetRect(L.latLngBounds([s,w],[n,e])); },order:planOrder,legs:planLegs,csv:planCsv,
+    download:planDownload,setStart:function(lat,lng){ planSetStart([lat,lng]); },add:planAdd,remove:planRemove,move:planMove,
+    near:function(c){ var m={}; planStops.forEach(function(s){ m[s.c._pid]=1; }); return planNear(c,m); },
+    savePlan:planSave,plans:planPlansRead,loadSaved:planLoadSaved,del:planDelete,link:planShareUrl,fromLink:planFromLink,
+    view:function(){ return map.getBounds().toBBoxString()+" z"+map.getZoom(); },waText:planWaText,waUrl:planWaUrl,byId:function(id){ return planById[id]; },
+    osrmBase:function(v){ if(v!=null){ planOsrm=String(v); planMatrixCache={}; } return planOsrm; },
+    state:function(){ return {stops:planStops,found:planFound,routed:planRouted,km:planKmTotal,routing:planRouting,road:planRoad,
+      linePts:planLine?planLine.getLatLngs().length:0,matrices:Object.keys(planMatrixCache).length}; }};
 
   document.getElementById('heat').onchange=function(e){ sizeByValue=e.target.checked; redraw(); };
   document.getElementById('cluster').onchange=function(e){ clusterOn=e.target.checked; redraw(); };
@@ -893,6 +1887,121 @@ function __main(){
 
   var disN=DATA.companies.filter(function(c){return c.hs;}).length;
   if(disN) document.getElementById('note').innerHTML += ' <b>'+disN+' pinned businesses are classified differently by the two systems</b> — the admin app wins on won and lost.';
+  // Scoreboard. Everything comes from the admin app: closed-by (co) and financing
+  // history (fi = [count, first, latest, ongoing, lastDue, approx]). HubSpot owners are not used.
+  var scorePeriod='quarter';
+  var SCORE_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  function scoreKey(y,m){ return y+'-'+(m<9?'0':'')+(m+1); }   // m is 0-11
+  function scoreRange(p){
+    var d=new Date(), y=d.getFullYear(), m=d.getMonth(), q=Math.floor(m/3);
+    if(p==='month') return {from:scoreKey(y,m)+'-01',label:SCORE_MONTHS[m]+' '+y};
+    if(p==='quarter') return {from:scoreKey(y,q*3)+'-01',label:'Q'+(q+1)+' '+y};
+    if(p==='year') return {from:y+'-01-01',label:String(y)};
+    return {from:'',label:'All time'};
+  }
+  function scoreClients(){
+    if(!DATA._scoreC) DATA._scoreC=DATA.companies.filter(function(c){ return c.fi&&c.fi[1]; });
+    return DATA._scoreC;
+  }
+  // New = first disbursed in the period; repeat = latest in the period, first before it.
+  // For all time there is no "before", so repeat means financed more than once.
+  function scoreCalc(p){
+    var r=scoreRange(p), from=r.from, rows={}, tot={n:0,rp:0,v:0};
+    scoreClients().forEach(function(c){
+      var f=c.fi, isNew=f[1]>=from, rep=from?(f[2]>=from&&f[1]<from):f[0]>1;
+      if(!isNew&&!rep) return;
+      var v=isNew?(c.m||0):0;
+      if(isNew) tot.n++; if(rep) tot.rp++; tot.v+=v;
+      (c.co?c.co.split(', '):['']).forEach(function(k){
+        var o=rows[k]||(rows[k]={name:k,n:0,rp:0,v:0});
+        if(isNew) o.n++; if(rep) o.rp++; o.v+=v;
+      });
+    });
+    var none=rows['']; delete rows[''];
+    var list=Object.keys(rows).map(function(k){ return rows[k]; }).sort(function(a,b){
+      return (b.n-a.n)||(b.v-a.v)||(b.rp-a.rp)||(a.name<b.name?-1:1);
+    });
+    return {r:r,tot:tot,rows:list,none:none};
+  }
+  // Badges, all-time except the streak: pioneer areas, new-client month streak, top area.
+  function scoreBadges(){
+    if(DATA._scoreB) return DATA._scoreB;
+    var first={}, areas={}, months={}, anyThis=false, d=new Date(), y=d.getFullYear(), m=d.getMonth();
+    var B={pio:{},top:{},streak:{}};
+    scoreClients().forEach(function(c){
+      var ar=c.a||c.e, cs=c.co?c.co.split(', '):[], mk=c.fi[1].slice(0,7);
+      if(mk===scoreKey(y,m)) anyThis=true;
+      if(ar&&(!first[ar]||c.fi[1]<first[ar].d)) first[ar]={d:c.fi[1],cs:cs};
+      cs.forEach(function(k){
+        if(ar){ (areas[k]||(areas[k]={}))[ar]=(areas[k][ar]||0)+1; }
+        (months[k]||(months[k]={}))[mk]=1;
+      });
+    });
+    Object.keys(first).forEach(function(ar){ first[ar].cs.forEach(function(k){ B.pio[k]=(B.pio[k]||0)+1; }); });
+    Object.keys(areas).forEach(function(k){
+      var best=null; Object.keys(areas[k]).sort().forEach(function(ar){ if(!best||areas[k][ar]>areas[k][best]) best=ar; });
+      if(best) B.top[k]={a:best,n:areas[k][best]};
+    });
+    if(!anyThis){ m--; if(m<0){ m=11; y--; } }
+    Object.keys(months).forEach(function(k){
+      var n=0, yy=y, mm=m;
+      while(months[k][scoreKey(yy,mm)]){ n++; mm--; if(mm<0){ mm=11; yy--; } }
+      B.streak[k]=n;
+    });
+    return DATA._scoreB=B;
+  }
+  function scoreChips(k){
+    var B=scoreBadges(), h='';
+    function chip(cls,t,tip){ h+='<span class="scb '+cls+'" title="'+esc(tip)+'">'+esc(t)+'</span>'; }
+    if(B.pio[k]) chip('pio','Pioneer \\u00d7'+B.pio[k],'Pioneer: has the earliest first disbursement of all time in '+B.pio[k]+(B.pio[k]===1?' area':' areas')+' (area, or emirate when there is no area).');
+    if(B.streak[k]>=2) chip('stk','Streak '+B.streak[k],'Streak: at least one new client in each of the last '+B.streak[k]+' calendar months in a row.');
+    if(B.top[k]) chip('','Top area: '+B.top[k].a,'Top area: where this closer has most funded clients ('+B.top[k].n+' in '+B.top[k].a+').');
+    return h;
+  }
+  // The closer the owner filter is narrowed to, or null when it is not narrowed to exactly one.
+  function scoreSelected(){
+    if(!ownOn||allOn(ownOn)) return null;
+    var t=Object.keys(ownOn).filter(function(k){ return ownOn[k]; });
+    return t.length===1?t[0]:null;
+  }
+  // Reuses the "Closed by" filter: only this closer ticked, or everyone again on a second click.
+  function scorePick(k){
+    if(!ownOn) renderOwn();
+    if(!ownOn) return;
+    var undo=(scoreSelected()===k);
+    Object.keys(ownOn).forEach(function(x){ ownOn[x]=undo||x===k; });
+    if(!undo) ownOn[k]=true;
+    renderOwn(); clearTimeout(redrawT); redrawT=null; redraw(); renderScore();
+  }
+  function renderScore(){
+    var el=document.getElementById('score'); if(!el) return;
+    if(!scoreClients().length){ el.style.display='none'; return; }
+    var P=[['month','This month'],['quarter','This quarter'],['year','This year'],['all','All time']];
+    var pills=document.getElementById('scpills');
+    pills.innerHTML=P.map(function(p){ return '<button type="button" class="scp'+(p[0]===scorePeriod?' on':'')+'" data-p="'+p[0]+'">'+p[1]+'</button>'; }).join('');
+    Array.prototype.forEach.call(pills.querySelectorAll('.scp'),function(b){
+      b.onclick=function(){ scorePeriod=b.getAttribute('data-p'); renderScore(); };
+    });
+    var s=scoreCalc(scorePeriod), t=s.tot, sel=scoreSelected(), shown=s.rows.slice(0,10);
+    document.getElementById('scsum').innerHTML='<b>'+esc(s.r.label)+'</b>: '+fmt(t.n)+' new client'+(t.n===1?'':'s')+', '+fmt(t.rp)+' repeat, '+(t.v?esc(aed(t.v)):'no deal value');
+    var h='<table class="sct"><tr><th></th><th class="sn" title="A client with two closers (shared) counts once for each.">Closer</th><th>New</th><th>Repeat</th><th>Value</th></tr>';
+    shown.forEach(function(o,i){
+      var med=i<3?' '+['g','s','b'][i]:'';
+      h+='<tr class="pick'+(sel===o.name?' sel':'')+'" data-i="'+i+'" title="'+esc('Show only the funded pins closed by '+o.name+'. A client with two closers (shared) counts once for each.')+'">'+
+        '<td><span class="rk'+med+'">'+(i+1)+'</span></td><td class="sn">'+esc(o.name)+'<br>'+scoreChips(o.name)+'</td>'+
+        '<td>'+fmt(o.n)+'</td><td>'+fmt(o.rp)+'</td><td>'+(o.v?esc(aed(o.v)):'&mdash;')+'</td></tr>';
+    });
+    if(s.none) h+='<tr class="none" title="Funded clients with no closer in the admin app."><td></td><td class="sn">Not recorded</td><td>'+fmt(s.none.n)+'</td><td>'+fmt(s.none.rp)+'</td><td>'+(s.none.v?esc(aed(s.none.v)):'&mdash;')+'</td></tr>';
+    h+='</table>';
+    if(s.rows.length>10) h+='<div class="muted" style="margin-top:4px">and '+fmt(s.rows.length-10)+' more</div>';
+    if(!s.rows.length&&!s.none) h='<div class="muted">No disbursements in this period.</div>';
+    var tab=document.getElementById('sctab'); tab.innerHTML=h;
+    Array.prototype.forEach.call(tab.querySelectorAll('tr.pick'),function(tr){
+      tr.onclick=function(){ scorePick(shown[Number(tr.getAttribute('data-i'))].name); };
+    });
+  }
+  renderScore();
+
   function renderBook(){
     var b=DATA.stats.book; if(!b||!b.rows||!b.rows.length) return;
     var h='<table style="width:100%;font-size:11.5px;border-collapse:collapse">';
@@ -924,8 +2033,13 @@ function __main(){
     // reads the container size, so it only runs when the container has one;
     // a hidden tab gets the fixed country view instead and locks on resize.
     var sz=map.getSize();
-    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS); lockZoom(); }
-    else map.setView([25.05,55.35], 8);
+    // No animation here: an animated fit fires its own moveend a moment later,
+    // which reveal() in deepLink() would take for the arrival at the pin and
+    // open the popup on a marker the country-zoom cull had dropped.
+    if(sz.x>0&&sz.y>0){ map.fitBounds(UAE_BOUNDS,{animate:false}); lockZoom(); }
+    else map.setView([25.05,55.35], 8, {animate:false});
+    deepLink();
+    planFromLink();
   }
   if(document.readyState==='complete') setTimeout(fit,60);
   else window.addEventListener('load',function(){ setTimeout(fit,60); });
@@ -937,21 +2051,86 @@ function __main(){
       '<b>This map needs a current browser</b> - Chrome, Edge, Safari 16.4 or newer, Firefox 113 or newer.<br><br>'+
       '<span style="color:#888">'+String(e&&e.message||e)+'</span></div>';
   }
+  function start(t){ DATA=(typeof t==='string')?JSON.parse(t):t; __expand(); __main(); }
   try{
-    var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
-    for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-    new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
-      .then(function(t){ DATA=JSON.parse(t); __expand(); __main(); })
-      .catch(fail);
+    if(DATA_URL){
+      // Server build: the server gzips this on the way out, so the bytes on the wire
+      // match the inlined build. A 401 here means the session expired - say so rather
+      // than letting it surface as a JSON parse error.
+      fetch(DATA_URL)
+        .then(function(r){
+          if(r.status===401) throw new Error('Your session expired. Reload the page and sign in again.');
+          if(!r.ok) throw new Error(DATA_URL+' -> '+r.status);
+          return r.json();
+        })
+        .then(start).catch(fail);
+    } else {
+      var bin=atob(DATA_GZ), bytes=new Uint8Array(bin.length);
+      for(var i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+      new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).text()
+        .then(start).catch(fail);
+    }
   }catch(e){ fail(e); }
+})();
+</script>
+<!-- Ask the map: demo-only entry point for the AI visit planner (not wired to any model yet) -->
+<style>
+  #askbtn{position:fixed;right:14px;bottom:30px;z-index:1200;width:52px;height:52px;border-radius:50%;border:0;cursor:pointer;
+    background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;box-shadow:0 6px 20px rgba(76,29,149,.45);display:flex;align-items:center;justify-content:center}
+  #askbtn:hover{transform:scale(1.06)}
+  #askbtn svg{width:24px;height:24px}
+  #askpanel{position:fixed;right:14px;bottom:92px;z-index:1200;width:340px;max-width:calc(100vw - 28px);background:#fff;border-radius:16px;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:#18181B;display:none;overflow:hidden}
+  #askpanel.on{display:block}
+  #askpanel .ask-ah{padding:12px 14px;background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;display:flex;justify-content:space-between;align-items:center}
+  #askpanel .ask-ah b{font-size:14px}
+  #askpanel .ask-ah span{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:9px;letter-spacing:.05em;text-transform:uppercase}
+  #askpanel .ask-ab{padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:#F8F8FA}
+  #askpanel .ask-mu{align-self:flex-end;background:#7c3aed;color:#fff;padding:8px 11px;border-radius:12px 12px 2px 12px;max-width:85%}
+  #askpanel .ask-ma{align-self:flex-start;background:#fff;border:1px solid #E4E4E7;padding:8px 11px;border-radius:12px 12px 12px 2px;max-width:90%}
+  #askpanel .ask-ma ol{margin:4px 0 6px 18px;padding:0}
+  #askpanel .ask-ma .ask-go{display:inline-block;margin-top:2px;background:#18181B;color:#fff;padding:5px 10px;border-radius:8px;font-weight:600;opacity:.55}
+  #askpanel .ask-af{display:flex;gap:6px;padding:10px;border-top:1px solid #E4E4E7}
+  #askpanel .ask-af input{flex:1;border:1px solid #E4E4E7;border-radius:10px;padding:8px 10px;font:inherit;background:#FAFAFA}
+  #askpanel .ask-af button{border:0;border-radius:10px;background:#E4E4E7;padding:0 10px;cursor:not-allowed}
+  #askpanel .ask-note{font-size:11px;color:#70707B;padding:0 14px 10px}
+</style>
+<button id="askbtn" title="Ask the map (preview)" aria-label="Ask the map">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M12 8l1 2.2 2.2 1-2.2 1L12 14.4l-1-2.2-2.2-1 2.2-1z" fill="currentColor"/></svg>
+</button>
+<div id="askpanel" role="dialog" aria-label="Ask the map">
+  <div class="ask-ah"><b>Ask the map</b><span>Preview</span></div>
+  <div class="ask-ab">
+    <div class="ask-mu">I'm in Al Quoz. Plan my day: Filli Cafe, Spinneys and two lost deals nearby.</div>
+    <div class="ask-ma">Here's your visit day, 4 stops:
+      <ol><li>Spinneys, Al Quoz</li><li>Filli Cafe, Al Barsha 1</li><li>Lost deal, Al Quoz Industrial 3</li><li>Lost deal, Al Quoz Industrial 4</li></ol>
+      About 18 km and 50 min driving.<br><span class="ask-go">Open in Google Maps</span></div>
+  </div>
+  <div class="ask-af"><input disabled placeholder="Where are you, and who do you want to visit?"><button disabled title="Voice">&#127908;</button></div>
+  <div class="ask-note">Coming soon: type or say your plan and the map builds the route.</div>
+</div>
+<script>
+(function(){
+  var b=document.getElementById('askbtn'), p=document.getElementById('askpanel');
+  b.addEventListener('click',function(){ p.classList.toggle('on'); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') p.classList.remove('on'); });
 })();
 </script>
 </body>
 </html>`;
 
-const OUT = path.join(ROOT, 'dist', 'flapkap-uae-map.html');
+const OUT = SERVER
+  ? path.join(ROOT, 'page', 'index.html')
+  : path.join(ROOT, 'dist', 'flapkap-uae-map.html');
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html);
+
+// Server build: the payload the page fetches, beside the page.
+if (SERVER) {
+  const dataOut = path.join(ROOT, 'data', 'map-page.json');
+  fs.writeFileSync(dataOut, JSON.stringify(payload));
+  console.log('wrote data/map-page.json  ' + (fs.statSync(dataOut).size / 1024 / 1024).toFixed(1) + ' MB');
+}
 
 console.log('pinned companies   ' + pinned.length +
   '   (geocoded ' + pinned.filter(c => c.h === 'geocoded').length +
@@ -959,4 +2138,5 @@ console.log('pinned companies   ' + pinned.length +
 console.log('with a deal value  ' + pinned.filter(c => c.m).length);
 console.log('with an owner      ' + pinned.filter(c => c.o).length);
 console.log('universe places    ' + map.universe.length);
-console.log('wrote dist/flapkap-uae-map.html  ' + (fs.statSync(OUT).size / 1024 / 1024).toFixed(1) + ' MB');
+console.log('wrote ' + path.relative(ROOT, OUT).replace(/\\/g, '/') +
+  '  ' + (fs.statSync(OUT).size / 1024 / 1024).toFixed(1) + ' MB');
