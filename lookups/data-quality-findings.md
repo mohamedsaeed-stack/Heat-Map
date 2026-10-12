@@ -130,3 +130,19 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - No-emirate companies: Google now tells us where 3,513 of them actually are; HubSpot can be filled from this.
 - Spot check of random chains: about 10 in 12 correct. Wrong ones are one-word or category-like names (e.g. "Fatma", "Haval Grill" matched car showrooms).
 - Dubai grey CRM companies (27,473) not searched yet.
+
+## In-person meetings in HubSpot (12 Oct 2026, strict recount)
+
+- UAE in-person meeting candidates since 1 Mar 2026: 48 (physical address, in-person title, or location type Address). Only 10 have an outcome starting "Completed" (4 plain Completed, 6 "Completed - sign up done/not done/QL"); 15 Scheduled (many with past dates), 22 blank.
+- None of the 10 held visits has a won deal yet: 8 open, Dar Group rejected by Risk, Just Drive It has no deal.
+- Earlier figures (41 sales visits, 3 of 7 won = 43%) counted meetings that were never marked held; withdrawn.
+- Data issues: meeting outcomes not maintained; Meet links auto-attached to address meetings; some meetings linked to the wrong company ("Chief Executive Officer", Amina Hospital on Kinetic Assurance); SANCO's deal not associated with its company.
+- UAE win rate last 12 months (deals with a UAE company): 130 won of 889 closed incl. risk and pre-NOP rejections (14.6%); 130 of 591 excluding them (22%).
+
+## Held in-person visits vs the admin app (12 Oct 2026)
+
+- The admin app records only Risk inspection visits (SITE_VISIT offer condition, SITE_VISIT_REPORT document, inspector stage VISITED). Since 1 Mar: ~118 site-visit conditions created, one stage=VISITED record (3 Sep). A sales visit leaves no trace outside the HubSpot meeting.
+- None of the 10 held visits is an inspection visit. Emagine's offer (16 Sep) carries a Risk site-visit condition, which is a separate event after Tommy's 7 Sep visit.
+- Visit -> admin sign-up within 0-16 days: SANCO (7 Oct -> 9 Oct), Dar Group (10 Aug -> 12 Aug), Emagine (7 Sep -> 15 Sep), Just Drive It (21 Jul -> 6 Aug), Future Art (14 Apr, same day). Al Nuaimi signed up 15 Jul before the 27 Jul visit. Sea Box, Roadlink, Maristo are not in the admin app; "Dresden Auto" matches only "Dresden Technical Services" (auto-rejected), unclear.
+- No held-visit company is funded: Al Nuaimi (offer made, AED 1.25M) and Emagine (conditional, AED 150k) have DRAFT invoices with no disbursement date; the offer's isDisbursed flag is the planned date, not a disbursement.
+- Visited vs not visited (HubSpot, 1 Mar-12 Oct, companies with a meeting marked Completed, UAE; deals created Mar-Oct, best stage per company): visited in person 10 companies, 5 reached sign-up or beyond (50%), 2 offer or beyond, 0 disbursed. Met but not visited 1,132 companies: 226 sign-up or beyond (20%), 76 offer or beyond (7%), 38 disbursed (3%); 21% for Mar-Jul first meetings, 18% for Aug-Oct. Counting admin-app sign-ups (SANCO, Just Drive It) the visited figure is 7 of 10. Caveats: n=10, selection bias, 264 control companies with no deal, deals created before March not pulled.

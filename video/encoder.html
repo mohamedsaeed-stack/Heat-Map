@@ -1,0 +1,35 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Encoder</title>
+<style>body{font:16px system-ui;background:#0a1024;color:#e5e7eb;padding:24px}#log{white-space:pre-wrap}</style></head>
+<body><h3>Frames → MP4 (WebCodecs)</h3><button id="go">Encode</button><div id="log"></div>
+<script type="module">
+import { Muxer, ArrayBufferTarget } from '/node_modules/mp4-muxer/build/mp4-muxer.mjs';
+const log = s => { document.getElementById('log').textContent += s + '\n'; window.__status = s; };
+async function run() {
+  const list = await (await fetch('/frames')).json();
+  log('frames: ' + list.length);
+  if (!list.length) return log('no frames');
+  const W = 1920, H = 1080, FPS = 30;
+  const muxer = new Muxer({ target: new ArrayBufferTarget(), video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
+  const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => log('ERR ' + e.message) });
+  const cfg = { codec: 'avc1.640028', width: W, height: H, bitrate: 14_000_000, framerate: FPS };
+  const sup = await VideoEncoder.isConfigSupported(cfg);
+  if (!sup.supported) return log('H.264 1080p not supported here');
+  enc.configure(cfg);
+  for (let i = 0; i < list.length; i++) {
+    const blob = await (await fetch('/out/frames/' + list[i])).blob();
+    const bmp = await createImageBitmap(blob);
+    const fr = new VideoFrame(bmp, { timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(fr, { keyFrame: i % 60 === 0 });
+    fr.close(); bmp.close();
+    while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 4));
+    if (i % 150 === 0) log('encoded ' + i);
+  }
+  await enc.flush(); muxer.finalize();
+  const buf = muxer.target.buffer;
+  const r = await fetch('/save', { method: 'POST', body: buf });
+  log('done: ' + (await r.text()) + ', ' + (buf.byteLength / 1e6).toFixed(1) + ' MB');
+}
+document.getElementById('go').onclick = () => run().catch(e => log('ERR ' + e.message));
+window.__run = run;
+</script></body></html>
