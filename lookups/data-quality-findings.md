@@ -153,3 +153,10 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - Admin app: 8,645 -> 8,789 clients; funded 378 -> 385 (7 new); funded UAE pins 323 -> 329 (one new funded client names Lebanon by phone and is left off).
 - Geocoder resolved 116 of 327 new addresses; 211 returned nothing.
 - **Funded was undercounted (fixed 9 Oct):** "funded" had meant admin `financingStatus = REFINANCING` (round 2+), 385 clients. Counting approved invoices with a disbursed amount gives **545** (UAE 484 on the map; EGY 57 and SAU 3 left off; 1 foreign by phone). 160 were funded once and still read NEW. Closed won on the map 637 -> 739. Pins now carry financing count, first/latest date, ongoing or ended. The 160 newly counted have no licence/address pull, so most sit at emirate or UAE-only precision (164 funded pins UAE-only).
+
+## Pins moved to their Google listing (12 Oct 2026)
+
+- Before: 671 of 44,914 pins were real addresses; the rest sat at a chosen point inside the area (15,349), emirate (20,826) or the UAE (8,068), while the popup link searched Google by name, so pin and link disagreed for almost every company. Measured against the 6,578 companies with an exact listing: 96% of pins were more than 1 km from the listing, 45% more than 25 km.
+- Fix: the branch crawl's HQ listings (6,578 with a place id, plus 14 single listings) now move the pin to the listing ("Placed via: Google Maps place") and the link opens that listing (maps?cid=). Exact pins 671 -> 7,124; UAE-only 8,068 -> 5,432; 33 CRM duplicates merged because their pins now coincide. Deal counts unchanged (737 won, 1,449 open, 963 lost).
+- Planner: one visit per company. When several ticked stops share a company name, the one closest to the rest of the day (and the start) stays ticked, the others are unticked with a note.
+- Not done yet: the 2,157 name-only matches without a place id, and branches as their own pins.
