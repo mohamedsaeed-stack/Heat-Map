@@ -107,6 +107,15 @@ for (const c of pinned) {
   for (const k of ['lc', 'ad', 'af', 'd']) if (!c[k]) { delete c[k]; dropped++; }
 }
 
+// Exact Google Maps listing ids from the branch crawl (12 Oct 2026): the popup link
+// opens that listing instead of a name search, which could land on a namesake.
+// Pins are not moved here; that needs the data rebuild.
+let withCid = 0;
+try {
+  const CIDS = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'gmaps-cids.json'), 'utf8'));
+  for (const c of pinned) { const g = CIDS[String(c.i)]; if (g) { c.g = g; withCid++; } }
+} catch (e) {}
+
 const payload = {
   pulled: map.stats.pulled,
   companies: pinned,
@@ -545,7 +554,8 @@ function __main(){
   // this form opened the right listing every time. A search pinned to our own
   // coordinates did not (it snapped to a different florist when our geocode
   // was off), so coordinates are never passed. No API key, no cost.
-  function gmapsUrl(name,area,emirate){
+  function gmapsUrl(name,area,emirate,cid){
+    if(cid) return 'https://www.google.com/maps?cid='+cid;   // the exact listing, when the crawl found it
     if(!name) return null;   // a nameless record would search for the district alone
     var q=[name, area, (emirate && emirate!=='UAE') ? emirate : null, 'UAE'].filter(Boolean).join(', ');
     return 'https://www.google.com/maps/search/?api=1&amp;hl=en&amp;query='+encodeURIComponent(q);
@@ -794,7 +804,7 @@ function __main(){
       : 'No usable location on record.';
     if(c.rt) loc += '<br><span class="muted">Placed via: '+esc(c.rt)+'</span>';
     if(c.cf) loc += '<div class="pnote" style="border-top-color:#FDB022;color:#FDB022"><b>Record disagrees with itself.</b> The CRM city says <b>'+esc(c.e||'the UAE')+'</b> but the ZIP code or state on the same record points abroad, so the street address was not used. Fix the record in HubSpot and the pin sharpens on the next refresh.</div>';
-    var gm=gmapsUrl(c.n,c.a,c.e);
+    var gm=gmapsUrl(c.n,c.a,c.e,c.g);
     return '<div class="pn">'+esc(c.n)+'</div>'+
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
