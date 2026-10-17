@@ -20,6 +20,8 @@ const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
 const auth = require('./lib/google-auth');
+const call = require('./lib/click-to-call');
+const contacts = require('./lib/hubspot-contacts');
 
 const ROOT = path.join(__dirname, '..');
 const PORT = Number(process.argv[2] || process.env.PORT || 8099);
@@ -50,13 +52,15 @@ function authOk(header) {
 }
 
 const server = http.createServer(async (req, res) => {
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.writeHead(405, { 'Allow': 'GET, HEAD' }); res.end(); return;
-  }
-
   let p;
   try { p = decodeURIComponent(req.url.split('?')[0]); }
   catch { res.writeHead(400, { 'Content-Type': 'text/plain' }); res.end('bad request'); return; }
+
+  // Read-only everywhere, except the one endpoint that places a call.
+  const allow = p === '/api/call' ? 'POST' : 'GET, HEAD';
+  if (!allow.split(', ').includes(req.method)) {
+    res.writeHead(405, { 'Allow': allow }); res.end(); return;
+  }
 
   // Railway's health check, before auth so a password does not fail the deploy.
   if (p === '/healthz') {
@@ -77,6 +81,21 @@ const server = http.createServer(async (req, res) => {
       'Content-Type': 'text/plain',
     });
     res.end('unauthorized'); return;
+  }
+
+  // Top 3 contacts for a pin card, live from HubSpot (scripts/lib/hubspot-contacts.js).
+  if (p === '/api/contacts') {
+    try { await contacts.handle(req, res); }
+    catch (e) { console.error('contacts error:', e.name); if (!res.headersSent) { res.writeHead(500); res.end(); } }
+    return;
+  }
+
+  // Click-to-call (scripts/lib/click-to-call.js), behind the same sign-in as the map.
+  if (p === '/api/call-config') { call.handleConfig(req, res); return; }
+  if (p === '/api/call') {
+    try { await call.handleCall(req, res); }
+    catch (e) { console.error('call error:', e.name); if (!res.headersSent) { res.writeHead(500); res.end(); } }
+    return;
   }
 
   if (p === '/') p = '/page/index.html';
@@ -135,6 +154,8 @@ server.listen(PORT, HOST, () => {
   if (auth.CONFIGURED) console.log('auth: Google sign-in, ' + auth.ALLOWED_DOMAIN + ' accounts only');
   else if (AUTH) console.log('auth: basic (shared password)');
   else console.log('auth: OFF - set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and SESSION_SECRET before exposing this publicly');
+  console.log('contacts: ' + (contacts.CONFIGURED ? 'live from HubSpot' : 'off (set HUBSPOT_TOKEN)'));
+  console.log('click-to-call: ' +(call.CONFIGURED ? 'ZIWO on' : 'off (popups open the contact in HubSpot instead)'));
 });
 
 // Railway sends SIGTERM on redeploy; exit cleanly instead of being killed.

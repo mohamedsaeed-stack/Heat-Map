@@ -266,10 +266,10 @@ async function handle(req, res, pathname) {
 
   if (unseal(cookies[SESSION_COOKIE])) return false; // signed in, serve the file
 
-  // Not signed in. The page fetches data/*.json with fetch(), and an HTML sign-in
+  // Not signed in. The page fetches data/*.json and /api/* with fetch(), and an HTML sign-in
   // page would land there as a JSON parse error with no explanation - answer those
   // with a 401 the console can read instead.
-  if (pathname.startsWith('/data/')) {
+  if (pathname.startsWith('/data/') || pathname.startsWith('/api/')) {
     res.writeHead(401, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'not signed in', signIn: origin + '/auth/login' }));
     return true;

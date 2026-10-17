@@ -45,6 +45,10 @@ const LAYERS = [
   { key: 'closed_lost', label: 'Closed lost', color: '#d93025', r: 7 },
   { key: 'crm',         label: 'On the CRM',  color: '#2f6fd6', r: 6 },   // blue, not grey: a CRM record is a real prospect
 ];
+// The free-for-all pool is not a lifecycle stage - a pooled company still has one -
+// so it is its own tick box, outside LAYERS. Lime because no other layer, category or
+// game turf uses it; the nearest hue, closed-won green, is far darker.
+const FFA = { key: 'ffa', label: 'Free for all', color: '#84cc16', r: 5 };
 const CAT_COLOR = {
   hospitality_fnb: '#e8590c', medical_healthcare: '#1098ad', marketing_advertising: '#c2255c',
   auto_automotive: '#2f9e44', contracting_fitout: '#6741d9', retail: '#b58900',
@@ -116,8 +120,25 @@ try {
   for (const c of pinned) { const g = CIDS[String(c.i)]; if (g) { c.g = g; withCid++; } }
 } catch (e) {}
 
+// Free-for-all pool (17 Oct 2026): HubSpot free_for_all_status = 'Available', the
+// unowned leads any rep may take. data/ffa.json is the id list, pulled separately; the
+// flag rides on each pin (ff:1) so both builds carry it with no extra fetch. A missing
+// file means an empty pool box, not a failed build; a malformed one fails loudly.
+const ffa = { pool: 0, onMap: 0, pulled: null };
+try {
+  const F = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'ffa.json'), 'utf8'));
+  const ids = new Set((F.ids || []).map(String));
+  ffa.pool = ids.size; ffa.pulled = F.pulled || null;
+  for (const c of pinned) if (!c.ao && ids.has(String(c.i))) { c.ff = 1; ffa.onMap++; }
+  console.log('free for all: ' + ffa.onMap + ' of ' + ffa.pool + ' pool companies are on the map');
+} catch (e) {
+  if (e.code !== 'ENOENT') throw e;
+  console.log('no data/ffa.json - the Free for all box is hidden');
+}
+
 const payload = {
   pulled: map.stats.pulled,
+  ffa,
   companies: pinned,
   dict: DICT,
   universe: map.universe,
@@ -336,6 +357,22 @@ ${V('MarkerCluster.Default.css')}
   .pid a{color:#528BFF;text-decoration:none;font-weight:500}
   .pid a:hover{text-decoration:underline}
   .pid span{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:#70707B;margin-left:6px}
+  /* Top contacts in the popup, fetched from HubSpot on open */
+  .pct{margin-top:8px;border-top:1px solid #3F3F46;padding-top:6px}
+  .pct-r{display:flex;align-items:center;gap:5px;padding:2px 0}
+  .pct-t{flex:1;min-width:0;line-height:1.25}
+  .pct-n{display:block;font-size:12px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pct-j{display:block;font-size:10.5px;color:#70707B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pct-i{flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+    border-radius:6px;border:1px solid #3F3F46;color:#528BFF!important;background:transparent;cursor:pointer;padding:0}
+  .pct-i:hover{background:#26272B}
+  .pct-call{color:#12B76A!important}
+  .pct-m{font-size:10.5px;color:#70707B}
+  .pct-s{font-size:10.5px;color:#A0A0AB;margin-top:5px;line-height:1.4}
+  .pct-s.err{color:#F04438}
+  .pct-s .sel{width:auto;max-width:150px;font-size:11px;padding:3px 6px}
+  .pct-f{font-size:10px;color:#70707B;margin-top:4px}
+  .pct-f a{color:#528BFF;text-decoration:none}
 
   .lbl{background:rgba(24,24,27,.95);border:1px solid #3F3F46;border-radius:6px;
     padding:1px 6px;font-size:11px;color:#fff;font-weight:500;white-space:nowrap;
@@ -545,6 +582,7 @@ function __main(){
   var LAYERS = ${JSON.stringify(LAYERS)};
   var CAT_COLOR = ${JSON.stringify(CAT_COLOR)};
   var BY_KEY = {}; LAYERS.forEach(function(l){ BY_KEY[l.key]=l; });
+  var FFA = ${JSON.stringify(FFA)};
 
   // The offline street map stops at zoom 15: the sharpest embedded tiles are z13,
   // two levels of scaling is still a map, four is a blur - and approximate pins
@@ -554,6 +592,7 @@ function __main(){
   // the sign-in page lands on /#/login - measured 22 Sep 2026 from the public
   // front-end, no login needed.
   var HUBSPOT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-2/{id}';
+  var HUBSPOT_CONTACT_URL = 'https://app.hubspot.com/contacts/25308329/record/0-1/{id}';
   var ADMIN_CLIENT_URL = 'https://admin72913.flapkap.com/#/clients/{id}';
   var BASEMAPS = ${BASEMAPS_JS};
   var EMBEDDED = ${SERVER ? 'false' : 'true'};
@@ -680,7 +719,13 @@ function __main(){
   })();
   setBase('streets');
 
-  var on={closed_won:true,in_process:true,closed_lost:true,crm:true,universe:false};
+  var on={closed_won:true,in_process:true,closed_lost:true,crm:true,ffa:true,universe:false};
+  // A pin shows when its lifecycle box is ticked OR it is in the free-for-all pool and
+  // that box is ticked - so unticking "On the CRM" with Free for all on leaves only the
+  // pool. Pool pins wear the pool colour only while the pool box is on.
+  function layerShown(c){ return on[c.l] || (c.ff && on.ffa); }
+  function stageColor(c){ return (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : BY_KEY[c.l].color; }   // purple: Risk rejection, distinct from in-process amber
+  function pinColor(c){ return (c.ff && on.ffa) ? FFA.color : stageColor(c); }
   var catOn={}; DATA.target.forEach(function(c){catOn[c]=true;}); catOn.other=true; catOn.blank=true;
   // Emirate filter, and a filter on HOW WELL a pin is located. The second one
   // matters: switching off "emirate only" leaves just the pins whose position
@@ -729,19 +774,18 @@ function __main(){
       var z=this._map.getZoom();
       // Culling by viewport does nothing at country zoom, where every pin IS in the
       // viewport - which is exactly where the map felt heaviest. Below z11 the draw is
-      // capped as well. _all arrives priority-sorted (closed won, in process, closed
-      // lost, then CRM), so a cap drops the least important pins first, and the count
-      // it drops is printed on screen rather than left for someone to notice.
+      // capped as well. _all arrives in draw order - plain CRM first, closed won last,
+      // so the loud pins paint on top - which makes the LAST pins in view the most
+      // important. The cap keeps that tail (17 Oct 2026: it used to keep the head,
+      // which at country zoom drew 4,000 plain CRM pins and no deal at all), and the
+      // count it drops is printed on screen rather than left for someone to notice.
       var budget = z<9 ? 4000 : (z<11 ? 9000 : (z<13 ? 20000 : Infinity));
-      var b=this._map.getBounds().pad(0.2), all=this._all, drawn=0, inView=0;
+      var b=this._map.getBounds().pad(0.2), all=this._all, seen=[];
       L.LayerGroup.prototype.clearLayers.call(this);
-      for(var i=0;i<all.length;i++){
-        if(!b.contains(all[i].getLatLng())) continue;
-        inView++;
-        if(drawn>=budget) continue;
-        L.LayerGroup.prototype.addLayer.call(this,all[i]); drawn++;
-      }
-      this._drawn=drawn; this._inView=inView;
+      for(var i=0;i<all.length;i++) if(b.contains(all[i].getLatLng())) seen.push(all[i]);
+      var from=Math.max(0,seen.length-budget);
+      for(var j=from;j<seen.length;j++) L.LayerGroup.prototype.addLayer.call(this,seen[j]);
+      this._drawn=seen.length-from; this._inView=seen.length;
       if(typeof onCull==='function') onCull();
     },
     // The search panel jumps to a pin that may be culled out of view. Fly first,
@@ -787,6 +831,121 @@ function __main(){
     return Math.max(base, Math.min(20, 4 + Math.sqrt(c.m)/220));
   }
 
+  // Top contacts per company (17 Oct 2026), fetched live from HubSpot by our server
+  // (scripts/lib/hubspot-contacts.js) when a card opens, and kept for the session.
+  // Names and titles never sit in the repo or the page data. Rows: [contactId, name,
+  // job title, hasPhone]. The server build only - the standalone file has no server.
+  var CONTACTS_URL = DATA_URL ? '/api/contacts?company=' : null;
+  var CONTACTS={}, contactsP={};
+  function loadContacts(id){
+    if(CONTACTS[id]) return Promise.resolve(CONTACTS[id]);
+    if(!contactsP[id]) contactsP[id]=fetch(CONTACTS_URL+encodeURIComponent(id)).then(function(r){
+      if(r.status===401) throw new Error('Your session expired - reload and sign in.');
+      if(r.status===503) throw new Error('Contacts need the HubSpot token on the server (see DEPLOY.md).');
+      if(!r.ok) throw new Error('Contacts could not be loaded (HTTP '+r.status+').');
+      return r.json();
+    }).then(function(j){ delete contactsP[id]; return (CONTACTS[id]=(j&&j.rows)||[]); },
+            function(e){ delete contactsP[id]; throw e; });   // a failure is retried on the next open
+    return contactsP[id];
+  }
+  // Click-to-call through ZIWO, via our server (scripts/lib/click-to-call.js), which looks
+  // the number up in HubSpot itself - no phone number ever reaches this page. Off unless
+  // the server says so; then the call icon just opens the contact in HubSpot.
+  var CALL={enabled:false,agents:[]};
+  if(DATA_URL) fetch('/api/call-config').then(function(r){ return r.ok?r.json():null; })
+    .then(function(j){ if(j&&j.enabled&&j.agents&&j.agents.length) CALL=j; }).catch(function(){});
+  var AGENT_KEY='fk_ziwo_agent';
+  function getAgent(){
+    try{ var a=localStorage.getItem(AGENT_KEY); return (a&&CALL.agents.indexOf(a)>=0)?a:null; }catch(x){ return null; }
+  }
+  function setAgent(a){ try{ localStorage.setItem(AGENT_KEY,a); }catch(x){} }
+  var ICON_LINK='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+  var ICON_PHONE='<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z"/></svg>';
+  function contactsHtml(rows){
+    if(!rows||!rows.length) return '<div class="pct-m">No contacts in HubSpot</div>';
+    var callTip=CALL.enabled?'Call through ZIWO - your softphone rings first'
+                            :'Opens the contact in HubSpot - press Call there (click-to-call is not set up)';
+    var h=rows.slice(0,3).map(function(r){
+      var url=HUBSPOT_CONTACT_URL.replace('{id}',encodeURIComponent(r[0]));
+      return '<div class="pct-r"><div class="pct-t"><span class="pct-n" title="'+esc(r[1])+'">'+esc(r[1]||'(no name)')+'</span>'+
+        (r[2]?'<span class="pct-j" title="'+esc(r[2])+'">'+esc(r[2])+'</span>':'')+'</div>'+
+        '<a class="pct-i" href="'+url+'" target="_blank" rel="noopener" title="Open the contact in HubSpot">'+ICON_LINK+'</a>'+
+        (r[3]?'<a class="pct-i pct-call" href="'+url+'" target="_blank" rel="noopener" data-ct="'+esc(r[0])+'" data-nm="'+esc(r[1])+'" title="'+callTip+'">'+ICON_PHONE+'</a>':'')+
+        '</div>';
+    }).join('');
+    var me=CALL.enabled&&getAgent();
+    return h+'<div class="pct-s" style="display:none"></div>'+
+      (me?'<div class="pct-f">Calling as '+esc(me)+' &middot; <a href="#" class="pct-chg">change</a></div>':'');
+  }
+  // Fill on open. The popup content is replaced (setContent), not edited in place, so
+  // Leaflet re-measures the card. On close the empty slot goes back, so the next open
+  // is re-filled from the cache with the current rep name and call setting.
+  map.on('popupopen',function(e){
+    var pop=e.popup, el=pop.getElement(), box=el&&el.querySelector('.pct:not([data-done])');
+    if(!box) return;
+    var id=box.getAttribute('data-co'), slot='<div class="pct" data-co="'+esc(id)+'"></div>';
+    function put(inner){
+      var html=pop.getContent();
+      if(typeof html!=='string' || html.indexOf(slot)<0) return;
+      // autoPan off for this one update: setContent would otherwise stop the opening
+      // pan mid-flight, the moveend re-culls the pins, and the culled marker takes its
+      // own popup down with it (seen in testing, 17 Oct 2026).
+      var ap=pop.options.autoPan; pop.options.autoPan=false; pop._fkOrig=html;
+      pop.setContent(html.replace(slot,'<div class="pct" data-co="'+esc(id)+'" data-done="1">'+inner+'</div>'));
+      pop.options.autoPan=ap;
+    }
+    if(CONTACTS[id]){ put(contactsHtml(CONTACTS[id])); return; }
+    box.innerHTML='<div class="pct-m">Loading contacts&hellip;</div>';
+    loadContacts(id).then(function(rows){ if(pop.isOpen()) put(contactsHtml(rows)); },
+      function(err){ box.innerHTML='<div class="pct-m">'+esc(err.message||'Contacts could not be loaded.')+'</div>'; });
+  });
+  map.on('popupclose',function(e){ if(e.popup._fkOrig){ e.popup.setContent(e.popup._fkOrig); e.popup._fkOrig=null; } });
+  function callStatus(box,html,err){
+    var st=box.querySelector('.pct-s'); if(!st) return null;
+    st.className='pct-s'+(err?' err':''); st.innerHTML=html; st.style.display=html?'':'none';
+    return st;
+  }
+  // The rep picks their name once; it is remembered on this browser. Google sign-in
+  // could supply it later (ZIWO_AGENTS keyed by email) - not built.
+  function pickAgent(box,then){
+    var st=callStatus(box,'Who is calling? <select class="sel pct-sel"><option value="">Pick your name</option>'+
+      CALL.agents.map(function(a){ return '<option>'+esc(a)+'</option>'; }).join('')+'</select>');
+    var sel=st.querySelector('select'); sel.focus();
+    sel.onchange=function(){
+      if(!sel.value) return;
+      setAgent(sel.value);
+      var f=box.querySelector('.pct-f');
+      if(f) f.firstChild.nodeValue='Calling as '+sel.value+' '+String.fromCharCode(183)+' ';
+      else box.insertAdjacentHTML('beforeend','<div class="pct-f">Calling as '+esc(sel.value)+' &middot; <a href="#" class="pct-chg">change</a></div>');
+      then(sel.value);
+    };
+  }
+  function placeCall(box,link,agent){
+    if(link.getAttribute('data-busy')) return;
+    link.setAttribute('data-busy','1');
+    callStatus(box,'Ringing your ZIWO&hellip; answer it and it dials '+esc(link.getAttribute('data-nm')||'the contact')+'.');
+    fetch('/api/call',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contactId:link.getAttribute('data-ct'),agent:agent})})
+      .then(function(r){ return r.json().catch(function(){ return {ok:false,error:'Call failed (HTTP '+r.status+').'}; }); })
+      .then(function(j){
+        if(j.ok) callStatus(box,'Ringing your ZIWO &mdash; answer it and it dials '+esc(link.getAttribute('data-nm')||'the contact')+'.');
+        else callStatus(box,esc(j.error||'Call failed.'),true);
+      }, function(){ callStatus(box,'Could not reach the server.',true); })
+      .then(function(){ link.removeAttribute('data-busy'); });
+  }
+  // Capture phase: Leaflet stops click propagation inside a popup, so a bubbling
+  // listener here would never hear these clicks.
+  document.addEventListener('click',function(e){
+    var t=e.target.closest&&e.target.closest('.pct-call,.pct-chg');
+    if(!t) return;
+    var box=t.closest('.pct');
+    if(t.classList.contains('pct-chg')){ e.preventDefault(); pickAgent(box,function(){ callStatus(box,''); }); return; }
+    if(!CALL.enabled) return;   // the link's own href opens the contact in HubSpot
+    e.preventDefault();
+    var me=getAgent();
+    if(me) placeCall(box,t,me); else pickAgent(box,function(a){ placeCall(box,t,a); });
+  },true);
+
   function popupFor(c,color){
     var kv='';
     if(c.ga) kv+='<dt>Address</dt><dd>'+esc(c.ga)+'</dd>';
@@ -820,7 +979,9 @@ function __main(){
       '<div class="pi">'+esc(DATA.categories[c.c]||c.c)+(c.a?' &middot; '+esc(c.a):'')+'</div>'+
       '<span class="pb" style="background:'+color+'">'+esc(STAGE[c.l])+(c.t==='risk_rejected'?' &middot; Risk':'')+'</span>'+
       (c.src==='admin'?' <span class="pb" style="background:#5f6368">per the admin app</span>':'')+
+      (c.ff?' <span class="pb" style="background:'+FFA.color+';color:#050505">Free for all</span>':'')+
       (kv?'<dl class="kv">'+kv+'</dl>':'')+dis+
+      ((CONTACTS_URL&&!c.ao)?'<div class="pct" data-co="'+esc(c.i)+'"></div>':'')+
       '<div class="pnote">'+loc+(c.lc?' Marked a customer by lifecycle stage, with no won deal attached.':'')+
       '<div class="pid"><a href="#" onclick="window.__planAdd(\\''+c._pid+'\\');return false;">+ Add to visit day</a></div>'+
       '<div class="pid">'+
@@ -842,14 +1003,15 @@ function __main(){
     // coloured ones. In record order the grey layer lands on top and buries
     // every won, in-process and lost deal - the pins anyone actually opens this
     // map for. So the quiet layer is drawn first and the loud ones last.
+    // Pool pins sit just above the plain CRM ones they would otherwise vanish into,
+    // and below every deal colour.
     if(!DATA._order){
-      var rank={crm:0,closed_lost:1,in_process:2,closed_won:3};
-      DATA._order=DATA.companies.slice().sort(function(a,b){
-        return (rank[a.l]||0)-(rank[b.l]||0);
-      });
+      var rank={crm:0,closed_lost:2,in_process:3,closed_won:4};
+      var rk=function(c){ return (c.l==='crm'&&c.ff) ? 1 : (rank[c.l]||0); };
+      DATA._order=DATA.companies.slice().sort(function(a,b){ return rk(a)-rk(b); });
     }
     DATA._order.forEach(function(c){
-      if(!on[c.l]||!catOn[c.c]) return;
+      if(!layerShown(c)||!catOn[c.c]) return;
       if(!emOn[c.e||'Unknown']) return;
       if(!precOn[c.h==='geocoded'?'exact':(c.h||'emirate')]) return;
       if(hsOwnOn && !hsOwnOn[c.o||'__none']) return;
@@ -862,8 +1024,8 @@ function __main(){
       }
       var L0=BY_KEY[c.l]; if(!L0) return;
       shown++;
-      var color = (c.l==='closed_lost'&&c.t==='risk_rejected') ? '#8e24aa' : L0.color;   // purple: Risk rejection, distinct from in-process amber
-      var quiet = (c.l==='crm');
+      var color = pinColor(c), pool = !!(c.ff && on.ffa);
+      var quiet = (c.l==='crm' && !pool);
       // A pin's STRENGTH encodes how well we know where it is. A solid dot with
       // a white ring is a real geocoded address. Anything scattered inside an
       // area or an emirate is drawn weaker and ringless, so a full-looking map
@@ -878,12 +1040,12 @@ function __main(){
       var fo = quiet?.8:.95;
       if(area) fo*=.95; if(vague) fo*=.85; if(untraced) fo*=.75;
       var m=L.circleMarker([c.y,c.x],{
-        radius: radiusFor(c,quiet?4:L0.r) * (untraced?.7:(vague?.85:(area?.92:1))),
+        radius: radiusFor(c,pool&&c.l==='crm'?FFA.r:(quiet?4:L0.r)) * (untraced?.7:(vague?.85:(area?.92:1))),
         color: (area||vague)?color:'#fff',
         weight: vague?0.5:(area?1:(quiet?1:2)),
         opacity: (area||vague)?.85:1,
         fillColor:color, fillOpacity:fo});
-      m.bindPopup(popupFor(c,color));
+      m.bindPopup(popupFor(c,stageColor(c)));
       if(showLabels) m.bindTooltip(c.n,{permanent:true,direction:'right',offset:[6,0],className:'lbl'});
       else m.bindTooltip(c.n,{direction:'top',className:'lbl'});
       target.addLayer(m);
@@ -921,6 +1083,12 @@ function __main(){
       return '<label class="lg'+(on[l.key]?'':' off')+'" data-k="'+l.key+'">'+
         '<span class="dot" style="background:'+l.color+'"></span>'+l.label+
         ' <span class="n">'+fmt(DATA.stats.crm.byLayer[l.key]||0)+'</span></label>';});
+    var F=DATA.ffa;
+    if(F&&F.pool) rows.push('<label class="lg'+(on.ffa?'':' off')+'" data-k="ffa" title="'+
+      esc('HubSpot free_for_all_status = Available: '+fmt(F.pool)+' companies in the pool, '+fmt(F.onMap)+
+          ' of them on the map (the rest have no UAE location to pin). '+
+          'Shown whenever this box is on, even with their lifecycle box off.'+(F.pulled?' Pulled '+String(F.pulled).slice(0,10)+'.':''))+'">'+
+      '<span class="dot" style="background:'+FFA.color+'"></span>'+FFA.label+' <span class="n">'+fmt(F.onMap)+'</span></label>');
     rows.push('<label class="lg'+(on.universe?'':' off')+'" data-k="universe">'+
       '<span class="dot" style="background:#009694"></span>Market universe <span class="n">'+
       fmt(DATA.universe.length)+'</span></label>');
@@ -1279,7 +1447,7 @@ function __main(){
     var box=planEl('plist'), chk=planChecked(), n=0, inPlan={};
     planStops.forEach(function(s){ inPlan[s.c._pid]=1; });
     box.innerHTML=planStops.map(function(s,i){
-      var c=s.c, color=(c.l==='closed_lost'&&c.t==='risk_rejected')?'#8e24aa':BY_KEY[c.l].color;
+      var c=s.c, color=pinColor(c);
       var no=(planRouted&&s.on)?(++n):'';
       var near=planPrecise(c)?planNear(c,inPlan):[], nr='', rows='';
       if(!planPrecise(c)) nr='';   // an approximate pin sits at a scattered point, so "nearby" would mean nothing

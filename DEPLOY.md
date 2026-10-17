@@ -112,12 +112,44 @@ visibly in the console instead of as a JSON parse error.
 | `/` | `page/index.html` — the coverage map |
 | `/data/*.json` | the map data the page fetches |
 | `/healthz` | `ok`, for Railway |
+| `/api/contacts` | a company's top 3 contacts, live from HubSpot, below (behind the same sign-in) |
+| `/api/call-config`, `/api/call` | click-to-call through ZIWO, below (behind the same sign-in) |
 
 Anything else resolves under `page/`. Paths that try to escape the repo get a 403.
 
 `data/map-uae.json` is 8 MB and `data/map.json` 6 MB, so responses are gzipped when the
 browser accepts it — 8.2 MB goes over the wire as 1.4 MB. Files are also ETagged, so a
 reload after the first visit is a 304 and no bytes.
+
+## Contacts and click-to-call (17 Oct 2026)
+
+Each company popup lists its top three HubSpot contacts, read live from HubSpot by
+`/api/contacts?company=<id>` when the popup opens (owner/founder/CEO first, then finance,
+then other heads; cached 10 minutes). Names and titles are deliberately not a data file:
+they stay out of the repo. Without `HUBSPOT_TOKEN` the popup says the token is missing.
+The Free for all box reads `data/ffa.json` (company ids only), which the build folds into
+`data/map-page.json`; it is committed like the rest of `data/`. Refresh it with
+`scripts/build-ffa.js` (see its header).
+
+The call icon dials through ZIWO when these four variables are set, and otherwise just
+opens the contact in HubSpot, where the rep presses Call:
+
+| Variable | Value |
+|---|---|
+| `ZIWO_INSTANCE` | the instance name - the `acme` in `acme-api.aswat.co` |
+| `ZIWO_API_KEY` | ZIWO admin API key (sent as the `api_key` header) |
+| `ZIWO_AGENTS` | JSON, rep name to ZIWO ccLogin: `{"Sara Ali":"sara_cc","Omar Khan":"omar_cc"}` |
+| `HUBSPOT_TOKEN` | HubSpot private-app token, scopes `crm.objects.contacts.read` and `crm.objects.companies.read` (also turns the contacts list on by itself) |
+
+The page sends a contact id and the rep's name; the server looks the number up live in
+HubSpot (`phone`, else `mobilephone`; UAE numbers starting 0 become +971), then asks ZIWO
+to ring that rep's softphone and dial once they answer. Numbers are never logged or sent to
+the page, and the ccLogins and keys stay on the server - `/api/call-config` returns names
+only. Each rep picks their name once per browser. The server prints
+`click-to-call: ZIWO on` at start when all four are set.
+
+Rep identity is self-chosen for now. Once Google sign-in is on, `ZIWO_AGENTS` could be keyed
+by sign-in email instead, so nobody can ring someone else's softphone - not built yet.
 
 ## Which page gets served
 

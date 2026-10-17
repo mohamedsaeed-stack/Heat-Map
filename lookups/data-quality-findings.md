@@ -160,3 +160,11 @@ The team loaded street addresses, cities and countries into HubSpot on 24 Sep 20
 - Fix: the branch crawl's HQ listings (6,578 with a place id, plus 14 single listings) now move the pin to the listing ("Placed via: Google Maps place") and the link opens that listing (maps?cid=). Exact pins 671 -> 7,124; UAE-only 8,068 -> 5,432; 33 CRM duplicates merged because their pins now coincide. Deal counts unchanged (737 won, 1,449 open, 963 lost).
 - Planner: one visit per company. When several ticked stops share a company name, the one closest to the rest of the day (and the start) stays ticked, the others are unticked with a note.
 - Not done yet: the 2,157 name-only matches without a place id, and branches as their own pins.
+
+## Free for all pool and contacts (17 Oct 2026)
+
+- `free_for_all_status` on companies: Available 14,602 (all unowned), Taken ~4,194, Pending 0. The pool job rewrites it nightly (~20:02). 13,976 of the 14,602 are on the map; 626 have no UAE location and are not drawn.
+- Contacts with a primary company: 63,511. 39,151 of the 44,881 map companies have at least one; 5,730 have none.
+- Of the 53,175 top-3 contacts shown in pin cards: 26,045 are owner/founder/CEO/MD, 7,666 finance, 8,075 other C-level/VP/director/head, 2,013 manager, 2,329 other titles, 5,950 have no job title, 1,097 are generic mailboxes ("Info department", "Hello department").
+- Reps call through ZIWO (HubSpot calls carry `hs_call_source = INTEGRATIONS_PLATFORM`, titled "ZIWO call").
+- Pool companies that are not plain CRM records on the map: 16 closed won, 15 in process, 24 closed lost. A funded or open-deal company sitting in the free-for-all pool looks wrong; CRM owner to check.
